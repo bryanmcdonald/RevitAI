@@ -146,6 +146,12 @@ RevitAI provides Claude with tools to query your Revit model:
 - Element movement and deletion
 - Transaction management with undo support
 
+**Coming Soon (Phase 1.5):**
+- Screenshot capture for Claude vision analysis
+- View switching and creation
+- Camera control (zoom, pan, 3D navigation)
+- Visual isolation and graphics overrides
+
 ## Development Status
 
 ### Phase 1: Foundation (MVP)
@@ -161,6 +167,14 @@ Core infrastructure for a working AI assistant.
 - [ ] **P1-08** Transaction Manager
 - [ ] **P1-09** Modification Tools (10 tools)
 - [ ] **P1-10** Safety & Configuration
+
+### Phase 1.5: View & Navigation Foundation
+View manipulation and visual context tools for enhanced AI understanding.
+
+- [ ] **P1.5-01** Screenshot Capture (view snapshots for Claude vision)
+- [ ] **P1.5-02** View Management (switch views, create views, list views)
+- [ ] **P1.5-03** Camera Control (zoom, pan, 3D orbit, section boxes)
+- [ ] **P1.5-04** Visual Isolation (isolate, hide, override graphics)
 
 ### Phase 2: Enhanced Capabilities
 Advanced features and improved workflows.
@@ -194,10 +208,14 @@ RevitAI/
 │   ├── UI/                   # WPF views and view models
 │   ├── Services/             # Core services
 │   ├── Tools/                # Claude tool implementations
+│   │   ├── ReadTools/        # Query tools
+│   │   ├── ModifyTools/      # Modification tools
+│   │   └── ViewTools/        # View & navigation tools (P1.5)
 │   ├── Threading/            # ExternalEvent infrastructure
 │   └── Models/               # Data models
 ├── docs/                     # Development documentation
 │   ├── phase1/               # Phase 1 implementation details
+│   ├── phase1.5/             # Phase 1.5 view & navigation specs
 │   ├── phase2/               # Phase 2 specifications
 │   ├── phase3/               # Phase 3 specifications
 │   └── appendix.md           # API patterns & reference
