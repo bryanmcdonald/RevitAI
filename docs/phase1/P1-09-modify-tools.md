@@ -185,3 +185,42 @@ registry.Register(new ZoomToElementTool());
 5. Ask Claude "Move the selected element 5 feet to the right"
 6. Ask Claude "Change the wall type to 'Generic - 8"'"
 7. Verify all operations work and can be undone with Ctrl+Z
+
+---
+
+## Implementation Notes (Lessons Learned)
+
+### Transaction Groups and API Context
+
+**Issue**: When Claude returns multiple tool calls (e.g., 5 `move_element` calls), the ToolDispatcher batches them in a transaction group for single-undo. However, starting the group in one `ExecuteOnRevitThreadAsync` call and running transactions in separate calls caused "Transaction group has not been started" errors.
+
+**Solution**: Execute ALL tools within a SINGLE `ExecuteOnRevitThreadAsync` call when using transaction groups. Revit requires all transactions in a group to be in the same IExternalEventHandler.Execute context.
+
+### Wall Type Changes and Face Preservation
+
+**Issue**: When changing wall thickness, users often want to keep a specific face (interior or exterior) in place. Initially assumed centerline behavior and calculated half-thickness compensation, but this was wrong.
+
+**Solution**: Revit walls have a "Location Line" parameter (`WALL_KEY_REF_PARAM`) that determines which reference stays fixed:
+- `Finish Face: Exterior` - exterior face is fixed
+- `Finish Face: Interior` - interior face is fixed
+- `Wall Centerline` - center is fixed (half compensation each side)
+- etc.
+
+`ChangeElementTypeTool` now returns:
+- `location_line_setting` - which reference is fixed
+- `width_difference` - thickness change
+- `perpendicular_to_exterior` - direction vector for moves
+
+If the user's desired face matches the location line, **no move is needed**.
+
+### Elevation Offsets
+
+Placement tools (`PlaceWallTool`, `PlaceFloorTool`, `PlaceColumnTool`) include optional offset parameters (`base_offset`, `elevation_offset`, `top_offset`) for placing elements at specific elevations relative to levels.
+
+### MoveElementTool is Single-Element
+
+`move_element` operates on ONE element. For multiple elements, Claude must call it once per element. The system prompt explicitly states this, and the ToolDispatcher handles batching them into a single undo operation.
+
+### Helper Utilities
+
+`ElementLookupHelper` provides case-insensitive lookup for levels, wall types, floor types, and family symbols with helpful error messages listing available options when not found.

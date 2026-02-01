@@ -13,7 +13,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1 Foundation: 80% Complete**
+**Phase 1 Foundation: 90% Complete**
 
 | Feature | Status |
 |---------|--------|
@@ -24,7 +24,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 | Tool Framework | Complete |
 | Read-Only Tools (11 tools) | Complete |
 | Transaction Manager | Complete |
-| Modification Tools | Pending |
+| Modification Tools (10 tools) | Complete |
 | Safety & Confirmation | Pending |
 
 See [Development Status](#development-status) for details.
@@ -139,12 +139,19 @@ RevitAI provides Claude with tools to query your Revit model:
 | `get_warnings` | Model warnings and errors |
 | `get_room_info` | Room boundaries and areas |
 | `get_element_quantity_takeoff` | Element counts and summaries |
+| `select_elements` | Select elements by ID |
+| `zoom_to_element` | Zoom view to elements |
+| `move_element` | Move element by translation vector |
+| `delete_elements` | Delete elements by ID |
+| `modify_element_parameter` | Change element parameter values |
+| `change_element_type` | Change element to different type |
+| `place_wall` | Create wall between two points |
+| `place_column` | Place structural column |
+| `place_beam` | Place structural beam |
+| `place_floor` | Create floor from boundary |
 
 **Coming Soon (Phase 1 completion):**
-- Element placement (walls, columns, beams, floors)
-- Parameter modification
-- Element movement and deletion
-- Transaction management with undo support
+- Safety confirmations for destructive operations
 
 **Coming Soon (Phase 1.5):**
 - Screenshot capture for Claude vision analysis
@@ -165,7 +172,7 @@ Core infrastructure for a working AI assistant.
 - [x] **P1-06** Tool Framework & Registry
 - [x] **P1-07** Read-Only Tools (11 query tools)
 - [x] **P1-08** Transaction Manager
-- [ ] **P1-09** Modification Tools (10 tools)
+- [x] **P1-09** Modification Tools (10 tools)
 - [ ] **P1-10** Safety & Configuration
 
 ### Phase 1.5: View & Navigation Foundation
@@ -279,13 +286,12 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 | Limitation | Description | Planned Resolution |
 |------------|-------------|-------------------|
 | **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
-| **Read-only mode** | Cannot yet place or modify elements | Phase 1 (P1-08, P1-09) |
+| **No safety confirmations** | Destructive operations don't prompt for confirmation | Phase 1 (P1-10) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
 
 ### Not Yet Supported
 
-- Element creation (walls, columns, beams, floors) - Coming in P1-09
 - Linked model queries
 - Worksharing-specific operations
 - Family editing context
