@@ -289,6 +289,8 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 | **No safety confirmations** | Destructive operations don't prompt for confirmation | Phase 1 (P1-10) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
+| **Chat auto-scroll broken** | Chat window doesn't auto-scroll to follow new responses; gets stuck at previous position | UI fix needed |
+| **Text not selectable** | Cannot select or copy text from chat messages | UI fix needed |
 
 ### Not Yet Supported
 
