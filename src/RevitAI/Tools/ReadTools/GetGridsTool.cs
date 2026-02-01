@@ -49,7 +49,7 @@ public sealed class GetGridsTool : IRevitTool
 
     public string Name => "get_grids";
 
-    public string Description => "Returns all grids in the Revit project with their names, start/end points, and whether they are curved. Use this to understand the structural grid layout.";
+    public string Description => "Returns all grids in the Revit project with their names, start/end points (in feet), orientation (Horizontal/Vertical/Diagonal), angle in degrees (0=East-West, 90=North-South), and whether they are curved. Use this to understand the structural grid layout.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -120,6 +120,26 @@ public sealed class GetGridsTool : IRevitTool
             if (curve is Line line)
             {
                 data.Length = Math.Round(line.Length, 4);
+
+                // Calculate orientation based on the grid direction
+                var direction = line.Direction;
+                var angleRad = Math.Atan2(direction.Y, direction.X);
+                var angleDeg = angleRad * 180.0 / Math.PI;
+
+                // Normalize angle to 0-180 range (grids are bidirectional)
+                if (angleDeg < 0) angleDeg += 180;
+                if (angleDeg >= 180) angleDeg -= 180;
+
+                data.AngleDegrees = Math.Round(angleDeg, 2);
+
+                // Determine orientation: 0° = East-West (horizontal), 90° = North-South (vertical)
+                // Use 10-degree tolerance for classification
+                if (angleDeg <= 10 || angleDeg >= 170)
+                    data.Orientation = "Horizontal (East-West)";
+                else if (angleDeg >= 80 && angleDeg <= 100)
+                    data.Orientation = "Vertical (North-South)";
+                else
+                    data.Orientation = "Diagonal";
             }
         }
 
@@ -141,6 +161,8 @@ public sealed class GetGridsTool : IRevitTool
         public PointData? End { get; set; }
         public bool IsCurved { get; set; }
         public double? Length { get; set; }
+        public double? AngleDegrees { get; set; }
+        public string? Orientation { get; set; }
     }
 
     private sealed class GetGridsResult
