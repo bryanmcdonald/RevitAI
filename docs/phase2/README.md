@@ -1,7 +1,7 @@
 # Phase 2: Enhanced Capabilities
 
 > Each chunk represents a 1-2 day development session.
-> Phase 1 must be complete before starting Phase 2.
+> **Phase 1 and Phase 1.5 must be complete before starting Phase 2.**
 
 ---
 
@@ -15,7 +15,7 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 
 | Chunk | Name | Description | Prerequisites |
 |-------|------|-------------|---------------|
-| [P2-01](P2-01-advanced-placement.md) | Advanced Placement Tools | Grids, levels, dimensions, tags, sections, sheets | Phase 1 |
+| [P2-01](P2-01-advanced-placement.md) | Advanced Placement Tools | Grids, levels, dimensions, tags, sections, sheets | Phase 1.5 |
 | [P2-02](P2-02-element-manipulation.md) | Element Manipulation Tools | Assemblies, groups, copy, mirror, array, align | P2-01 |
 | [P2-03](P2-03-multi-step-operations.md) | Multi-Step Design Operations | Coordinated multi-tool sequences, transaction groups | P2-02 |
 | [P2-04](P2-04-smart-context.md) | Smart Context Awareness | Grid intersection resolver, relative positions, type inference | P2-03 |
