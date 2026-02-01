@@ -2,6 +2,33 @@
 
 A Revit plugin that embeds a Claude-powered conversational AI assistant directly into the Revit interface. Query model information, place and modify elements, and automate tasks using natural language.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Current Status](#current-status)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Quick Install](#quick-install)
+  - [Manual Build](#manual-build)
+- [Usage](#usage)
+  - [Opening the Chat Panel](#opening-the-chat-panel)
+  - [Configuring Settings](#configuring-settings)
+  - [Example Queries](#example-queries)
+  - [Context Awareness](#context-awareness)
+- [Available Tools](#available-tools)
+- [Development Status](#development-status)
+  - [Phase 1: Foundation (MVP)](#phase-1-foundation-mvp)
+  - [Phase 1.5: View & Navigation Foundation](#phase-15-view--navigation-foundation)
+  - [Phase 2: Enhanced Capabilities](#phase-2-enhanced-capabilities)
+  - [Phase 3: Advanced & Multi-Discipline](#phase-3-advanced--multi-discipline)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [Known Issues & Limitations](#known-issues--limitations)
+- [Team Deployment](#team-deployment)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
 ## Overview
 
 RevitAI provides a dockable chat panel where you interact with Claude to:
