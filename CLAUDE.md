@@ -188,6 +188,35 @@ RevitAI/
 
 ---
 
+## Post-Change Requirements
+
+After making any meaningful changes to the codebase, ensure all documentation stays synchronized:
+
+### 1. Update CLAUDE.md
+- Reflect any architectural changes, new patterns, or workflow modifications
+- Update the "Current Status" section to track progress
+- Add new entries to "Known Limitations / Deferred Items" as discovered
+- Update "Project Folder Structure" if new directories or key files are added
+
+### 2. Update README.md (Project Root)
+- Reflect user-facing changes: new features, modified setup steps, changed requirements
+- Update "Available Tools" table when tools are added or modified
+- Update "Development Status" checkboxes as chunks are completed
+- Keep installation and usage instructions current
+
+### 3. Update Phase Documentation (`docs/`)
+- **Phase README.md files**: Update status, add cross-references to related chunks
+- **Chunk .md files**: Add implementation notes, lessons learned, or gotchas discovered during development
+- **Cross-phase references**: When work in one phase affects another, add notes to both
+- **New phases/chunks**: Create new documentation files following existing naming conventions (`P#-##-description.md`)
+
+### 4. Keep Everything in Sync
+- Documentation should reflect the actual state of the codebase
+- When adding a feature, update all relevant docs in the same commit when practical
+- Future Claude Code sessions rely on accurate documentation for context
+
+---
+
 ## Quick Reference
 
 ### Chunk Naming Convention
@@ -229,3 +258,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.2 | Gap Analysis | Added missing features from overview: streaming, cancellation, temperature, max tokens, context verbosity, system prompt strategy, distribution scripts, success criteria |
 | 1.3 | Restructure Phases | Split all phase docs into individual chunk files (phase1/, phase2/, phase3/) for easier Claude Code context management |
 | 1.4 | Phase 1.5 | Added Phase 1.5 (View & Navigation Foundation) with 4 chunks: screenshot capture, view management, camera control, visual isolation |
+| 1.5 | Post-Change Reqs | Added Post-Change Requirements section with documentation sync guidelines |
