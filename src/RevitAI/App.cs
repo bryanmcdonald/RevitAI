@@ -5,6 +5,7 @@ using Autodesk.Revit.UI;
 using RevitAI.Services;
 using RevitAI.Threading;
 using RevitAI.Tools;
+using RevitAI.Tools.ReadTools;
 using RevitAI.UI;
 
 namespace RevitAI;
@@ -159,8 +160,24 @@ public class App : IExternalApplication
     private static void RegisterTools()
     {
         var registry = ToolRegistry.Instance;
+
+        // Test tool
         registry.Register(new EchoTool());
-        // Future tools registered here (P1-07, P1-09)
+
+        // Read-only tools (P1-07)
+        registry.Register(new GetLevelsTool());
+        registry.Register(new GetGridsTool());
+        registry.Register(new GetProjectInfoTool());
+        registry.Register(new GetViewInfoTool());
+        registry.Register(new GetSelectedElementsTool());
+        registry.Register(new GetWarningsTool());
+        registry.Register(new GetAvailableTypesTool());
+        registry.Register(new GetElementsByCategoryTool());
+        registry.Register(new GetElementPropertiesTool());
+        registry.Register(new GetRoomInfoTool());
+        registry.Register(new GetElementQuantityTakeoffTool());
+
+        // Modification tools registered here (P1-09)
     }
 
     /// <summary>
