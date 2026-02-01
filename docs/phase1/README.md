@@ -16,7 +16,7 @@ Phase 1 establishes the core plugin infrastructure: a dockable chat UI, Claude A
 | Chunk | Name | Description | Prerequisites | Status |
 |-------|------|-------------|---------------|--------|
 | [P1-01](P1-01-project-setup.md) | Project Setup & Hello World | Solution structure, minimal plugin that loads in Revit | Dev environment | ✅ Complete |
-| [P1-02](P1-02-chat-pane.md) | Dockable Chat Pane | WPF chat UI with message display, input, status | P1-01 | Pending |
+| [P1-02](P1-02-chat-pane.md) | Dockable Chat Pane | WPF chat UI with message display, input, status | P1-01 | ✅ Complete |
 | [P1-03](P1-03-threading.md) | ExternalEvent Threading | Thread marshalling infrastructure for Revit API calls | P1-02 | Pending |
 | [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | Pending |
 | [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | Pending |
@@ -76,7 +76,7 @@ src/RevitAI/
 ## Phase 1 Completion Criteria
 
 - [x] Plugin loads in Revit 2026 without errors (P1-01)
-- [ ] Dockable chat pane displays and accepts input
+- [x] Dockable chat pane displays and accepts input (P1-02)
 - [ ] Claude API responds to messages
 - [ ] Context (selection, view, level) is captured and sent to Claude
 - [ ] Read-only tools return accurate model information

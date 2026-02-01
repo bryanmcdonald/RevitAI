@@ -162,9 +162,9 @@ RevitAI/
 
 ## Current Status
 
-**Currently working on**: P1-01 Complete
+**Currently working on**: P1-02 Complete
 
-**Next chunk**: P1-02 (Dockable Chat Pane)
+**Next chunk**: P1-03 (ExternalEvent Threading)
 
 ---
 

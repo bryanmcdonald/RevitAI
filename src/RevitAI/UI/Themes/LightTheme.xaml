@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Background Colors -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#F8F9FA"/>
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FFFFFF"/>
+
+    <!-- Text Colors -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#6B7280"/>
+    <SolidColorBrush x:Key="DisabledTextBrush" Color="#9CA3AF"/>
+
+    <!-- Border Colors -->
+    <SolidColorBrush x:Key="BorderBrush" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="SubtleBorderBrush" Color="#F3F4F6"/>
+
+    <!-- Primary Accent (Blue) -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="PrimaryPressedBrush" Color="#1E40AF"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="#EFF6FF"/>
+
+    <!-- Danger (Red) -->
+    <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+    <SolidColorBrush x:Key="DangerHoverBrush" Color="#B91C1C"/>
+    <SolidColorBrush x:Key="DangerPressedBrush" Color="#991B1B"/>
+
+    <!-- Hover/Press States -->
+    <SolidColorBrush x:Key="HoverBrush" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="PressedBrush" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="DisabledBrush" Color="#E5E7EB"/>
+
+    <!-- Message Card Colors -->
+    <SolidColorBrush x:Key="UserMessageBackgroundBrush" Color="#EFF6FF"/>
+    <SolidColorBrush x:Key="UserMessageBorderBrush" Color="#BFDBFE"/>
+    <SolidColorBrush x:Key="AssistantMessageBackgroundBrush" Color="#F9FAFB"/>
+    <SolidColorBrush x:Key="AssistantMessageBorderBrush" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="SystemMessageBackgroundBrush" Color="#FFF7ED"/>
+    <SolidColorBrush x:Key="SystemMessageBorderBrush" Color="#FED7AA"/>
+
+    <!-- Status Colors -->
+    <SolidColorBrush x:Key="StreamingIndicatorBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="ErrorBrush" Color="#DC2626"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="#16A34A"/>
+
+</ResourceDictionary>
