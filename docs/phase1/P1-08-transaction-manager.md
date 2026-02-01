@@ -8,6 +8,32 @@
 - `src/RevitAI/Transactions/TransactionManager.cs`
 - `src/RevitAI/Transactions/TransactionScope.cs`
 
+**Files to Modify**:
+- `src/RevitAI/Tools/ToolDispatcher.cs` - Integrate TransactionManager for tools with `RequiresTransaction = true`
+
+---
+
+## P1-06 Integration Notes
+
+Currently, `ToolDispatcher` returns an error for tools with `RequiresTransaction = true`:
+
+```csharp
+if (tool.RequiresTransaction)
+{
+    return new ToolResultBlock
+    {
+        ToolUseId = toolUse.Id,
+        Content = "Tool requires transaction, but TransactionManager not yet implemented.",
+        IsError = true
+    };
+}
+```
+
+This chunk should:
+1. Create `TransactionManager` as a singleton or inject it into `ToolDispatcher`
+2. Replace the error block with actual transaction handling
+3. Support multi-tool transaction groups when Claude makes multiple tool calls
+
 ---
 
 ## Implementation Details

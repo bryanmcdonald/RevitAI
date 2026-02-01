@@ -18,6 +18,51 @@
 
 ---
 
+## P1-06 Framework Reference
+
+All modification tools must set `RequiresTransaction = true` (except `select_elements` and `zoom_to_element` which don't modify the model).
+
+**Template pattern**:
+```csharp
+public sealed class PlaceWallTool : IRevitTool
+{
+    private static readonly JsonElement _inputSchema;
+
+    static PlaceWallTool()
+    {
+        var schemaJson = """
+        {
+            "type": "object",
+            "properties": {
+                "start": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+                "end": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+                "wall_type": { "type": "string" },
+                "base_level": { "type": "string" },
+                "height": { "type": "number" }
+            },
+            "required": ["start", "end", "base_level"]
+        }
+        """;
+        _inputSchema = JsonDocument.Parse(schemaJson).RootElement.Clone();
+    }
+
+    public string Name => "place_wall";
+    public string Description => "Creates a wall between two points on a specified level";
+    public JsonElement InputSchema => _inputSchema;
+    public bool RequiresTransaction => true;  // Model modification
+
+    public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken ct)
+    {
+        // TransactionManager handles the transaction wrapping (from P1-08)
+        // Implementation creates wall and returns result
+    }
+}
+```
+
+**Registration**: Add all tools to `App.RegisterTools()`.
+
+---
+
 ## Implementation Details
 
 ### 1. select_elements
