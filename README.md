@@ -227,30 +227,28 @@ RevitAI/
 
 ## Contributing
 
-### Development Setup
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-1. **Prerequisites**
-   - Visual Studio 2022 (17.8+) with .NET 8 SDK
-   - Revit 2026 installed
-   - Anthropic API key for testing
+### Quick Start
 
-2. **Clone and Build**
-   ```bash
-   git clone https://github.com/bryanmcdonald/RevitAI.git
-   cd RevitAI
-   ```
-   Open `RevitAI.sln` in Visual Studio and build.
+1. Fork and clone the repository
+2. Open `RevitAI.sln` in Visual Studio 2022 (17.8+)
+3. Build and test with Revit 2026
+4. Submit a PR with your changes
 
-3. **Development Documentation**
-   - Start with `CLAUDE.md` for project overview
-   - Each phase has detailed implementation specs in `docs/`
-   - Current work: `docs/phase1/README.md`
+### Requirements
+
+- All commits must include a [DCO sign-off](https://developercertificate.org/) (`git commit -s`)
+- New source files must include the [GPL-3.0 license header](CLAUDE.md#0-add-gpl-license-headers-to-new-files)
+- Code should follow existing patterns in the codebase
 
 ### Key Architecture Notes
 
-- **Threading**: All Revit API calls MUST run on the main UI thread via `ExternalEvent` + `IExternalEventHandler`
+- **Threading**: All Revit API calls must run on the main UI thread via `ExternalEvent` + `IExternalEventHandler`
 - **Tools**: Implement `IRevitTool` interface and register with `ToolRegistry`
 - **Context**: `ContextEngine` gathers selection/view/level state for each Claude message
+
+For detailed setup, coding standards, and the full contribution process, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Troubleshooting
 
