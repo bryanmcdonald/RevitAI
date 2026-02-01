@@ -59,7 +59,7 @@ If you want to build from source:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/RevitAI.git
+   git clone https://github.com/bryanmcdonald/RevitAI.git
    cd RevitAI
    ```
 
@@ -235,7 +235,7 @@ RevitAI/
 
 2. **Clone and Build**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/RevitAI.git
+   git clone https://github.com/bryanmcdonald/RevitAI.git
    cd RevitAI
    ```
    Open `RevitAI.sln` in Visual Studio and build.
@@ -275,7 +275,9 @@ RevitAI/
 
 ## License
 
-[Add your license here]
+This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
+
+This means you are free to use, modify, and distribute this software, but any derivative works must also be open source under the same license.
 
 ## Acknowledgments
 
