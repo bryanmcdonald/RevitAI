@@ -1,0 +1,168 @@
+<Window x:Class="RevitAI.UI.SettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RevitAI Settings"
+        Width="450"
+        Height="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        Topmost="True"
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <Style x:Key="DescriptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#666666"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,2,0,12"/>
+        </Style>
+
+        <Style x:Key="InputStyle" TargetType="Control">
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#CCCCCC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Settings"
+                   FontSize="20"
+                   FontWeight="Bold"
+                   Foreground="#1976D2"
+                   Margin="0,0,0,20"/>
+
+        <!-- Settings Content -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- API Key Section -->
+                <Border Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="API Key"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <PasswordBox x:Name="ApiKeyBox"
+                                     Padding="8,6"
+                                     Background="White"
+                                     BorderBrush="#CCCCCC"
+                                     BorderThickness="1"/>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            Your Anthropic API key. Get one at console.anthropic.com
+                        </TextBlock>
+
+                        <Button x:Name="TestConnectionButton"
+                                Content="Test Connection"
+                                Padding="12,6"
+                                Margin="0,0,0,0"
+                                HorizontalAlignment="Left"
+                                Click="TestConnectionButton_Click"/>
+                        <TextBlock x:Name="ConnectionStatusText"
+                                   FontSize="12"
+                                   Margin="0,8,0,0"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Model Settings Section -->
+                <Border Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Model"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <ComboBox x:Name="ModelComboBox"
+                                  Padding="8,6"
+                                  Background="White"
+                                  IsEditable="True">
+                            <ComboBoxItem Content="claude-sonnet-4-5-20250929"/>
+                            <ComboBoxItem Content="claude-opus-4-20250514"/>
+                            <ComboBoxItem Content="claude-3-5-haiku-20241022"/>
+                        </ComboBox>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            The Claude model to use. Sonnet is recommended for most tasks.
+                        </TextBlock>
+
+                        <TextBlock Text="Temperature"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="50"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="TemperatureSlider"
+                                    Grid.Column="0"
+                                    Minimum="0"
+                                    Maximum="1"
+                                    TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding ElementName=TemperatureSlider, Path=Value, StringFormat={}{0:F1}}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       FontFamily="Consolas"/>
+                        </Grid>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            Lower values (0.0-0.3) are more deterministic, higher values (0.7-1.0) are more creative.
+                        </TextBlock>
+
+                        <TextBlock Text="Max Tokens"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <TextBox x:Name="MaxTokensTextBox"
+                                 Padding="8,6"
+                                 Background="White"
+                                 BorderBrush="#CCCCCC"
+                                 BorderThickness="1"/>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            Maximum length of the response (100-128000).
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button x:Name="CancelButton"
+                    Content="Cancel"
+                    Padding="20,8"
+                    Margin="0,0,8,0"
+                    IsCancel="True"
+                    Click="CancelButton_Click"/>
+            <Button x:Name="SaveButton"
+                    Content="Save"
+                    Padding="20,8"
+                    IsDefault="True"
+                    Background="#1976D2"
+                    Foreground="White"
+                    BorderBrush="#1565C0"
+                    Click="SaveButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

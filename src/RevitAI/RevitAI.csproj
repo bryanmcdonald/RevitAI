@@ -29,6 +29,7 @@
     <PackageReference Include="Markdig" Version="0.34.0" />
     <PackageReference Include="Neo.Markdig.Xaml" Version="1.0.10" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="Exists('Resources\ChatIcon16.png')">
@@ -42,6 +43,7 @@
   <Target Name="DeployAddin" AfterTargets="Build">
     <PropertyGroup>
       <AddinFolder>$(APPDATA)\Autodesk\Revit\Addins\2026</AddinFolder>
+      <ProtectedDataDll>$(NuGetPackageRoot)system.security.cryptography.protecteddata\6.0.0\lib\net6.0\System.Security.Cryptography.ProtectedData.dll</ProtectedDataDll>
     </PropertyGroup>
     <MakeDir Directories="$(AddinFolder)" Condition="!Exists('$(AddinFolder)')" />
     <!-- Copy main assembly -->
@@ -51,6 +53,8 @@
       <DependencyDlls Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
     </ItemGroup>
     <Copy SourceFiles="@(DependencyDlls)" DestinationFolder="$(AddinFolder)" SkipUnchangedFiles="true" />
+    <!-- Copy ProtectedData DLL (not auto-copied for net8.0-windows) -->
+    <Copy SourceFiles="$(ProtectedDataDll)" DestinationFolder="$(AddinFolder)" SkipUnchangedFiles="true" Condition="Exists('$(ProtectedDataDll)')" />
     <!-- Copy addin manifest -->
     <Copy SourceFiles="$(ProjectDir)..\..\RevitAI.addin" DestinationFolder="$(AddinFolder)" />
   </Target>
