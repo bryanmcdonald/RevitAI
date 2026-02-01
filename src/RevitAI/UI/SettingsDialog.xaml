@@ -172,9 +172,9 @@
                         <ComboBox x:Name="VerbosityComboBox"
                                   Padding="8,6"
                                   Background="White">
-                            <ComboBoxItem Content="Minimal (view name, selection count)" Tag="0"/>
-                            <ComboBoxItem Content="Standard (+ element details, level)" Tag="1"/>
-                            <ComboBoxItem Content="Detailed (+ project info, all params, types)" Tag="2"/>
+                            <ComboBoxItem Content="Minimal (view, level, selected element IDs)" Tag="0"/>
+                            <ComboBoxItem Content="Standard (+ element levels, all parameters)" Tag="1"/>
+                            <ComboBoxItem Content="Detailed (+ project info, available types)" Tag="2"/>
                         </ComboBox>
                         <TextBlock Style="{StaticResource DescriptionStyle}">
                             Controls how much Revit context is sent with each message. Higher levels provide more detail but use more tokens.

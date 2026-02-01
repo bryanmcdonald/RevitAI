@@ -35,8 +35,9 @@ public sealed class ContextEngine
 
     /// <summary>
     /// Maximum number of parameters to include per element.
+    /// Set high to avoid missing important data - token usage is acceptable for modern models.
     /// </summary>
-    private const int MaxParametersPerElement = 30;
+    private const int MaxParametersPerElement = 200;
 
     /// <summary>
     /// Maximum number of types to list per category.
@@ -101,22 +102,8 @@ public sealed class ContextEngine
             // Always gather active level
             context.ActiveLevel = ExtractActiveLevel(doc, uiDoc.ActiveView);
 
-            // Gather selected elements based on verbosity
-            if (verbosity >= 1)
-            {
-                context.SelectedElements = ExtractSelectedElements(uiDoc, doc, verbosity);
-            }
-            else
-            {
-                // Minimal: just count
-                var selection = uiDoc.Selection.GetElementIds();
-                context.SelectedElements = new List<ElementInfo>();
-                // Store count in a simple way - we'll show just the count in the prompt
-                for (int i = 0; i < Math.Min(selection.Count, MaxDetailedElements); i++)
-                {
-                    context.SelectedElements.Add(new ElementInfo { Id = -1 }); // Placeholder for count
-                }
-            }
+            // Always gather selected elements (IDs are needed for tool use at all verbosity levels)
+            context.SelectedElements = ExtractSelectedElements(uiDoc, doc, verbosity);
 
             // Verbose mode: add project info and available types
             if (verbosity >= 2)
@@ -154,7 +141,7 @@ public sealed class ContextEngine
         sb.AppendLine();
         sb.AppendLine("Be concise and helpful. When discussing Revit elements, use correct terminology and reference element IDs when relevant.");
         sb.AppendLine();
-        sb.AppendLine("**Important:** When the user refers to 'selected elements', 'the selection', or 'that element', use the element IDs listed in the 'Selected Elements' section below. These are the currently selected elements in Revit. You should use these IDs directly with tools like move_element, delete_elements, modify_element_parameter, etc. without asking the user for IDs.");
+        sb.AppendLine("**CRITICAL - Selection Context:** The 'Current Revit Context' section below is refreshed with EVERY message. When the user says 'this element', 'the selection', 'selected elements', or similar references, ALWAYS use the element IDs from the CURRENT context below - NOT element IDs from earlier in the conversation. The user may have changed their selection between messages. Use these current IDs directly with tools like move_element, delete_elements, modify_element_parameter, etc.");
         sb.AppendLine();
         sb.AppendLine("**Tool usage notes:**");
         sb.AppendLine("- move_element: Moves ONE element at a time. For multiple elements, call it once per element.");
@@ -208,8 +195,8 @@ public sealed class ContextEngine
 
         sb.AppendLine();
 
-        // Selected elements detail (verbosity 1+)
-        if (verbosity >= 1 && selectionCount > 0)
+        // Selected elements - always show IDs so Claude can reference them with tools
+        if (selectionCount > 0)
         {
             sb.AppendLine("### Selected Elements");
             sb.AppendLine();
@@ -218,25 +205,24 @@ public sealed class ContextEngine
             for (int i = 0; i < displayCount; i++)
             {
                 var elem = context.SelectedElements[i];
-                if (elem.Id == -1) continue; // Skip placeholder
 
                 sb.AppendLine($"- **[{elem.Id}]** {elem.Category}: {elem.FullTypeName}");
 
-                if (!string.IsNullOrEmpty(elem.LevelName))
+                // Show level and parameters only at verbosity 1+
+                if (verbosity >= 1)
                 {
-                    sb.AppendLine($"  - Level: {elem.LevelName}");
-                }
-
-                // Show key parameters (verbosity 1) or all parameters (verbosity 2)
-                var paramsToShow = verbosity >= 2
-                    ? elem.Parameters
-                    : elem.Parameters.Take(5).ToList();
-
-                foreach (var param in paramsToShow)
-                {
-                    if (!string.IsNullOrEmpty(param.Value))
+                    if (!string.IsNullOrEmpty(elem.LevelName))
                     {
-                        sb.AppendLine($"  - {param.Name}: {param.Value}");
+                        sb.AppendLine($"  - Level: {elem.LevelName}");
+                    }
+
+                    // Show all parameters at verbosity 1+
+                    foreach (var param in elem.Parameters)
+                    {
+                        if (!string.IsNullOrEmpty(param.Value))
+                        {
+                            sb.AppendLine($"  - {param.Name}: {param.Value}");
+                        }
                     }
                 }
             }
@@ -621,8 +607,8 @@ Be concise and helpful. When discussing Revit elements, use correct terminology.
             }
         }
 
-        // Add other instance parameters if we have room (verbosity 2)
-        if (verbosity >= 2 && parameters.Count < MaxParametersPerElement)
+        // Add other instance parameters if we have room (verbosity 1+)
+        if (verbosity >= 1 && parameters.Count < MaxParametersPerElement)
         {
             foreach (Parameter param in elem.Parameters)
             {
