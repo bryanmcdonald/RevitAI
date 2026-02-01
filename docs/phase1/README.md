@@ -110,3 +110,9 @@ src/RevitAI/
 | Item | Reason | Deferred To |
 |------|--------|-------------|
 | Markdown rendering in chat | RichTextBox.Document doesn't support direct binding; requires custom attached behavior | P2-05 |
+
+---
+
+## Next Phase
+
+After completing Phase 1, proceed to **[Phase 1.5: View & Navigation Foundation](../phase1.5/README.md)** before starting Phase 2. Phase 1.5 adds essential view navigation, camera control, and visual context tools that enable Claude to "see" and navigate the model like a human user.

@@ -59,7 +59,8 @@ RevitAI/
 │   │   │   ├── IRevitTool.cs
 │   │   │   ├── ToolRegistry.cs
 │   │   │   ├── ReadTools/
-│   │   │   └── ModifyTools/
+│   │   │   ├── ModifyTools/
+│   │   │   └── ViewTools/          # P1.5: View/navigation tools
 │   │   ├── Threading/              # ExternalEvent infrastructure
 │   │   │   ├── RevitEventHandler.cs
 │   │   │   └── CommandQueue.cs
@@ -79,6 +80,12 @@ RevitAI/
 │   │   ├── P1-08-transaction-manager.md
 │   │   ├── P1-09-modify-tools.md
 │   │   └── P1-10-safety-config.md
+│   ├── phase1.5/                   # Phase 1.5 chunks (view & navigation)
+│   │   ├── README.md               # Phase 1.5 overview & index
+│   │   ├── P1.5-01-screenshot-capture.md
+│   │   ├── P1.5-02-view-management.md
+│   │   ├── P1.5-03-camera-control.md
+│   │   └── P1.5-04-visual-isolation.md
 │   ├── phase2/                     # Phase 2 chunks (individual files)
 │   │   ├── README.md               # Phase 2 overview & index
 │   │   ├── P2-01-advanced-placement.md
@@ -115,6 +122,7 @@ RevitAI/
 | Phase | Description | Chunks | Documentation |
 |-------|-------------|--------|---------------|
 | **Phase 1** | Foundation (MVP) | P1-01 to P1-10 | [docs/phase1/README.md](docs/phase1/README.md) |
+| **Phase 1.5** | View & Navigation Foundation | P1.5-01 to P1.5-04 | [docs/phase1.5/README.md](docs/phase1.5/README.md) |
 | **Phase 2** | Enhanced Capabilities | P2-01 to P2-07 | [docs/phase2/README.md](docs/phase2/README.md) |
 | **Phase 3** | Advanced & Multi-Discipline | P3-01 to P3-07 | [docs/phase3/README.md](docs/phase3/README.md) |
 | **Appendix** | API Patterns & Reference | A.1 to A.9 | [docs/appendix.md](docs/appendix.md) |
@@ -133,6 +141,15 @@ RevitAI/
 | P1-08 | Transaction Manager | [P1-08-transaction-manager.md](docs/phase1/P1-08-transaction-manager.md) |
 | P1-09 | Modification Tools | [P1-09-modify-tools.md](docs/phase1/P1-09-modify-tools.md) |
 | P1-10 | Safety & Configuration | [P1-10-safety-config.md](docs/phase1/P1-10-safety-config.md) |
+
+### Phase 1.5 Quick Links
+
+| Chunk | Description | File |
+|-------|-------------|------|
+| P1.5-01 | Screenshot Capture | [P1.5-01-screenshot-capture.md](docs/phase1.5/P1.5-01-screenshot-capture.md) |
+| P1.5-02 | View Management | [P1.5-02-view-management.md](docs/phase1.5/P1.5-02-view-management.md) |
+| P1.5-03 | Camera Control | [P1.5-03-camera-control.md](docs/phase1.5/P1.5-03-camera-control.md) |
+| P1.5-04 | Visual Isolation | [P1.5-04-visual-isolation.md](docs/phase1.5/P1.5-04-visual-isolation.md) |
 
 ### Phase 2 Quick Links
 
@@ -175,6 +192,7 @@ RevitAI/
 
 ### Chunk Naming Convention
 - `P1-XX`: Phase 1 - Foundation
+- `P1.5-XX`: Phase 1.5 - View & Navigation Foundation
 - `P2-XX`: Phase 2 - Enhanced Capabilities
 - `P3-XX`: Phase 3 - Advanced & Multi-Discipline
 
@@ -210,3 +228,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.1 | Restructure | Split into phase-based documentation files |
 | 1.2 | Gap Analysis | Added missing features from overview: streaming, cancellation, temperature, max tokens, context verbosity, system prompt strategy, distribution scripts, success criteria |
 | 1.3 | Restructure Phases | Split all phase docs into individual chunk files (phase1/, phase2/, phase3/) for easier Claude Code context management |
+| 1.4 | Phase 1.5 | Added Phase 1.5 (View & Navigation Foundation) with 4 chunks: screenshot capture, view management, camera control, visual isolation |
