@@ -18,7 +18,7 @@ Phase 1 establishes the core plugin infrastructure: a dockable chat UI, Claude A
 | [P1-01](P1-01-project-setup.md) | Project Setup & Hello World | Solution structure, minimal plugin that loads in Revit | Dev environment | ✅ Complete |
 | [P1-02](P1-02-chat-pane.md) | Dockable Chat Pane | WPF chat UI with message display, input, status | P1-01 | ✅ Complete |
 | [P1-03](P1-03-threading.md) | ExternalEvent Threading | Thread marshalling infrastructure for Revit API calls | P1-02 | ✅ Complete |
-| [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | Pending |
+| [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | ✅ Complete |
 | [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | Pending |
 | [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 | Pending |
 | [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 | Pending |
@@ -41,6 +41,8 @@ src/RevitAI/
 │   ├── ChatPane.xaml.cs                # P1-02
 │   ├── ChatViewModel.cs                # P1-02
 │   ├── ChatMessage.cs                  # P1-02
+│   ├── SettingsDialog.xaml             # P1-04
+│   ├── SettingsDialog.xaml.cs          # P1-04
 │   ├── SettingsPane.xaml               # P1-10
 │   ├── SettingsViewModel.cs            # P1-10
 │   └── ConfirmationDialog.xaml         # P1-10
@@ -51,12 +53,13 @@ src/RevitAI/
 ├── Services/
 │   ├── ClaudeApiService.cs             # P1-04
 │   ├── ConfigurationService.cs         # P1-04
+│   ├── SecureStorage.cs                # P1-04
 │   ├── ContextEngine.cs                # P1-05
 │   └── SafetyService.cs                # P1-10
 ├── Models/
-│   ├── ClaudeRequest.cs                # P1-04
-│   ├── ClaudeResponse.cs               # P1-04
-│   ├── Message.cs                      # P1-04
+│   ├── ApiSettings.cs                  # P1-04
+│   ├── ClaudeModels.cs                 # P1-04 (request/response/message types)
+│   ├── StreamEvents.cs                 # P1-04 (SSE streaming events)
 │   └── RevitContext.cs                 # P1-05
 ├── Tools/
 │   ├── IRevitTool.cs                   # P1-06
@@ -77,10 +80,20 @@ src/RevitAI/
 
 - [x] Plugin loads in Revit 2026 without errors (P1-01)
 - [x] Dockable chat pane displays and accepts input (P1-02)
-- [ ] Claude API responds to messages
+- [x] Claude API responds to messages (P1-04)
+- [x] Streaming responses display progressively (P1-04)
+- [x] Request cancellation works (P1-04)
 - [ ] Context (selection, view, level) is captured and sent to Claude
 - [ ] Read-only tools return accurate model information
 - [ ] Modification tools create/modify elements successfully
 - [ ] All modifications can be undone with single Ctrl+Z
 - [ ] Destructive operations show confirmation dialog
-- [ ] Settings persist between sessions
+- [x] Settings persist between sessions (P1-04)
+
+---
+
+## Deferred Items
+
+| Item | Reason | Deferred To |
+|------|--------|-------------|
+| Markdown rendering in chat | RichTextBox.Document doesn't support direct binding; requires custom attached behavior | P2-05 |

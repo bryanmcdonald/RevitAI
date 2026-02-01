@@ -48,6 +48,9 @@ public class App : IExternalApplication
             var handler = new RevitEventHandler(CommandQueue);
             RevitEvent = ExternalEvent.Create(handler);
 
+            // Initialize configuration service (loads settings from disk)
+            _ = ConfigurationService.Instance;
+
             // Initialize the theme service
             ThemeService.Instance.Initialize(application);
 

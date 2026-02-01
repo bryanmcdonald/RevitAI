@@ -19,7 +19,7 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 | [P2-02](P2-02-element-manipulation.md) | Element Manipulation Tools | Assemblies, groups, copy, mirror, array, align | P2-01 |
 | [P2-03](P2-03-multi-step-operations.md) | Multi-Step Design Operations | Coordinated multi-tool sequences, transaction groups | P2-02 |
 | [P2-04](P2-04-smart-context.md) | Smart Context Awareness | Grid intersection resolver, relative positions, type inference | P2-03 |
-| [P2-05](P2-05-visual-feedback.md) | Visual Feedback System | Element highlighting, preview graphics, status display | P2-04 |
+| [P2-05](P2-05-visual-feedback.md) | Visual Feedback System | Element highlighting, preview graphics, status display, **markdown rendering** | P2-04 |
 | [P2-06](P2-06-parameter-schedule.md) | Parameter & Schedule Tools | Bulk modify, schedule read/create, data export | P2-05 |
 | [P2-07](P2-07-conversation-memory.md) | Conversation Memory | Persist history, change tracking, undo all | P2-06 |
 

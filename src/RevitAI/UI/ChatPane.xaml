@@ -171,6 +171,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
@@ -182,7 +183,20 @@
                         Content="Clear"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Command="{Binding ClearConversationCommand}"
-                        ToolTip="Clear conversation and start fresh"/>
+                        ToolTip="Clear conversation and start fresh"
+                        Margin="0,0,8,0"/>
+
+                <Button Grid.Column="2"
+                        x:Name="SettingsButton"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding OpenSettingsCommand}"
+                        ToolTip="Settings"
+                        Padding="8,4"
+                        MinWidth="32">
+                    <TextBlock Text="&#x2699;"
+                               FontSize="16"
+                               FontFamily="Segoe UI Symbol"/>
+                </Button>
             </Grid>
         </Border>
 

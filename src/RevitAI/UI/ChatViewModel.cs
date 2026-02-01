@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using RevitAI.Models;
 using RevitAI.Services;
 
 namespace RevitAI.UI;
@@ -13,6 +14,8 @@ namespace RevitAI.UI;
 public partial class ChatViewModel : ObservableObject
 {
     private readonly ConversationPersistenceService _persistenceService;
+    private readonly ConfigurationService _configService;
+    private readonly ClaudeApiService _apiService;
     private readonly Dispatcher _dispatcher;
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -48,13 +51,44 @@ I can help you with your Revit model. Try asking me to:
 
 Type a message below to get started.";
 
+    /// <summary>
+    /// Message shown when no API key is configured.
+    /// </summary>
+    private const string NoApiKeyMessage = @"**API Key Required**
+
+Please click the gear icon (⚙) in the header to configure your Anthropic API key.
+
+You can get an API key from [console.anthropic.com](https://console.anthropic.com).";
+
+    /// <summary>
+    /// System prompt for RevitAI conversations.
+    /// </summary>
+    private const string SystemPrompt = @"You are RevitAI, an AI assistant embedded in Autodesk Revit. You help users with their Revit models through natural language conversation.
+
+Your capabilities include:
+- Answering questions about Revit and BIM workflows
+- Helping users understand their model structure
+- Providing guidance on Revit best practices
+
+Be concise and helpful. When discussing Revit elements, use correct terminology.
+
+Note: Tool-based model queries and modifications will be available in future updates.";
+
     public ChatViewModel()
     {
         _persistenceService = new ConversationPersistenceService();
+        _configService = ConfigurationService.Instance;
+        _apiService = new ClaudeApiService(_configService);
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
         // Add welcome message
         Messages.Add(ChatMessage.CreateSystemMessage(WelcomeMessage));
+
+        // Check if API key is configured
+        if (!_configService.HasApiKey)
+        {
+            Messages.Add(ChatMessage.CreateSystemMessage(NoApiKeyMessage));
+        }
     }
 
     /// <summary>
@@ -69,6 +103,14 @@ Type a message below to get started.";
     private async Task SendAsync()
     {
         if (string.IsNullOrWhiteSpace(InputText)) return;
+
+        // Check for API key
+        if (!_configService.HasApiKey)
+        {
+            Messages.Add(ChatMessage.CreateSystemMessage(
+                "Please configure your API key in Settings (gear icon) before sending messages."));
+            return;
+        }
 
         var userMessage = InputText.Trim();
         InputText = string.Empty;
@@ -89,8 +131,11 @@ Type a message below to get started.";
             var assistantMessage = ChatMessage.CreateAssistantMessage(isStreaming: true);
             Messages.Add(assistantMessage);
 
-            // Simulate streaming response (will be replaced with actual Claude API in P1-04)
-            await SimulateStreamingResponseAsync(userMessage, assistantMessage, _cancellationTokenSource.Token);
+            // Build conversation history for Claude
+            var claudeMessages = BuildClaudeMessages();
+
+            // Send streaming request to Claude
+            await StreamClaudeResponseAsync(claudeMessages, assistantMessage, _cancellationTokenSource.Token);
 
             assistantMessage.CompleteStreaming();
 
@@ -109,6 +154,10 @@ Type a message below to get started.";
                     lastMessage.Content = "(Cancelled)";
                 }
             }
+        }
+        catch (ClaudeApiException ex)
+        {
+            HandleApiError(ex);
         }
         catch (Exception ex)
         {
@@ -133,6 +182,99 @@ Type a message below to get started.";
     }
 
     /// <summary>
+    /// Builds the conversation history in Claude message format.
+    /// </summary>
+    private List<ClaudeMessage> BuildClaudeMessages()
+    {
+        var claudeMessages = new List<ClaudeMessage>();
+
+        foreach (var msg in Messages)
+        {
+            // Skip system messages (they go in the system prompt)
+            if (msg.Role == MessageRole.System)
+                continue;
+
+            // Skip empty or streaming messages
+            if (string.IsNullOrEmpty(msg.Content) || msg.IsStreaming)
+                continue;
+
+            claudeMessages.Add(msg.Role == MessageRole.User
+                ? ClaudeMessage.User(msg.Content)
+                : ClaudeMessage.Assistant(msg.Content));
+        }
+
+        return claudeMessages;
+    }
+
+    /// <summary>
+    /// Streams a response from Claude API.
+    /// </summary>
+    private async Task StreamClaudeResponseAsync(
+        List<ClaudeMessage> messages,
+        ChatMessage assistantMessage,
+        CancellationToken cancellationToken)
+    {
+        await _dispatcher.InvokeAsync(() => StatusText = "Receiving...");
+
+        // Run streaming on background thread to keep UI responsive
+        await Task.Run(async () =>
+        {
+            await foreach (var streamEvent in _apiService.SendMessageStreamingAsync(
+                systemPrompt: SystemPrompt,
+                messages: messages,
+                tools: null,
+                settingsOverride: null,
+                ct: cancellationToken))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (streamEvent is ContentBlockDeltaEvent deltaEvent)
+                {
+                    if (deltaEvent.Delta is TextDelta textDelta)
+                    {
+                        // Use async invoke to allow UI to repaint between chunks
+                        await _dispatcher.InvokeAsync(() => assistantMessage.AppendContent(textDelta.Text));
+                    }
+                }
+                else if (streamEvent is ErrorEvent errorEvent)
+                {
+                    var errorMessage = errorEvent.Error?.Message ?? "Unknown streaming error";
+                    throw new ClaudeApiException(errorMessage);
+                }
+            }
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Handles API errors with appropriate user messaging.
+    /// </summary>
+    private void HandleApiError(ClaudeApiException ex)
+    {
+        var lastMessage = Messages.LastOrDefault();
+
+        string userFriendlyMessage = ex.ErrorType switch
+        {
+            "authentication_error" =>
+                "Authentication failed. Please check your API key in Settings.",
+            "rate_limit_error" =>
+                "Rate limit exceeded. Please wait a moment and try again.",
+            "invalid_request_error" =>
+                $"Invalid request: {ex.Message}",
+            _ =>
+                ex.Message
+        };
+
+        if (lastMessage?.Role == MessageRole.Assistant)
+        {
+            lastMessage.SetError(userFriendlyMessage);
+        }
+        else
+        {
+            Messages.Add(ChatMessage.CreateSystemMessage($"Error: {userFriendlyMessage}"));
+        }
+    }
+
+    /// <summary>
     /// Determines if the current operation can be cancelled.
     /// </summary>
     private bool CanCancel() => IsProcessing;
@@ -144,6 +286,7 @@ Type a message below to get started.";
     private void Cancel()
     {
         _cancellationTokenSource?.Cancel();
+        _apiService.CancelCurrentRequest();
         StatusText = "Cancelling...";
     }
 
@@ -155,6 +298,12 @@ Type a message below to get started.";
     {
         Messages.Clear();
         Messages.Add(ChatMessage.CreateSystemMessage(WelcomeMessage));
+
+        if (!_configService.HasApiKey)
+        {
+            Messages.Add(ChatMessage.CreateSystemMessage(NoApiKeyMessage));
+        }
+
         _persistenceService.StartNewConversation();
         StatusText = "Conversation cleared";
 
@@ -163,6 +312,41 @@ Type a message below to get started.";
         {
             _dispatcher.Invoke(() => StatusText = "Ready");
         });
+    }
+
+    /// <summary>
+    /// Opens the settings dialog.
+    /// </summary>
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        try
+        {
+            var dialog = new SettingsDialog
+            {
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+
+            var result = dialog.ShowDialog();
+
+            // If settings were saved and we now have an API key, remove the warning message
+            if (result == true && _configService.HasApiKey)
+            {
+                // Remove any "API Key Required" messages
+                var warningMessages = Messages
+                    .Where(m => m.Role == MessageRole.System && m.Content.Contains("API Key Required"))
+                    .ToList();
+
+                foreach (var msg in warningMessages)
+                {
+                    Messages.Remove(msg);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Messages.Add(ChatMessage.CreateSystemMessage($"Failed to open settings: {ex.Message}"));
+        }
     }
 
     /// <summary>
@@ -178,102 +362,6 @@ Type a message below to get started.";
                 lastMessage.AppendContent(chunk);
             }
         });
-    }
-
-    /// <summary>
-    /// Simulates a streaming response for testing purposes.
-    /// Will be replaced with actual Claude API integration in P1-04.
-    /// </summary>
-    private async Task SimulateStreamingResponseAsync(string userMessage, ChatMessage assistantMessage, CancellationToken cancellationToken)
-    {
-        // Simulate "thinking" delay
-        await Task.Delay(500, cancellationToken);
-
-        StatusText = "Receiving...";
-
-        // Generate a sample response with markdown
-        var response = GenerateSampleResponse(userMessage);
-
-        // Simulate streaming by sending chunks
-        var chunkSize = 10;
-        for (var i = 0; i < response.Length; i += chunkSize)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var chunk = response.Substring(i, Math.Min(chunkSize, response.Length - i));
-
-            _dispatcher.Invoke(() => assistantMessage.AppendContent(chunk));
-
-            // Random delay to simulate network latency
-            await Task.Delay(Random.Shared.Next(20, 60), cancellationToken);
-        }
-    }
-
-    /// <summary>
-    /// Generates a sample response based on the user's message.
-    /// </summary>
-    private static string GenerateSampleResponse(string userMessage)
-    {
-        var lowerMessage = userMessage.ToLowerInvariant();
-
-        if (lowerMessage.Contains("hello") || lowerMessage.Contains("hi"))
-        {
-            return @"Hello! I'm your RevitAI assistant. I can help you with:
-
-- **Querying elements** in your model
-- **Placing new elements** like walls, doors, and windows
-- **Modifying parameters** on selected elements
-- **Analyzing** your model structure
-
-What would you like to do today?";
-        }
-
-        if (lowerMessage.Contains("wall"))
-        {
-            return @"I can help you with walls! Here are some things I can do:
-
-1. **Query walls** - Get information about walls in your model
-2. **Place walls** - Create new walls at specified locations
-3. **Modify walls** - Change wall types, heights, or parameters
-
-For example, you could say:
-- ""Show me all exterior walls""
-- ""Place a 10ft wall from point A to point B""
-- ""Change the selected wall to type 'Basic Wall'""
-
-What would you like to do with walls?";
-        }
-
-        if (lowerMessage.Contains("select"))
-        {
-            return @"I can see your current selection in Revit. To work with selected elements:
-
-1. Select elements in Revit first
-2. Then ask me to perform operations on them
-
-For example:
-- ""What is selected?""
-- ""Show parameters of selected elements""
-- ""Change the height of selected walls to 12 feet""
-
-The context engine tracks your selection in real-time, so I always know what you're working with.";
-        }
-
-        // Default response
-        return $@"I received your message: ""{userMessage}""
-
-This is a **simulated response** for testing the chat interface. In the full implementation, I'll:
-
-1. Analyze your request using Claude AI
-2. Use available **tools** to query or modify your Revit model
-3. Provide helpful responses with relevant information
-
-Try asking about:
-- Walls, doors, windows, or other elements
-- Your current selection
-- Model information
-
-*Note: This is a test response. Claude API integration coming in P1-04.*";
     }
 
     /// <summary>

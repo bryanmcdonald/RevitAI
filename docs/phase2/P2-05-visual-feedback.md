@@ -1,6 +1,6 @@
 # P2-05: Visual Feedback System
 
-**Goal**: Add temporary highlighting, preview graphics, and status bar integration.
+**Goal**: Add temporary highlighting, preview graphics, status bar integration, and markdown rendering in chat.
 
 **Prerequisites**: P2-04 complete.
 
@@ -8,6 +8,7 @@
 - `src/RevitAI/UI/HighlightService.cs`
 - `src/RevitAI/UI/PreviewGraphics.cs`
 - `src/RevitAI/UI/StatusBarService.cs`
+- `src/RevitAI/UI/Behaviors/MarkdownBehavior.cs` (deferred from P1-04)
 
 ---
 
@@ -102,6 +103,46 @@ await Task.Delay(2000);
 _highlightService.ClearHighlights(doc);
 ```
 
+### 5. Markdown Rendering in Chat (Deferred from P1-04)
+
+The chat pane currently displays raw markdown text. Implement proper rendering using an attached behavior for RichTextBox.
+
+**Why deferred**: `RichTextBox.Document` is not a dependency property and doesn't support direct binding. A custom attached behavior is needed.
+
+```csharp
+public static class MarkdownBehavior
+{
+    public static readonly DependencyProperty MarkdownProperty =
+        DependencyProperty.RegisterAttached(
+            "Markdown",
+            typeof(string),
+            typeof(MarkdownBehavior),
+            new PropertyMetadata(null, OnMarkdownChanged));
+
+    public static string GetMarkdown(DependencyObject obj) =>
+        (string)obj.GetValue(MarkdownProperty);
+
+    public static void SetMarkdown(DependencyObject obj, string value) =>
+        obj.SetValue(MarkdownProperty, value);
+
+    private static void OnMarkdownChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is RichTextBox rtb && e.NewValue is string markdown)
+        {
+            rtb.Document = MarkdownService.Instance.ConvertToFlowDocument(markdown);
+        }
+    }
+}
+```
+
+**XAML Usage**:
+```xml
+<RichTextBox behaviors:MarkdownBehavior.Markdown="{Binding Content}"
+             IsReadOnly="True"
+             Background="Transparent"
+             BorderThickness="0"/>
+```
+
 ---
 
 ## Verification (Manual)
@@ -110,3 +151,4 @@ _highlightService.ClearHighlights(doc);
 2. Verify preview graphics appear
 3. After element creation, verify temporary green highlight
 4. Verify highlights clear after a few seconds
+5. **Markdown**: Verify `**bold**` renders as bold, lists render with bullets, etc.
