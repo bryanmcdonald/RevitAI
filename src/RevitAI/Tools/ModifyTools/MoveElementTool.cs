@@ -68,6 +68,22 @@ public sealed class MoveElementTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        var elementId = input.TryGetProperty("element_id", out var idElem) ? idElem.GetInt64().ToString() : "unknown";
+        if (input.TryGetProperty("translation", out var transElem))
+        {
+            var coords = transElem.EnumerateArray().ToList();
+            if (coords.Count == 3)
+            {
+                return $"Would move element {elementId} by ({coords[0].GetDouble():F2}, {coords[1].GetDouble():F2}, {coords[2].GetDouble():F2}) feet.";
+            }
+        }
+        return $"Would move element {elementId}.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

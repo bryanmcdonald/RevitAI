@@ -107,7 +107,20 @@ public sealed class ClaudeApiService : IDisposable
             }
 
             var claudeResponse = JsonSerializer.Deserialize<ClaudeResponse>(responseContent, JsonOptions);
-            return claudeResponse ?? throw new ClaudeApiException("Failed to parse response");
+            if (claudeResponse == null)
+            {
+                throw new ClaudeApiException("Failed to parse response");
+            }
+
+            // Record token usage
+            if (claudeResponse.Usage != null)
+            {
+                UsageTracker.Instance.RecordUsage(
+                    claudeResponse.Usage.InputTokens,
+                    claudeResponse.Usage.OutputTokens);
+            }
+
+            return claudeResponse;
         }
         finally
         {
@@ -218,6 +231,11 @@ public sealed class ClaudeApiService : IDisposable
 
             if (finalUsage != null)
             {
+                // Record token usage for streaming responses
+                UsageTracker.Instance.RecordUsage(
+                    finalUsage.InputTokens,
+                    finalUsage.OutputTokens);
+
                 StreamCompleted?.Invoke(this, finalUsage);
             }
         }

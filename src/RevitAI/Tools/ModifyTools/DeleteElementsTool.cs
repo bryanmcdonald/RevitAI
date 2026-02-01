@@ -62,6 +62,18 @@ public sealed class DeleteElementsTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        if (input.TryGetProperty("element_ids", out var elementIdsElement))
+        {
+            var count = elementIdsElement.GetArrayLength();
+            return $"Would delete {count} element(s) from the model.";
+        }
+        return "Would delete elements from the model.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

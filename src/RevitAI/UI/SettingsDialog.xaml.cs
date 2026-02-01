@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -29,12 +30,40 @@ namespace RevitAI.UI;
 public partial class SettingsDialog : Window
 {
     private readonly ConfigurationService _configService;
+    private readonly UsageTracker _usageTracker;
 
     public SettingsDialog()
     {
         InitializeComponent();
         _configService = ConfigurationService.Instance;
+        _usageTracker = UsageTracker.Instance;
+
+        // Subscribe to usage tracker changes
+        _usageTracker.PropertyChanged += UsageTracker_PropertyChanged;
+
         LoadSettings();
+        UpdateUsageDisplay();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        // Unsubscribe from usage tracker
+        _usageTracker.PropertyChanged -= UsageTracker_PropertyChanged;
+        base.OnClosed(e);
+    }
+
+    private void UsageTracker_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Update UI on the dispatcher thread
+        Dispatcher.InvokeAsync(UpdateUsageDisplay);
+    }
+
+    private void UpdateUsageDisplay()
+    {
+        InputTokensText.Text = _usageTracker.InputTokens.ToString("N0");
+        OutputTokensText.Text = _usageTracker.OutputTokens.ToString("N0");
+        TotalTokensText.Text = _usageTracker.TotalTokens.ToString("N0");
+        EstimatedCostText.Text = _usageTracker.FormattedCost;
     }
 
     private void LoadSettings()
@@ -57,6 +86,10 @@ public partial class SettingsDialog : Window
 
         // Load context verbosity
         VerbosityComboBox.SelectedIndex = _configService.ContextVerbosity;
+
+        // Load safety settings
+        SkipConfirmationsCheckBox.IsChecked = _configService.SkipConfirmations;
+        DryRunModeCheckBox.IsChecked = _configService.DryRunMode;
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -98,6 +131,10 @@ public partial class SettingsDialog : Window
         _configService.Temperature = TemperatureSlider.Value;
         _configService.MaxTokens = maxTokens;
         _configService.ContextVerbosity = VerbosityComboBox.SelectedIndex;
+
+        // Save safety settings
+        _configService.SkipConfirmations = SkipConfirmationsCheckBox.IsChecked == true;
+        _configService.DryRunMode = DryRunModeCheckBox.IsChecked == true;
 
         DialogResult = true;
         Close();
@@ -180,5 +217,11 @@ public partial class SettingsDialog : Window
             ? new SolidColorBrush(Color.FromRgb(0xD3, 0x2F, 0x2F)) // Red
             : new SolidColorBrush(Color.FromRgb(0x38, 0x8E, 0x3C)); // Green
         ConnectionStatusText.Visibility = Visibility.Visible;
+    }
+
+    private void ResetUsageButton_Click(object sender, RoutedEventArgs e)
+    {
+        _usageTracker.Reset();
+        UpdateUsageDisplay();
     }
 }

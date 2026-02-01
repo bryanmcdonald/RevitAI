@@ -92,6 +92,38 @@ public sealed class PlaceWallTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        var baseLevel = input.TryGetProperty("base_level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
+        var wallType = input.TryGetProperty("wall_type", out var typeElem) ? typeElem.GetString() : null;
+
+        // Calculate length if possible
+        double? length = null;
+        if (input.TryGetProperty("start", out var startElem) && input.TryGetProperty("end", out var endElem))
+        {
+            var start = startElem.EnumerateArray().ToList();
+            var end = endElem.EnumerateArray().ToList();
+            if (start.Count == 2 && end.Count == 2)
+            {
+                var dx = end[0].GetDouble() - start[0].GetDouble();
+                var dy = end[1].GetDouble() - start[1].GetDouble();
+                length = Math.Sqrt(dx * dx + dy * dy);
+            }
+        }
+
+        if (wallType != null && length.HasValue)
+        {
+            return $"Would place a {length.Value:F2}' '{wallType}' wall on {baseLevel}.";
+        }
+        else if (length.HasValue)
+        {
+            return $"Would place a {length.Value:F2}' wall on {baseLevel}.";
+        }
+        return $"Would place a wall on {baseLevel}.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

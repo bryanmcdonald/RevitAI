@@ -15,7 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Text.Json;
+using System.Windows;
 using RevitAI.Models;
+using RevitAI.Services;
 using RevitAI.Transactions;
 
 namespace RevitAI.Tools;
@@ -28,13 +30,19 @@ public sealed class ToolDispatcher
 {
     private readonly ToolRegistry _registry;
     private readonly TransactionManager _transactionManager;
+    private readonly ConfigurationService _configService;
+    private readonly SafetyService _safetyService;
 
-    public ToolDispatcher() : this(ToolRegistry.Instance, TransactionManager.Instance) { }
+    public ToolDispatcher() : this(ToolRegistry.Instance, TransactionManager.Instance,
+        ConfigurationService.Instance, SafetyService.Instance) { }
 
-    public ToolDispatcher(ToolRegistry registry, TransactionManager transactionManager)
+    public ToolDispatcher(ToolRegistry registry, TransactionManager transactionManager,
+        ConfigurationService configService, SafetyService safetyService)
     {
         _registry = registry;
         _transactionManager = transactionManager;
+        _configService = configService;
+        _safetyService = safetyService;
     }
 
     /// <summary>
@@ -66,6 +74,33 @@ public sealed class ToolDispatcher
 
         try
         {
+            // Check dry-run mode first
+            if (_configService.DryRunMode && tool.RequiresTransaction)
+            {
+                var dryRunDescription = GetToolDryRunDescription(tool, toolUse.Input);
+                return new ToolResultBlock
+                {
+                    ToolUseId = toolUse.Id,
+                    Content = $"[DRY RUN - NO CHANGES MADE] {dryRunDescription} (Dry-run mode is enabled. The model was NOT modified. Tell the user this was a dry run.)",
+                    IsError = false
+                };
+            }
+
+            // Check confirmation on WPF UI thread
+            if (tool.RequiresConfirmation)
+            {
+                var confirmed = await ConfirmOnUIThreadAsync(tool, toolUse.Input);
+                if (!confirmed)
+                {
+                    return new ToolResultBlock
+                    {
+                        ToolUseId = toolUse.Id,
+                        Content = "Operation was cancelled by the user.",
+                        IsError = true
+                    };
+                }
+            }
+
             // Execute on Revit thread to safely access Revit API
             var resultTask = await App.ExecuteOnRevitThreadAsync(
                 app => ExecuteToolAsync(tool, toolUse, app, cancellationToken),
@@ -107,6 +142,16 @@ public sealed class ToolDispatcher
                 IsError = true
             };
         }
+    }
+
+    /// <summary>
+    /// Shows confirmation dialog on the WPF UI thread.
+    /// </summary>
+    private async Task<bool> ConfirmOnUIThreadAsync(IRevitTool tool, JsonElement input)
+    {
+        // Use WPF dispatcher to show dialog on UI thread
+        return await Application.Current.Dispatcher.InvokeAsync(() =>
+            _safetyService.CheckAndConfirm(tool, input));
     }
 
     /// <summary>
@@ -166,6 +211,71 @@ public sealed class ToolDispatcher
     {
         var toolList = toolUses.ToList();
 
+        // Check dry-run mode for batch - return dry run results for all tools that require transactions
+        if (_configService.DryRunMode)
+        {
+            var dryRunResults = new List<ToolResultBlock>();
+            foreach (var toolUse in toolList)
+            {
+                var tool = _registry.Get(toolUse.Name);
+                if (tool == null)
+                {
+                    dryRunResults.Add(new ToolResultBlock
+                    {
+                        ToolUseId = toolUse.Id,
+                        Content = $"Unknown tool: '{toolUse.Name}'",
+                        IsError = true
+                    });
+                }
+                else if (tool.RequiresTransaction)
+                {
+                    var description = GetToolDryRunDescription(tool, toolUse.Input);
+                    dryRunResults.Add(new ToolResultBlock
+                    {
+                        ToolUseId = toolUse.Id,
+                        Content = $"[DRY RUN - NO CHANGES MADE] {description} (Dry-run mode is enabled. The model was NOT modified. Tell the user this was a dry run.)",
+                        IsError = false
+                    });
+                }
+                else
+                {
+                    // Execute read-only tools normally even in dry-run mode
+                    var result = await DispatchAsync(toolUse, cancellationToken);
+                    dryRunResults.Add(result);
+                }
+            }
+            return dryRunResults;
+        }
+
+        // Check batch confirmation for tools that require it
+        var toolsWithInputs = new List<(IRevitTool Tool, JsonElement Input)>();
+        foreach (var toolUse in toolList)
+        {
+            var tool = _registry.Get(toolUse.Name);
+            if (tool != null)
+            {
+                toolsWithInputs.Add((tool, toolUse.Input));
+            }
+        }
+
+        // Show batch confirmation dialog on UI thread
+        var anyRequiresConfirmation = toolsWithInputs.Any(t => t.Tool.RequiresConfirmation);
+        if (anyRequiresConfirmation && toolList.Count > 1)
+        {
+            var confirmed = await Application.Current.Dispatcher.InvokeAsync(() =>
+                _safetyService.CheckAndConfirmBatch(toolsWithInputs));
+
+            if (!confirmed)
+            {
+                return toolList.Select(t => new ToolResultBlock
+                {
+                    ToolUseId = t.Id,
+                    Content = "Batch operation was cancelled by the user.",
+                    IsError = true
+                }).ToList();
+            }
+        }
+
         // Check if any tools require transactions
         var anyRequiresTransaction = toolList.Any(t =>
         {
@@ -184,6 +294,7 @@ public sealed class ToolDispatcher
         else
         {
             // Single tool or no transactions - use simple sequential dispatch
+            // Note: Single tool confirmation is handled in DispatchAsync
             var results = new List<ToolResultBlock>();
             foreach (var toolUse in toolList)
             {
@@ -353,5 +464,30 @@ public sealed class ToolDispatcher
                 IsError = true
             });
         }
+    }
+
+    /// <summary>
+    /// Gets the dry-run description for a tool, handling default interface implementation quirks.
+    /// Uses dynamic dispatch to call the concrete implementation.
+    /// </summary>
+    private static string GetToolDryRunDescription(IRevitTool tool, JsonElement input)
+    {
+        try
+        {
+            // Use dynamic to bypass interface dispatch and call the concrete implementation
+            var description = ((dynamic)tool).GetDryRunDescription(input) as string;
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                return description;
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+
+        // Fallback: provide a generic description based on tool name
+        return $"Execute '{tool.Name}' tool" + (tool.RequiresTransaction ? " (modifies model)" : "");
     }
 }

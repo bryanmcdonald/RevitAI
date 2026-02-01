@@ -81,6 +81,15 @@ public sealed class PlaceBeamTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        var beamType = input.TryGetProperty("beam_type", out var typeElem) ? typeElem.GetString() ?? "unknown" : "unknown";
+        var level = input.TryGetProperty("level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
+        return $"Would place a '{beamType}' beam on {level}.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

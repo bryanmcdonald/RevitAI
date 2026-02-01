@@ -20,7 +20,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="RevitAI Settings"
         Width="450"
-        Height="500"
+        Height="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
@@ -115,8 +115,8 @@
                                   Background="White"
                                   IsEditable="True">
                             <ComboBoxItem Content="claude-sonnet-4-5-20250929"/>
-                            <ComboBoxItem Content="claude-opus-4-20250514"/>
-                            <ComboBoxItem Content="claude-3-5-haiku-20241022"/>
+                            <ComboBoxItem Content="claude-opus-4-5-20251101"/>
+                            <ComboBoxItem Content="claude-haiku-4-5-20251001"/>
                         </ComboBox>
                         <TextBlock Style="{StaticResource DescriptionStyle}">
                             The Claude model to use. Sonnet is recommended for most tasks.
@@ -179,6 +179,81 @@
                         <TextBlock Style="{StaticResource DescriptionStyle}">
                             Controls how much Revit context is sent with each message. Higher levels provide more detail but use more tokens.
                         </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Safety Settings Section -->
+                <Border Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Safety"
+                                   Style="{StaticResource LabelStyle}"
+                                   FontSize="14"
+                                   Margin="0,0,0,8"/>
+
+                        <CheckBox x:Name="SkipConfirmationsCheckBox"
+                                  Content="Skip confirmation dialogs"
+                                  Margin="0,0,0,4"/>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            When enabled, tools that modify the model will execute without asking for confirmation.
+                        </TextBlock>
+
+                        <CheckBox x:Name="DryRunModeCheckBox"
+                                  Content="Dry-run mode"
+                                  Margin="0,8,0,4"/>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            When enabled, modification tools report what they would do without actually making changes.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Token Usage Section -->
+                <Border Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Token Usage (Session)"
+                                   Style="{StaticResource LabelStyle}"
+                                   FontSize="14"
+                                   Margin="0,0,0,12"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Input Tokens:" Foreground="#666666" Margin="0,0,12,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="InputTokensText" Text="0" FontFamily="Consolas"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Output Tokens:" Foreground="#666666" Margin="0,0,12,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="OutputTokensText" Text="0" FontFamily="Consolas"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Total Tokens:" Foreground="#666666" Margin="0,0,12,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalTokensText" Text="0" FontFamily="Consolas" FontWeight="SemiBold"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Estimated Cost:" Foreground="#666666" Margin="0,0,12,4"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="EstimatedCostText" Text="$0.0000" FontFamily="Consolas" Foreground="#388E3C"/>
+                        </Grid>
+
+                        <Button x:Name="ResetUsageButton"
+                                Content="Reset Usage"
+                                Padding="12,6"
+                                HorizontalAlignment="Left"
+                                Click="ResetUsageButton_Click"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

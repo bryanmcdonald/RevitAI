@@ -46,6 +46,23 @@ public interface IRevitTool
     bool RequiresTransaction { get; }
 
     /// <summary>
+    /// Gets whether this tool requires user confirmation before execution.
+    /// Return true for destructive operations (delete, modify, place elements).
+    /// Return false for read-only operations and UI-only actions (select, zoom).
+    /// Default implementation returns false (opt-in for destructive tools).
+    /// </summary>
+    bool RequiresConfirmation => false;
+
+    /// <summary>
+    /// Gets a human-readable description of what this tool would do with the given input.
+    /// Used for confirmation dialogs and dry-run mode.
+    /// Default implementation provides a generic message.
+    /// </summary>
+    /// <param name="input">The input parameters as a JSON element.</param>
+    /// <returns>A description of the action that would be performed.</returns>
+    string GetDryRunDescription(JsonElement input) => $"Would execute {Name} with provided parameters.";
+
+    /// <summary>
     /// Executes the tool with the given input parameters.
     /// </summary>
     /// <param name="input">The input parameters as a JSON element.</param>

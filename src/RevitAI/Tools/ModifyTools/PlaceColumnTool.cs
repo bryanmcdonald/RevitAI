@@ -86,6 +86,23 @@ public sealed class PlaceColumnTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        var columnType = input.TryGetProperty("column_type", out var typeElem) ? typeElem.GetString() ?? "unknown" : "unknown";
+        var baseLevel = input.TryGetProperty("base_level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
+        if (input.TryGetProperty("location", out var locElem))
+        {
+            var coords = locElem.EnumerateArray().ToList();
+            if (coords.Count == 2)
+            {
+                return $"Would place a '{columnType}' column at ({coords[0].GetDouble():F2}, {coords[1].GetDouble():F2}) on {baseLevel}.";
+            }
+        }
+        return $"Would place a '{columnType}' column on {baseLevel}.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

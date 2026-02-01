@@ -68,6 +68,16 @@ public sealed class ModifyElementParameterTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        var elementId = input.TryGetProperty("element_id", out var idElem) ? idElem.GetInt64().ToString() : "unknown";
+        var paramName = input.TryGetProperty("parameter_name", out var paramElem) ? paramElem.GetString() ?? "unknown" : "unknown";
+        var value = input.TryGetProperty("value", out var valElem) ? valElem.ToString() : "unknown";
+        return $"Would set parameter '{paramName}' to '{value}' on element {elementId}.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
