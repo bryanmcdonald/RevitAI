@@ -19,6 +19,53 @@
 
 ---
 
+## P1-06 Framework Reference
+
+All tools must implement `IRevitTool` (in `RevitAI.Tools` namespace):
+
+```csharp
+public interface IRevitTool
+{
+    string Name { get; }                    // snake_case identifier
+    string Description { get; }             // For Claude's understanding
+    JsonElement InputSchema { get; }        // JSON Schema for parameters
+    bool RequiresTransaction { get; }       // false for read-only tools
+    Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken ct);
+}
+```
+
+**Template pattern** (use `EchoTool.cs` as reference):
+```csharp
+public sealed class GetLevelsTool : IRevitTool
+{
+    private static readonly JsonElement _inputSchema;
+
+    static GetLevelsTool()
+    {
+        var schemaJson = """{ "type": "object", "properties": {} }""";
+        _inputSchema = JsonDocument.Parse(schemaJson).RootElement.Clone();
+    }
+
+    public string Name => "get_levels";
+    public string Description => "Returns all levels in the project with names and elevations";
+    public JsonElement InputSchema => _inputSchema;
+    public bool RequiresTransaction => false;
+
+    public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken ct)
+    {
+        // Implementation here
+        return Task.FromResult(ToolResult.Ok(result));
+    }
+}
+```
+
+**Registration**: Add to `App.RegisterTools()`:
+```csharp
+registry.Register(new GetLevelsTool());
+```
+
+---
+
 ## Implementation Details
 
 ### 1. get_selected_elements

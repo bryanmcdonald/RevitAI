@@ -1,10 +1,13 @@
 using System.Collections.ObjectModel;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RevitAI.Models;
 using RevitAI.Services;
+using RevitAI.Tools;
 
 namespace RevitAI.UI;
 
@@ -17,6 +20,7 @@ public partial class ChatViewModel : ObservableObject
     private readonly ConfigurationService _configService;
     private readonly ClaudeApiService _apiService;
     private readonly ContextEngine _contextEngine;
+    private readonly ToolDispatcher _toolDispatcher;
     private readonly Dispatcher _dispatcher;
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -73,6 +77,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         _configService = ConfigurationService.Instance;
         _apiService = new ClaudeApiService(_configService);
         _contextEngine = new ContextEngine();
+        _toolDispatcher = new ToolDispatcher();
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
         // Add welcome message
@@ -270,7 +275,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     }
 
     /// <summary>
-    /// Streams a response from Claude API.
+    /// Streams a response from Claude API with tool execution loop.
     /// </summary>
     private async Task StreamClaudeResponseAsync(
         string systemPrompt,
@@ -280,33 +285,206 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     {
         await _dispatcher.InvokeAsync(() => StatusText = "Receiving...");
 
-        // Run streaming on background thread to keep UI responsive
-        await Task.Run(async () =>
-        {
-            await foreach (var streamEvent in _apiService.SendMessageStreamingAsync(
-                systemPrompt: systemPrompt,
-                messages: messages,
-                tools: null,
-                settingsOverride: null,
-                ct: cancellationToken))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
+        // Get tool definitions from registry
+        var toolDefinitions = ToolRegistry.Instance.GetDefinitions();
+        var hasTools = toolDefinitions.Count > 0;
 
-                if (streamEvent is ContentBlockDeltaEvent deltaEvent)
+        // Keep conversation messages for multi-turn tool use
+        var conversationMessages = new List<ClaudeMessage>(messages);
+
+        // Tool execution loop - continues until Claude stops using tools
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var accumulator = new ResponseAccumulator();
+
+            // Run streaming on background thread to keep UI responsive
+            await Task.Run(async () =>
+            {
+                await foreach (var streamEvent in _apiService.SendMessageStreamingAsync(
+                    systemPrompt: systemPrompt,
+                    messages: conversationMessages,
+                    tools: hasTools ? toolDefinitions : null,
+                    settingsOverride: null,
+                    ct: cancellationToken))
                 {
-                    if (deltaEvent.Delta is TextDelta textDelta)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    accumulator.ProcessEvent(streamEvent);
+
+                    if (streamEvent is ContentBlockDeltaEvent deltaEvent)
                     {
-                        // Use async invoke to allow UI to repaint between chunks
-                        await _dispatcher.InvokeAsync(() => assistantMessage.AppendContent(textDelta.Text));
+                        if (deltaEvent.Delta is TextDelta textDelta)
+                        {
+                            // Use async invoke to allow UI to repaint between chunks
+                            await _dispatcher.InvokeAsync(() => assistantMessage.AppendContent(textDelta.Text));
+                        }
+                    }
+                    else if (streamEvent is ErrorEvent errorEvent)
+                    {
+                        var errorMessage = errorEvent.Error?.Message ?? "Unknown streaming error";
+                        throw new ClaudeApiException(errorMessage);
                     }
                 }
-                else if (streamEvent is ErrorEvent errorEvent)
-                {
-                    var errorMessage = errorEvent.Error?.Message ?? "Unknown streaming error";
-                    throw new ClaudeApiException(errorMessage);
-                }
+            }, cancellationToken);
+
+            // Check if we need to execute tools
+            if (accumulator.StopReason != "tool_use" || accumulator.ToolUseBlocks.Count == 0)
+            {
+                // No more tool calls - we're done
+                break;
             }
-        }, cancellationToken);
+
+            // Add assistant's response (with tool use) to conversation history
+            conversationMessages.Add(ClaudeMessage.Assistant(accumulator.GetContentBlocks()));
+
+            // Execute all tool calls
+            await _dispatcher.InvokeAsync(() => StatusText = $"Executing {accumulator.ToolUseBlocks.Count} tool(s)...");
+
+            var toolResults = await _toolDispatcher.DispatchAllAsync(accumulator.ToolUseBlocks, cancellationToken);
+
+            // Show tool execution in the chat
+            foreach (var toolUse in accumulator.ToolUseBlocks)
+            {
+                var result = toolResults.First(r => r.ToolUseId == toolUse.Id);
+                var statusText = result.IsError ? "failed" : "completed";
+                await _dispatcher.InvokeAsync(() => assistantMessage.AppendContent($"\n\n[Tool: {toolUse.Name} {statusText}]\n\n"));
+            }
+
+            // Add tool results to conversation history
+            conversationMessages.Add(ClaudeMessage.ToolResult(toolResults));
+
+            // Continue the loop to get Claude's response to the tool results
+            await _dispatcher.InvokeAsync(() => StatusText = "Processing tool results...");
+        }
+    }
+
+    /// <summary>
+    /// Accumulates streaming response data to track stop reason and tool use blocks.
+    /// </summary>
+    private sealed class ResponseAccumulator
+    {
+        private readonly Dictionary<int, ToolUseBlockBuilder> _toolBuilders = new();
+        private readonly List<ContentBlock> _contentBlocks = new();
+
+        /// <summary>
+        /// Gets the stop reason from the response.
+        /// </summary>
+        public string? StopReason { get; private set; }
+
+        /// <summary>
+        /// Gets the accumulated tool use blocks.
+        /// </summary>
+        public List<ToolUseBlock> ToolUseBlocks => _toolBuilders.Values
+            .Select(b => b.Build())
+            .Where(b => b != null)
+            .Cast<ToolUseBlock>()
+            .ToList();
+
+        /// <summary>
+        /// Processes a stream event and accumulates relevant data.
+        /// </summary>
+        public void ProcessEvent(StreamEvent streamEvent)
+        {
+            switch (streamEvent)
+            {
+                case ContentBlockStartEvent startEvent:
+                    if (startEvent.ContentBlock is ToolUseBlock toolUseStart)
+                    {
+                        _toolBuilders[startEvent.Index] = new ToolUseBlockBuilder(toolUseStart.Id, toolUseStart.Name);
+                    }
+                    else if (startEvent.ContentBlock is TextContentBlock textBlock)
+                    {
+                        _contentBlocks.Add(textBlock);
+                    }
+                    break;
+
+                case ContentBlockDeltaEvent deltaEvent:
+                    if (deltaEvent.Delta is InputJsonDelta jsonDelta)
+                    {
+                        if (_toolBuilders.TryGetValue(deltaEvent.Index, out var builder))
+                        {
+                            builder.AppendJson(jsonDelta.PartialJson);
+                        }
+                    }
+                    else if (deltaEvent.Delta is TextDelta textDelta)
+                    {
+                        // Update text content block
+                        if (_contentBlocks.Count > 0 && _contentBlocks[^1] is TextContentBlock lastText)
+                        {
+                            // Create a new block with accumulated text
+                            var newText = lastText.Text + textDelta.Text;
+                            _contentBlocks[^1] = new TextContentBlock { Text = newText };
+                        }
+                    }
+                    break;
+
+                case MessageDeltaEvent messageDelta:
+                    StopReason = messageDelta.Delta?.StopReason;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Gets all content blocks (text and tool use) for the conversation history.
+        /// </summary>
+        public List<ContentBlock> GetContentBlocks()
+        {
+            var blocks = new List<ContentBlock>(_contentBlocks);
+            blocks.AddRange(ToolUseBlocks);
+            return blocks;
+        }
+    }
+
+    /// <summary>
+    /// Builds a ToolUseBlock from streamed JSON fragments.
+    /// </summary>
+    private sealed class ToolUseBlockBuilder
+    {
+        private readonly string _id;
+        private readonly string _name;
+        private readonly StringBuilder _jsonBuilder = new();
+
+        public ToolUseBlockBuilder(string id, string name)
+        {
+            _id = id;
+            _name = name;
+        }
+
+        public void AppendJson(string json)
+        {
+            _jsonBuilder.Append(json);
+        }
+
+        public ToolUseBlock? Build()
+        {
+            var json = _jsonBuilder.ToString();
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                json = "{}";
+            }
+
+            try
+            {
+                var input = JsonDocument.Parse(json).RootElement;
+                return new ToolUseBlock
+                {
+                    Id = _id,
+                    Name = _name,
+                    Input = input.Clone()
+                };
+            }
+            catch (JsonException)
+            {
+                // Failed to parse JSON - return with empty input
+                return new ToolUseBlock
+                {
+                    Id = _id,
+                    Name = _name,
+                    Input = JsonDocument.Parse("{}").RootElement
+                };
+            }
+        }
     }
 
     /// <summary>

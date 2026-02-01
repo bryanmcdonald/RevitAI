@@ -1,15 +1,23 @@
 # P1-06: Tool Framework & Registry
 
+**Status**: ✅ Complete
+
 **Goal**: Create the infrastructure for defining, registering, and dispatching Claude tools.
 
 **Prerequisites**: P1-05 complete.
 
-**Key Files to Create**:
-- `src/RevitAI/Tools/IRevitTool.cs`
-- `src/RevitAI/Tools/ToolDefinition.cs`
-- `src/RevitAI/Tools/ToolRegistry.cs`
-- `src/RevitAI/Tools/ToolDispatcher.cs`
-- `src/RevitAI/Tools/ToolResult.cs`
+**Files Created**:
+- `src/RevitAI/Tools/IRevitTool.cs` - Interface for all tools
+- `src/RevitAI/Tools/ToolResult.cs` - Immutable result wrapper
+- `src/RevitAI/Tools/ToolRegistry.cs` - Singleton registry with ConcurrentDictionary
+- `src/RevitAI/Tools/ToolDispatcher.cs` - Routes tool calls with Revit thread marshalling
+- `src/RevitAI/Tools/EchoTool.cs` - Test tool to verify framework
+
+**Files Modified**:
+- `src/RevitAI/App.cs` - Added `RegisterTools()` method
+- `src/RevitAI/UI/ChatViewModel.cs` - Added tool execution loop with `ResponseAccumulator`
+
+**Note**: `ToolDefinition` already exists in `Models/ClaudeModels.cs` - reuse that class.
 
 ---
 
@@ -124,3 +132,44 @@ public class EchoTool : IRevitTool
 2. Open chat, ask Claude to use the echo tool
 3. Verify Claude calls the tool and receives the result
 4. Verify tool result appears in conversation
+
+---
+
+## Implementation Notes (Post-Completion)
+
+### Key Architecture Decisions
+
+1. **ToolRegistry is a singleton** - Access via `ToolRegistry.Instance`
+2. **Thread marshalling** - `ToolDispatcher` uses `App.ExecuteOnRevitThreadAsync()` to ensure tools run on Revit's main thread
+3. **Transaction guard** - Tools with `RequiresTransaction = true` return an error until P1-08 TransactionManager is implemented
+4. **Streaming tool parsing** - `ChatViewModel.ResponseAccumulator` inner class accumulates streamed JSON deltas to build complete `ToolUseBlock` objects
+
+### Tool Registration Pattern
+
+Tools are registered in `App.RegisterTools()` called from `OnStartup`:
+
+```csharp
+private static void RegisterTools()
+{
+    var registry = ToolRegistry.Instance;
+    registry.Register(new EchoTool());
+    // Future tools registered here
+}
+```
+
+### Creating New Tools
+
+Use `EchoTool` as a template. Key requirements:
+- Implement `IRevitTool` interface
+- Use `JsonDocument.Parse()` for `InputSchema` (parse once in static constructor)
+- Set `RequiresTransaction = true` for any tool that modifies the model
+- Return `ToolResult.Ok()` or `ToolResult.Error()` from `ExecuteAsync`
+
+### Chat Integration
+
+The tool execution loop in `ChatViewModel.StreamClaudeResponseAsync`:
+1. Streams response and accumulates content blocks
+2. Detects `stop_reason: "tool_use"` from `MessageDeltaEvent`
+3. Executes tools via `ToolDispatcher.DispatchAllAsync()`
+4. Sends `ToolResultBlock` back to Claude
+5. Loops until Claude stops using tools

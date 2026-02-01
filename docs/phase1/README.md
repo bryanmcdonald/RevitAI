@@ -20,7 +20,7 @@ Phase 1 establishes the core plugin infrastructure: a dockable chat UI, Claude A
 | [P1-03](P1-03-threading.md) | ExternalEvent Threading | Thread marshalling infrastructure for Revit API calls | P1-02 | ✅ Complete |
 | [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | ✅ Complete |
 | [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | ✅ Complete |
-| [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 | Pending |
+| [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 | ✅ Complete |
 | [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 | Pending |
 | [P1-08](P1-08-transaction-manager.md) | Transaction Manager | Transaction/TransactionGroup handling, undo support | P1-07 | Pending |
 | [P1-09](P1-09-modify-tools.md) | Modification Tools | 10 tools for element placement and modification | P1-08 | Pending |
@@ -63,10 +63,10 @@ src/RevitAI/
 │   └── RevitContext.cs                 # P1-05
 ├── Tools/
 │   ├── IRevitTool.cs                   # P1-06
-│   ├── ToolDefinition.cs               # P1-06
+│   ├── ToolResult.cs                   # P1-06
 │   ├── ToolRegistry.cs                 # P1-06
 │   ├── ToolDispatcher.cs               # P1-06
-│   ├── ToolResult.cs                   # P1-06
+│   ├── EchoTool.cs                     # P1-06 (test tool)
 │   ├── ReadTools/                      # P1-07 (11 tools)
 │   └── ModifyTools/                    # P1-09 (10 tools)
 └── Transactions/

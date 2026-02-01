@@ -4,6 +4,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitAI.Services;
 using RevitAI.Threading;
+using RevitAI.Tools;
 using RevitAI.UI;
 
 namespace RevitAI;
@@ -53,6 +54,9 @@ public class App : IExternalApplication
 
             // Initialize the theme service
             ThemeService.Instance.Initialize(application);
+
+            // Register available tools
+            RegisterTools();
 
             // Register the dockable chat pane
             RegisterDockablePane(application);
@@ -147,6 +151,16 @@ public class App : IExternalApplication
         }
 
         await command.Task;
+    }
+
+    /// <summary>
+    /// Registers all available tools with the tool registry.
+    /// </summary>
+    private static void RegisterTools()
+    {
+        var registry = ToolRegistry.Instance;
+        registry.Register(new EchoTool());
+        // Future tools registered here (P1-07, P1-09)
     }
 
     /// <summary>
