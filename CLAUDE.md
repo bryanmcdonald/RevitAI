@@ -51,6 +51,49 @@ Review your changes for any personal information. If you accidentally commit sen
 
 ---
 
+## Git Workflow
+
+**Always use feature branches, never commit directly to main.**
+
+### Starting a Session
+1. Check if already on a feature branch: `git branch --show-current`
+2. If on `main`, create a feature branch before making changes:
+   ```
+   git checkout -b feature/short-description
+   ```
+3. Use descriptive branch names: `feature/fix-autoscroll`, `feature/add-grid-orientation`, etc.
+
+### During Development
+- Commit to the feature branch as work progresses
+- Each commit should be a logical unit of work with a clear message
+- It's fine to accumulate multiple commits before creating a PR
+
+### Creating a Pull Request
+When the user asks to create a PR (or when a set of changes is complete):
+1. Push the feature branch to origin (`git push -u origin feature/branch-name`)
+   - This uploads the *feature branch* to GitHub, not main. Main is unaffected.
+2. Create a PR from the feature branch to `main` using `gh pr create`
+3. The PR description should explain the "why" behind the changes
+4. Include a summary of all commits in the PR body
+5. After the PR is merged on GitHub, main is updated with the changes
+
+### After PR is Merged
+- Switch back to `main` and pull: `git checkout main && git pull`
+- Delete the merged feature branch if desired
+
+### Exception: Documentation-Only Changes
+Minor documentation updates (typo fixes, small clarifications, README tweaks) can be committed directly to `main` without a PR. Use a PR for documentation changes only when:
+- Significant overhaul affects the overall roadmap or architecture
+- Changes to CLAUDE.md that affect development workflow
+- New phase documentation or major restructuring
+
+### Why This Workflow?
+- PRs provide a detailed record of why changes were made
+- Easier to review, revert, or reference changes later
+- Keeps `main` history clean with meaningful merge commits
+
+---
+
 ## Development Environment Setup
 
 ### Prerequisites
