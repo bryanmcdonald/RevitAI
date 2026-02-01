@@ -88,13 +88,19 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- Message content -->
-                        <TextBlock Grid.Row="1"
-                                   Text="{Binding Content}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource PrimaryTextBrush}"
-                                   FontSize="14"
-                                   LineHeight="20"/>
+                        <!-- Message content (TextBox for selection/copy support) -->
+                        <TextBox Grid.Row="1"
+                                 Text="{Binding Content, Mode=OneWay}"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 FontSize="14"
+                                 Padding="0"
+                                 IsTabStop="False"
+                                 Cursor="IBeam"
+                                 Focusable="True"/>
 
                         <!-- Streaming indicator -->
                         <StackPanel Grid.Row="2"

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Xaml.Behaviors;
@@ -24,12 +25,14 @@ namespace RevitAI.UI.Behaviors;
 /// <summary>
 /// Automatically scrolls a ListView to the bottom when new items are added,
 /// unless the user has manually scrolled up.
+/// Also handles streaming content updates by subscribing to PropertyChanged events.
 /// </summary>
 public class AutoScrollBehavior : Behavior<ListView>
 {
     private ScrollViewer? _scrollViewer;
     private bool _autoScroll = true;
     private bool _isUpdating;
+    private readonly List<INotifyPropertyChanged> _subscribedItems = new();
 
     protected override void OnAttached()
     {
@@ -51,6 +54,13 @@ public class AutoScrollBehavior : Behavior<ListView>
         {
             collection.CollectionChanged -= OnCollectionChanged;
         }
+
+        // Unsubscribe from all item property changes
+        foreach (var item in _subscribedItems)
+        {
+            item.PropertyChanged -= OnItemPropertyChanged;
+        }
+        _subscribedItems.Clear();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -68,42 +78,107 @@ public class AutoScrollBehavior : Behavior<ListView>
         {
             collection.CollectionChanged += OnCollectionChanged;
         }
+
+        // Subscribe to existing items
+        SubscribeToExistingItems();
     }
 
     private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         if (_isUpdating) return;
 
-        // Check if user has scrolled up from the bottom
-        if (_scrollViewer != null)
+        // Only update auto-scroll state on user-initiated scrolls (when content didn't change)
+        // This prevents content growth from re-enabling auto-scroll after user scrolled up
+        if (_scrollViewer != null && e.ExtentHeightChange == 0)
         {
-            var isAtBottom = _scrollViewer.VerticalOffset >= _scrollViewer.ScrollableHeight - 10;
-            _autoScroll = isAtBottom || e.ExtentHeightChange > 0;
+            _autoScroll = _scrollViewer.VerticalOffset >= _scrollViewer.ScrollableHeight - 10;
         }
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        // Subscribe to new items for property change notifications
+        if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems != null)
+        {
+            foreach (var item in e.NewItems)
+            {
+                if (item is INotifyPropertyChanged notifyItem && !_subscribedItems.Contains(notifyItem))
+                {
+                    notifyItem.PropertyChanged += OnItemPropertyChanged;
+                    _subscribedItems.Add(notifyItem);
+                }
+            }
+        }
+
+        // Unsubscribe from removed items
+        if (e.Action == NotifyCollectionChangedAction.Remove && e.OldItems != null)
+        {
+            foreach (var item in e.OldItems)
+            {
+                if (item is INotifyPropertyChanged notifyItem)
+                {
+                    notifyItem.PropertyChanged -= OnItemPropertyChanged;
+                    _subscribedItems.Remove(notifyItem);
+                }
+            }
+        }
+
+        // Clear subscriptions on reset
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            foreach (var item in _subscribedItems)
+            {
+                item.PropertyChanged -= OnItemPropertyChanged;
+            }
+            _subscribedItems.Clear();
+            SubscribeToExistingItems();
+        }
+
+        // Scroll to bottom when items are added
         if (e.Action == NotifyCollectionChangedAction.Add && _autoScroll)
         {
-            // Use dispatcher to ensure the UI has updated before scrolling
-            AssociatedObject.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                _isUpdating = true;
-                try
-                {
-                    if (AssociatedObject.Items.Count > 0)
-                    {
-                        var lastItem = AssociatedObject.Items[^1];
-                        AssociatedObject.ScrollIntoView(lastItem);
-                    }
-                }
-                finally
-                {
-                    _isUpdating = false;
-                }
-            }), System.Windows.Threading.DispatcherPriority.Background);
+            ScrollToBottom();
         }
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // When Content changes during streaming, scroll to bottom if auto-scroll is enabled
+        if (e.PropertyName == "Content" && _autoScroll)
+        {
+            ScrollToBottom();
+        }
+    }
+
+    private void SubscribeToExistingItems()
+    {
+        if (AssociatedObject.ItemsSource == null) return;
+
+        foreach (var item in AssociatedObject.ItemsSource)
+        {
+            if (item is INotifyPropertyChanged notifyItem && !_subscribedItems.Contains(notifyItem))
+            {
+                notifyItem.PropertyChanged += OnItemPropertyChanged;
+                _subscribedItems.Add(notifyItem);
+            }
+        }
+    }
+
+    private void ScrollToBottom()
+    {
+        // Use dispatcher to ensure the UI has updated before scrolling
+        AssociatedObject.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _isUpdating = true;
+            try
+            {
+                _scrollViewer?.ScrollToEnd();
+            }
+            finally
+            {
+                _isUpdating = false;
+            }
+        }), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private static ScrollViewer? FindScrollViewer(DependencyObject parent)
