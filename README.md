@@ -139,15 +139,20 @@ Click the **gear icon** in the chat panel to:
 
 ### Context Awareness
 
-RevitAI automatically provides Claude with:
-- **Active view** - Name, type, scale, associated level
-- **Current selection** - Element details for up to 20 selected items
-- **Active level** - When working in a floor plan
-- **Available types** - Loaded family types for common categories
+RevitAI automatically provides Claude with context about your Revit session. The level of detail is configurable via the Settings dialog:
+
+| Verbosity Level | What Claude Sees |
+|-----------------|------------------|
+| **Minimal** | Active view, level, and selected element IDs with category/type |
+| **Standard** | Above + element level associations and all parameters (up to 200) |
+| **Detailed** | Above + project info and available family types |
+
+Element IDs are always included so Claude can reference selected elements with modification tools (move, delete, etc.).
 
 This means you can ask contextual questions like:
 - "What is selected?" (Claude sees your current selection)
 - "What level am I on?" (Claude sees your active view's level)
+- "Move the selected wall 5 feet north" (Claude has the element ID)
 
 ## Available Tools
 
@@ -159,7 +164,7 @@ RevitAI provides Claude with tools to query your Revit model:
 | `get_element_properties` | All parameters for a specific element |
 | `get_elements_by_category` | List elements by category (walls, columns, etc.) |
 | `get_levels` | All levels with elevations |
-| `get_grids` | Grid lines with geometry |
+| `get_grids` | Grid lines with geometry, orientation, and angle |
 | `get_view_info` | Active view details |
 | `get_project_info` | Project metadata |
 | `get_available_types` | Loaded family types by category |
@@ -312,12 +317,7 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 | **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
-| **Chat auto-scroll broken** | Chat window doesn't auto-scroll to follow new responses; gets stuck at previous position | UI fix needed |
-| **Text not selectable** | Cannot select or copy text from chat messages | UI fix needed |
 | **Confirmation dialog description empty** | Confirmation dialogs show tool name but description area is blank (C# default interface implementation issue) | P1-10 followup |
-| **Verbosity change may break context** | Changing context verbosity setting may cause selected element info to stop being sent | Investigation needed |
-| **get_grids incorrect coordinates** | `get_grids` tool returns incorrect/unreliable coordinate data for grid lines | P1-07 fix needed |
-| **Verbosity levels need refinement** | Standard mode should include all element parameters; Detailed should include project info and types | Settings enhancement |
 
 ### Not Yet Supported
 

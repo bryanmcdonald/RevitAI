@@ -85,7 +85,7 @@ app.SelectionChanged += (sender, args) =>
 
 ### 4. Inject Context into System Prompt
 
-With configurable verbosity.
+With configurable verbosity. **Important**: Element IDs are always included at all verbosity levels so Claude can reference selected elements with tools (move, delete, modify, etc.).
 
 ```csharp
 private string BuildSystemPrompt(RevitContext context, ContextVerbosity verbosity)
@@ -94,48 +94,43 @@ private string BuildSystemPrompt(RevitContext context, ContextVerbosity verbosit
     sb.AppendLine("You are RevitAI, an assistant embedded in Autodesk Revit.");
     sb.AppendLine();
     sb.AppendLine("## Current Context");
-
-    // Minimal: Just view and selection count
     sb.AppendLine($"Active View: {context.ActiveView?.Name} ({context.ActiveView?.ViewType})");
-    sb.AppendLine($"Selected Elements: {context.SelectedElements.Count}");
+    sb.AppendLine($"Active Level: {context.ActiveLevel?.Name}");
+
+    // Element IDs always included (required for tool use)
+    if (context.SelectedElements.Any())
+    {
+        sb.AppendLine("### Selected Elements:");
+        foreach (var elem in context.SelectedElements.Take(20))
+        {
+            sb.AppendLine($"  - [{elem.Id}] {elem.Category}: {elem.TypeName}");
+        }
+    }
 
     if (verbosity == ContextVerbosity.Minimal)
         return sb.ToString();
 
-    // Standard: Add level and selection details
-    sb.AppendLine($"Active Level: {context.ActiveLevel?.Name} (Elevation: {context.ActiveLevel?.Elevation}')");
-
-    if (context.SelectedElements.Any())
-    {
-        sb.AppendLine("### Selected Elements:");
-        foreach (var elem in context.SelectedElements.Take(10))
-        {
-            sb.AppendLine($"  - [{elem.Id}] {elem.Category}: {elem.TypeName}");
-        }
-        if (context.SelectedElements.Count > 10)
-            sb.AppendLine($"  ... and {context.SelectedElements.Count - 10} more");
-    }
-
-    if (verbosity == ContextVerbosity.Standard)
-        return sb.ToString();
-
-    // Detailed: Add all properties and available types
-    sb.AppendLine($"Project: {context.Project?.Name} ({context.Project?.Number})");
-
+    // Standard: Add element levels and ALL parameters (up to 200)
     if (context.SelectedElements.Any())
     {
         sb.AppendLine("### Selected Element Details:");
-        foreach (var elem in context.SelectedElements.Take(5))
+        foreach (var elem in context.SelectedElements.Take(20))
         {
             sb.AppendLine($"  [{elem.Id}] {elem.Category}: {elem.TypeName}");
-            foreach (var param in elem.KeyParameters.Take(10))
+            sb.AppendLine($"    Level: {elem.Level}");
+            foreach (var param in elem.KeyParameters.Take(200))
             {
                 sb.AppendLine($"    - {param.Key}: {param.Value}");
             }
         }
     }
 
-    // Include available types for common categories
+    if (verbosity == ContextVerbosity.Standard)
+        return sb.ToString();
+
+    // Detailed: Add project info and available types
+    sb.AppendLine($"Project: {context.Project?.Name} ({context.Project?.Number})");
+
     sb.AppendLine("### Available Types:");
     foreach (var category in context.AvailableTypes.Take(5))
     {
@@ -145,6 +140,14 @@ private string BuildSystemPrompt(RevitContext context, ContextVerbosity verbosit
     return sb.ToString();
 }
 ```
+
+**Verbosity Level Summary:**
+
+| Level | Includes |
+|-------|----------|
+| Minimal | View, level, element IDs with category/type |
+| Standard | Above + element levels and ALL parameters (up to 200 per element) |
+| Detailed | Above + project info and available family types |
 
 ---
 

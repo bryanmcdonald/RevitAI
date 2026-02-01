@@ -36,7 +36,7 @@ src/RevitAI/Tools/ReadTools/
 | Tool Name | Input | Output | Notes |
 |-----------|-------|--------|-------|
 | `get_levels` | None | Levels with elevations | Sorted by elevation |
-| `get_grids` | None | Grids with coordinates | Includes curved flag |
+| `get_grids` | None | Grids with geometry | Includes orientation, angle, curved flag |
 | `get_project_info` | None | Project metadata | Name, number, client, workshared status |
 | `get_view_info` | None | Active view details | Scale, level, phase, detail level |
 | `get_selected_elements` | None | Selected elements (max 50) | ID, category, family/type, parameters |
@@ -142,6 +142,25 @@ Rooms without proper enclosure have `Area = 0`. The `is_enclosed` flag helps Cla
 ```csharp
 data.IsEnclosed = room.Area > 0;
 ```
+
+### Grid Orientation Calculation
+
+The `get_grids` tool calculates orientation and angle from the grid line direction:
+
+```csharp
+var direction = line.Direction;
+var angleRad = Math.Atan2(direction.Y, direction.X);
+var angleDeg = angleRad * 180.0 / Math.PI;
+
+// Normalize to 0-180 range (grids are bidirectional)
+if (angleDeg < 0) angleDeg += 180;
+if (angleDeg >= 180) angleDeg -= 180;
+
+// Classify orientation with 10-degree tolerance
+// 0° = East-West (horizontal), 90° = North-South (vertical)
+```
+
+This makes it easier to understand grid layout without manually interpreting coordinates.
 
 ---
 
