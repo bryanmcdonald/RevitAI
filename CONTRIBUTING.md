@@ -22,7 +22,7 @@ We're committed to providing a welcoming and respectful environment for all cont
 
 ### Submitting Pull Requests
 
-1. **Fork the repository** and create your branch from `master`
+1. **Fork the repository** and create your branch from `main`
 2. **Follow the coding standards** outlined below
 3. **Ensure the build passes** before submitting
 4. **Sign your commits** with a DCO sign-off (see below)
@@ -149,7 +149,7 @@ Open `RevitAI.sln` in Visual Studio and build. The output automatically deploys 
 2. **Fill out the PR template** (if provided)
 3. **Link related issues** - Use "Fixes #123" to auto-close issues
 4. **Respond to feedback** - Address review comments or explain your reasoning
-5. **Keep the PR updated** - Rebase on master if there are conflicts
+5. **Keep the PR updated** - Rebase on main if there are conflicts
 
 ### PR Checklist
 
