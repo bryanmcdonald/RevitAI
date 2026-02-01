@@ -649,6 +649,13 @@ public class ProxyClaudeApiService
 
 ## A.9: Distribution & Installation
 
+> This section has been consolidated into the main [README.md](../README.md) to avoid duplication. See:
+> - [Quick Install](../README.md#quick-install) - End-user installation
+> - [Manual Build](../README.md#manual-build) - Building from source
+> - [Team Deployment](../README.md#team-deployment) - PowerShell and batch scripts
+
+*The detailed scripts below are kept for reference but the authoritative versions are in README.md.*
+
 ### Manual Installation
 
 1. Build the solution in Release mode

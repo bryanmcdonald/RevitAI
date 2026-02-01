@@ -34,6 +34,8 @@
 
 ## Implementation Details
 
+> *This is a preliminary outline. Detailed implementation will be added during the chunk planning session.*
+
 ### 1. export_view_to_image
 
 ```csharp

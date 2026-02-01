@@ -9,14 +9,17 @@
 - `src/RevitAI/Tools/ModifyTools/PlaceLevelTool.cs`
 - `src/RevitAI/Tools/ModifyTools/PlaceDimensionTool.cs`
 - `src/RevitAI/Tools/ModifyTools/PlaceTagTool.cs`
-- `src/RevitAI/Tools/ModifyTools/CreateSectionViewTool.cs`
 - `src/RevitAI/Tools/ModifyTools/CreateSheetTool.cs`
 - `src/RevitAI/Tools/ModifyTools/PlaceDetailLineTool.cs`
 - `src/RevitAI/Tools/ModifyTools/PlaceTextNoteTool.cs`
 
+> **Note**: `create_section_view` is implemented in Phase 1.5 (P1.5-02) under ViewTools.
+
 ---
 
 ## Implementation Details
+
+> *This is a preliminary outline. Detailed implementation will be added during the chunk planning session.*
 
 ### 1. place_grid
 
@@ -47,28 +50,21 @@
 // Use IndependentTag.Create
 ```
 
-### 5. create_section_view
-
-```csharp
-// Input: { "name": "Section A", "head": [0, 0, 0], "tail": [20, 0, 0], "up": [0, 0, 1] }
-// Create BoundingBoxXYZ, use ViewSection.CreateSection
-```
-
-### 6. create_sheet
+### 5. create_sheet
 
 ```csharp
 // Input: { "number": "A101", "name": "Floor Plan", "title_block": "E1 30x42" }
 // Use ViewSheet.Create, optionally place views
 ```
 
-### 7. place_detail_line
+### 6. place_detail_line
 
 ```csharp
 // Input: { "view_id": 123, "start": [0, 0], "end": [10, 10] }
 // Use doc.Create.NewDetailCurve
 ```
 
-### 8. place_text_note
+### 7. place_text_note
 
 ```csharp
 // Input: { "view_id": 123, "location": [5, 5], "text": "Note: Verify in field" }

@@ -207,12 +207,13 @@ RevitAI/
 │   ├── Commands/             # Revit commands
 │   ├── UI/                   # WPF views and view models
 │   ├── Services/             # Core services
+│   ├── Models/               # Data models
 │   ├── Tools/                # Claude tool implementations
-│   │   ├── ReadTools/        # Query tools
-│   │   ├── ModifyTools/      # Modification tools
+│   │   ├── ReadTools/        # Query tools (P1-07)
+│   │   ├── ModifyTools/      # Modification tools (P1-09)
 │   │   └── ViewTools/        # View & navigation tools (P1.5)
 │   ├── Threading/            # ExternalEvent infrastructure
-│   └── Models/               # Data models
+│   └── Transactions/         # Transaction management
 ├── docs/                     # Development documentation
 │   ├── phase1/               # Phase 1 implementation details
 │   ├── phase1.5/             # Phase 1.5 view & navigation specs
@@ -272,6 +273,80 @@ RevitAI/
 2. Verify API key is configured correctly
 3. Click the Cancel button if a request is stuck
 4. Clear the conversation and try again
+
+## Known Issues & Limitations
+
+### Current Limitations
+
+| Limitation | Description | Planned Resolution |
+|------------|-------------|-------------------|
+| **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
+| **Read-only mode** | Cannot yet place or modify elements | Phase 1 (P1-08, P1-09) |
+| **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
+| **Single document** | Only works with active document | Future consideration |
+
+### Not Yet Supported
+
+- Element creation (walls, columns, beams, floors) - Coming in P1-09
+- Linked model queries
+- Worksharing-specific operations
+- Family editing context
+- Detail views and drafting operations
+
+## Team Deployment
+
+### PowerShell Install Script
+
+For deploying to multiple workstations:
+
+```powershell
+# install-revitai.ps1
+param(
+    [string]$SourcePath = "\\server\share\RevitAI\latest",
+    [string]$RevitYear = "2026"
+)
+
+$addinsPath = "$env:APPDATA\Autodesk\Revit\Addins\$RevitYear"
+$pluginPath = "$addinsPath\RevitAI"
+
+# Create directory if needed
+if (-not (Test-Path $pluginPath)) {
+    New-Item -ItemType Directory -Path $pluginPath | Out-Null
+}
+
+# Copy files
+Copy-Item "$SourcePath\RevitAI.addin" $addinsPath -Force
+Copy-Item "$SourcePath\RevitAI\*" $pluginPath -Recurse -Force
+
+Write-Host "RevitAI installed successfully to $pluginPath"
+Write-Host "Restart Revit to load the plugin."
+```
+
+### Batch File Alternative
+
+```batch
+@echo off
+REM install-revitai.bat
+
+set SOURCE=\\server\share\RevitAI\latest
+set ADDINS=%APPDATA%\Autodesk\Revit\Addins\2026
+set PLUGIN=%ADDINS%\RevitAI
+
+if not exist "%PLUGIN%" mkdir "%PLUGIN%"
+
+copy /Y "%SOURCE%\RevitAI.addin" "%ADDINS%\"
+xcopy /Y /E "%SOURCE%\RevitAI\*" "%PLUGIN%\"
+
+echo RevitAI installed. Restart Revit to load.
+pause
+```
+
+### Update Process
+
+1. Close Revit on all workstations
+2. Update files on network share
+3. Users run install script (or automatic via login script)
+4. Revit loads new version on next startup
 
 ## License
 

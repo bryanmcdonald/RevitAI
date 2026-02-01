@@ -35,7 +35,6 @@ src/RevitAI/
 │       ├── PlaceLevelTool.cs             # P2-01
 │       ├── PlaceDimensionTool.cs         # P2-01
 │       ├── PlaceTagTool.cs               # P2-01
-│       ├── CreateSectionViewTool.cs      # P2-01
 │       ├── CreateSheetTool.cs            # P2-01
 │       ├── PlaceDetailLineTool.cs        # P2-01
 │       ├── PlaceTextNoteTool.cs          # P2-01
@@ -47,8 +46,7 @@ src/RevitAI/
 │       ├── AlignElementsTool.cs          # P2-02
 │       ├── PlaceScopeBoxTool.cs          # P2-02
 │       ├── BulkModifyParametersTool.cs   # P2-06
-│       ├── ExportElementDataTool.cs      # P2-06
-│       └── CreateScheduleTool.cs         # P2-06
+│       └── ExportElementDataTool.cs      # P2-06
 ├── Tools/
 │   └── ReadTools/
 │       └── ReadScheduleDataTool.cs       # P2-06
@@ -69,7 +67,7 @@ src/RevitAI/
 
 ## Phase 2 Completion Criteria
 
-- [ ] All 8 advanced placement tools working
+- [ ] All 7 advanced placement tools working
 - [ ] All 7 element manipulation tools working
 - [ ] Multi-step operations execute as single undo
 - [ ] Grid intersection references resolve correctly

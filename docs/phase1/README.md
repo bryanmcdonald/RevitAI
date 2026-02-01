@@ -41,9 +41,9 @@ src/RevitAI/
 │   ├── ChatPane.xaml.cs                # P1-02
 │   ├── ChatViewModel.cs                # P1-02
 │   ├── ChatMessage.cs                  # P1-02
-│   ├── SettingsDialog.xaml             # P1-04
+│   ├── SettingsDialog.xaml             # P1-04 (modal dialog for quick API key setup)
 │   ├── SettingsDialog.xaml.cs          # P1-04
-│   ├── SettingsPane.xaml               # P1-10
+│   ├── SettingsPane.xaml               # P1-10 (embedded pane for full configuration)
 │   ├── SettingsViewModel.cs            # P1-10
 │   └── ConfirmationDialog.xaml         # P1-10
 ├── Threading/

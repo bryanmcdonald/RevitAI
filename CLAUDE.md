@@ -40,75 +40,74 @@ All Revit API calls MUST run on the main UI thread via `ExternalEvent` + `IExter
 3. Reference assemblies are in `C:\Program Files\Autodesk\Revit 2026\` (RevitAPI.dll, RevitAPIUI.dll)
 
 ### Project Folder Structure
+
+> **Canonical source**: See [docs/phase1/README.md](docs/phase1/README.md) for the most detailed file listing.
+
 ```
 RevitAI/
 ├── src/
 │   ├── RevitAI/                    # Main plugin project
 │   │   ├── App.cs                  # IExternalApplication entry point
 │   │   ├── RevitAI.csproj
-│   │   ├── Commands/               # IExternalCommand implementations
-│   │   ├── UI/                     # WPF views and view models
+│   │   ├── Commands/
+│   │   │   └── ShowChatPaneCommand.cs
+│   │   ├── UI/
 │   │   │   ├── ChatPane.xaml
 │   │   │   ├── ChatPane.xaml.cs
-│   │   │   └── ChatViewModel.cs
-│   │   ├── Services/               # Core services
+│   │   │   ├── ChatViewModel.cs
+│   │   │   ├── ChatMessage.cs
+│   │   │   ├── SettingsDialog.xaml      # P1-04: Quick API key setup dialog
+│   │   │   ├── SettingsDialog.xaml.cs
+│   │   │   ├── SettingsPane.xaml        # P1-10: Full configuration pane
+│   │   │   ├── SettingsViewModel.cs
+│   │   │   └── ConfirmationDialog.xaml
+│   │   ├── Services/
 │   │   │   ├── ClaudeApiService.cs
+│   │   │   ├── ConfigurationService.cs
+│   │   │   ├── SecureStorage.cs
 │   │   │   ├── ContextEngine.cs
-│   │   │   └── ConfigurationService.cs
-│   │   ├── Tools/                  # Claude tool implementations
+│   │   │   └── SafetyService.cs
+│   │   ├── Models/
+│   │   │   ├── ApiSettings.cs
+│   │   │   ├── ClaudeModels.cs
+│   │   │   ├── StreamEvents.cs
+│   │   │   └── RevitContext.cs
+│   │   ├── Tools/
 │   │   │   ├── IRevitTool.cs
+│   │   │   ├── ToolResult.cs
 │   │   │   ├── ToolRegistry.cs
-│   │   │   ├── ReadTools/
-│   │   │   ├── ModifyTools/
-│   │   │   └── ViewTools/          # P1.5: View/navigation tools
-│   │   ├── Threading/              # ExternalEvent infrastructure
+│   │   │   ├── ToolDispatcher.cs
+│   │   │   ├── ReadTools/              # P1-07: Query tools
+│   │   │   ├── ModifyTools/            # P1-09: Modification tools
+│   │   │   └── ViewTools/              # P1.5: View/navigation tools
+│   │   ├── Threading/
 │   │   │   ├── RevitEventHandler.cs
-│   │   │   └── CommandQueue.cs
-│   │   └── Transactions/           # Transaction management
-│   │       └── TransactionManager.cs
+│   │   │   ├── CommandQueue.cs
+│   │   │   └── RevitCommand.cs
+│   │   └── Transactions/
+│   │       ├── TransactionManager.cs
+│   │       └── TransactionScope.cs
 │   └── RevitAI.Tests/              # Unit tests (non-Revit logic)
 ├── docs/                           # Development documentation
-│   ├── phase1/                     # Phase 1 chunks (individual files)
-│   │   ├── README.md               # Phase 1 overview & index
-│   │   ├── P1-01-project-setup.md
-│   │   ├── P1-02-chat-pane.md
-│   │   ├── P1-03-threading.md
-│   │   ├── P1-04-claude-api.md
-│   │   ├── P1-05-context-engine.md
-│   │   ├── P1-06-tool-framework.md
-│   │   ├── P1-07-read-tools.md
-│   │   ├── P1-08-transaction-manager.md
-│   │   ├── P1-09-modify-tools.md
-│   │   └── P1-10-safety-config.md
+│   ├── phase1/                     # Phase 1 chunks
 │   ├── phase1.5/                   # Phase 1.5 chunks (view & navigation)
-│   │   ├── README.md               # Phase 1.5 overview & index
-│   │   ├── P1.5-01-screenshot-capture.md
-│   │   ├── P1.5-02-view-management.md
-│   │   ├── P1.5-03-camera-control.md
-│   │   └── P1.5-04-visual-isolation.md
-│   ├── phase2/                     # Phase 2 chunks (individual files)
-│   │   ├── README.md               # Phase 2 overview & index
-│   │   ├── P2-01-advanced-placement.md
-│   │   ├── P2-02-element-manipulation.md
-│   │   ├── P2-03-multi-step-operations.md
-│   │   ├── P2-04-smart-context.md
-│   │   ├── P2-05-visual-feedback.md
-│   │   ├── P2-06-parameter-schedule.md
-│   │   └── P2-07-conversation-memory.md
-│   ├── phase3/                     # Phase 3 chunks (individual files)
-│   │   ├── README.md               # Phase 3 overview & index
-│   │   ├── P3-01-structural-tools.md
-│   │   ├── P3-02-mep-tools.md
-│   │   ├── P3-03-fire-protection-tools.md
-│   │   ├── P3-04-architecture-tools.md
-│   │   ├── P3-05-export-tools.md
-│   │   ├── P3-06-model-health.md
-│   │   └── P3-07-prompt-templates.md
+│   ├── phase2/                     # Phase 2 chunks
+│   ├── phase3/                     # Phase 3 chunks
 │   └── appendix.md                 # API patterns, threading, troubleshooting
 ├── RevitAI.sln
 ├── RevitAI.addin                   # Manifest file
 └── CLAUDE.md                       # This file
 ```
+
+### NuGet Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `CommunityToolkit.Mvvm` | MVVM framework (ObservableObject, RelayCommand) |
+| `System.Text.Json` | JSON serialization for Claude API |
+| `System.Security.Cryptography.ProtectedData` | DPAPI for secure API key storage |
+
+> **Note**: RevitAPI.dll and RevitAPIUI.dll are referenced directly from the Revit installation, not via NuGet.
 
 ### Addin Installation Path
 ```
@@ -125,7 +124,7 @@ RevitAI/
 | **Phase 1.5** | View & Navigation Foundation | P1.5-01 to P1.5-04 | [docs/phase1.5/README.md](docs/phase1.5/README.md) |
 | **Phase 2** | Enhanced Capabilities | P2-01 to P2-07 | [docs/phase2/README.md](docs/phase2/README.md) |
 | **Phase 3** | Advanced & Multi-Discipline | P3-01 to P3-07 | [docs/phase3/README.md](docs/phase3/README.md) |
-| **Appendix** | API Patterns & Reference | A.1 to A.9 | [docs/appendix.md](docs/appendix.md) |
+| **Appendix** | API Patterns & Reference | A.1 to A.8 | [docs/appendix.md](docs/appendix.md) |
 
 ### Phase 1 Quick Links
 
@@ -179,12 +178,9 @@ RevitAI/
 
 ## Current Status
 
-**Currently working on**: P1-07 Complete
+See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk**: P1-08 (Transaction Manager)
-
-### Known Limitations / Deferred Items
-- **Markdown rendering in chat** - Chat messages display raw markdown (e.g., `**bold**` instead of **bold**). RichTextBox binding requires custom attached behavior. Deferred to P2-05 (Visual Feedback System).
+**Next chunk to implement**: P1-08 (Transaction Manager)
 
 ---
 
@@ -259,3 +255,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.3 | Restructure Phases | Split all phase docs into individual chunk files (phase1/, phase2/, phase3/) for easier Claude Code context management |
 | 1.4 | Phase 1.5 | Added Phase 1.5 (View & Navigation Foundation) with 4 chunks: screenshot capture, view management, camera control, visual isolation |
 | 1.5 | Post-Change Reqs | Added Post-Change Requirements section with documentation sync guidelines |
+| 1.6 | Doc Cleanup | Consolidated status tracking to README.md, added NuGet deps, synced folder structure with Phase 1 README, removed duplicate tools from P2 |

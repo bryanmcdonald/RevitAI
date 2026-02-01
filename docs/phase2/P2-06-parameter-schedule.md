@@ -8,11 +8,14 @@
 - `src/RevitAI/Tools/ModifyTools/BulkModifyParametersTool.cs`
 - `src/RevitAI/Tools/ReadTools/ReadScheduleDataTool.cs`
 - `src/RevitAI/Tools/ModifyTools/ExportElementDataTool.cs`
-- `src/RevitAI/Tools/ModifyTools/CreateScheduleTool.cs`
+
+> **Note**: `create_schedule_view` is implemented in Phase 1.5 (P1.5-02) under ViewTools.
 
 ---
 
 ## Implementation Details
+
+> *This is a preliminary outline. Detailed implementation will be added during the chunk planning session.*
 
 ### 1. bulk_modify_parameters
 
@@ -81,33 +84,12 @@ public Task<ToolResult> ExecuteAsync(...)
 // Export to file or return as string
 ```
 
-### 4. create_schedule
-
-```csharp
-// Input: { "name": "Beam Schedule", "category": "Structural Framing", "fields": ["Type", "Length", "Level"] }
-public Task<ToolResult> ExecuteAsync(...)
-{
-    var schedule = ViewSchedule.CreateSchedule(doc, categoryId);
-    schedule.Name = name;
-
-    var definition = schedule.Definition;
-    foreach (var fieldName in fields)
-    {
-        var field = definition.GetSchedulableFields()
-            .FirstOrDefault(f => f.GetName(doc) == fieldName);
-        if (field != null)
-            definition.AddField(field);
-    }
-
-    return ToolResult.Ok($"Created schedule: {name}");
-}
-```
-
 ---
 
 ## Verification (Manual)
 
 1. Ask Claude "Set the Mark parameter to 'C-{n}' for all columns on Level 1"
 2. Ask Claude "What's in the Column Schedule?"
-3. Ask Claude "Create a beam schedule showing Type, Length, and Level"
-4. Ask Claude "Export all wall data to CSV"
+3. Ask Claude "Export all wall data to CSV"
+
+> **Note**: Schedule creation is tested in Phase 1.5 (P1.5-02).
