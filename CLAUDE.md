@@ -91,7 +91,8 @@ RevitAI/
 │   │   │   ├── ConfigurationService.cs
 │   │   │   ├── SecureStorage.cs
 │   │   │   ├── ContextEngine.cs
-│   │   │   └── SafetyService.cs
+│   │   │   ├── SafetyService.cs
+│   │   │   └── UsageTracker.cs
 │   │   ├── Models/
 │   │   │   ├── ApiSettings.cs
 │   │   │   ├── ClaudeModels.cs
@@ -205,7 +206,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P1-10 (Safety & Configuration)
+**Next chunk to implement**: P1.5-01 (Screenshot Capture)
 
 ---
 
@@ -281,6 +282,12 @@ This project is licensed under GPL-3.0. **All new source files must include the 
 - Documentation should reflect the actual state of the codebase
 - When adding a feature, update all relevant docs in the same commit when practical
 - Future Claude Code sessions rely on accurate documentation for context
+
+### 5. Tool Safety Classification
+When creating new tools:
+- Set `RequiresConfirmation = true` for tools that modify the Revit model
+- Implement `GetDryRunDescription()` to describe what the tool would do
+- See [docs/phase1/P1-06-tool-framework.md](docs/phase1/P1-06-tool-framework.md) for detailed guidance
 
 ---
 

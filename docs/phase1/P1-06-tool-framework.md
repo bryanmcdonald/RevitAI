@@ -173,3 +173,73 @@ The tool execution loop in `ChatViewModel.StreamClaudeResponseAsync`:
 3. Executes tools via `ToolDispatcher.DispatchAllAsync()`
 4. Sends `ToolResultBlock` back to Claude
 5. Loops until Claude stops using tools
+
+---
+
+## Safety Classification
+
+Tools that modify the Revit model should implement safety features to protect users from unintended changes.
+
+### RequiresConfirmation Property
+
+The `IRevitTool` interface includes a `RequiresConfirmation` property (default: `false`). Set this to `true` for:
+
+- **Model modifications**: Tools that create, delete, or modify elements
+- **Destructive operations**: Tools that cannot be easily undone
+- **Batch operations**: Tools that affect multiple elements
+
+Tools that should **NOT** require confirmation:
+- Read-only query tools
+- UI-only operations (select, zoom, highlight)
+- View navigation operations
+
+### GetDryRunDescription Method
+
+All tools should implement `GetDryRunDescription(JsonElement input)` to provide a human-readable description of what the tool would do. This is used for:
+
+1. **Confirmation dialogs**: Shows users what action is about to be performed
+2. **Dry-run mode**: Returns this description instead of executing the tool
+3. **Logging and auditing**: Records intended actions
+
+#### Example Implementation
+
+```csharp
+public bool RequiresConfirmation => true;
+
+public string GetDryRunDescription(JsonElement input)
+{
+    var elementId = input.TryGetProperty("element_id", out var idElem)
+        ? idElem.GetInt64().ToString()
+        : "unknown";
+    var translation = input.TryGetProperty("translation", out var transElem)
+        ? transElem.EnumerateArray().ToList()
+        : null;
+
+    if (translation?.Count == 3)
+    {
+        return $"Would move element {elementId} by ({translation[0].GetDouble():F2}, {translation[1].GetDouble():F2}, {translation[2].GetDouble():F2}) feet.";
+    }
+    return $"Would move element {elementId}.";
+}
+```
+
+### Tool Safety Categories
+
+| Category | RequiresConfirmation | RequiresTransaction | Examples |
+|----------|---------------------|---------------------|----------|
+| Read-Only | `false` | `false` | `get_levels`, `get_element_properties` |
+| UI-Only | `false` | `false` | `select_elements`, `zoom_to_element` |
+| Placement | `true` | `true` | `place_wall`, `place_column`, `place_beam` |
+| Modification | `true` | `true` | `move_element`, `modify_element_parameter` |
+| Destructive | `true` | `true` | `delete_elements` |
+
+### SafetyService Integration
+
+The `ToolDispatcher` integrates with `SafetyService` to:
+
+1. Check if confirmation is globally disabled (`ConfigurationService.SkipConfirmations`)
+2. Check if the tool has session-level skip enabled ("Don't ask again this session")
+3. Show confirmation dialog if needed
+4. Record user's "don't ask again" preference
+
+For batch operations, a single confirmation dialog shows all destructive tools in the batch.

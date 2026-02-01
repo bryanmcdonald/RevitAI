@@ -85,6 +85,21 @@ public sealed class PlaceFloorTool : IRevitTool
 
     public bool RequiresTransaction => true;
 
+    public bool RequiresConfirmation => true;
+
+    public string GetDryRunDescription(JsonElement input)
+    {
+        var level = input.TryGetProperty("level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
+        var pointCount = input.TryGetProperty("boundary", out var boundaryElem) ? boundaryElem.GetArrayLength() : 0;
+        var floorType = input.TryGetProperty("floor_type", out var typeElem) ? typeElem.GetString() : null;
+
+        if (floorType != null)
+        {
+            return $"Would place a '{floorType}' floor with {pointCount} boundary points on {level}.";
+        }
+        return $"Would place a floor with {pointCount} boundary points on {level}.";
+    }
+
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

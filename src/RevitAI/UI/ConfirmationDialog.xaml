@@ -1,0 +1,94 @@
+<!--
+    RevitAI - AI-powered assistant for Autodesk Revit
+    Copyright (C) 2025 Bryan McDonald
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Window x:Class="RevitAI.UI.ConfirmationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confirm Action"
+        Width="420"
+        Height="220"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        Topmost="True"
+        Background="#F5F5F5">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tool Name Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="Tool:"
+                       FontWeight="SemiBold"
+                       Foreground="#666666"
+                       VerticalAlignment="Center"/>
+            <TextBlock x:Name="ToolNameText"
+                       Text="tool_name"
+                       FontWeight="Bold"
+                       FontSize="14"
+                       Foreground="#1976D2"
+                       Margin="8,0,0,0"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Description -->
+        <Border Grid.Row="1"
+                Background="White"
+                BorderBrush="#E0E0E0"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="12"
+                Margin="0,0,0,16">
+            <TextBlock x:Name="DescriptionText"
+                       Text="This tool will perform an action."
+                       TextWrapping="Wrap"
+                       Foreground="#333333"/>
+        </Border>
+
+        <!-- Don't ask again checkbox -->
+        <CheckBox x:Name="DontAskAgainCheckBox"
+                  Grid.Row="2"
+                  Content="Don't ask again this session for this tool"
+                  Foreground="#666666"
+                  Margin="0,0,0,16"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button x:Name="DenyButton"
+                    Content="Deny"
+                    Padding="20,8"
+                    Margin="0,0,8,0"
+                    IsCancel="True"
+                    Click="DenyButton_Click"/>
+            <Button x:Name="AllowButton"
+                    Content="Allow"
+                    Padding="20,8"
+                    IsDefault="True"
+                    Background="#1976D2"
+                    Foreground="White"
+                    BorderBrush="#1565C0"
+                    Click="AllowButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

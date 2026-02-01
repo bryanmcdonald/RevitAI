@@ -40,7 +40,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1 Foundation: 90% Complete**
+**Phase 1 Foundation: Complete**
 
 | Feature | Status |
 |---------|--------|
@@ -52,7 +52,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 | Read-Only Tools (11 tools) | Complete |
 | Transaction Manager | Complete |
 | Modification Tools (10 tools) | Complete |
-| Safety & Confirmation | Pending |
+| Safety & Confirmation | Complete |
 
 See [Development Status](#development-status) for details.
 
@@ -177,9 +177,6 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_beam` | Place structural beam |
 | `place_floor` | Create floor from boundary |
 
-**Coming Soon (Phase 1 completion):**
-- Safety confirmations for destructive operations
-
 **Coming Soon (Phase 1.5):**
 - Screenshot capture for Claude vision analysis
 - View switching and creation
@@ -200,7 +197,7 @@ Core infrastructure for a working AI assistant.
 - [x] **P1-07** Read-Only Tools (11 query tools)
 - [x] **P1-08** Transaction Manager
 - [x] **P1-09** Modification Tools (10 tools)
-- [ ] **P1-10** Safety & Configuration
+- [x] **P1-10** Safety & Configuration
 
 ### Phase 1.5: View & Navigation Foundation
 View manipulation and visual context tools for enhanced AI understanding.
@@ -313,11 +310,14 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 | Limitation | Description | Planned Resolution |
 |------------|-------------|-------------------|
 | **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
-| **No safety confirmations** | Destructive operations don't prompt for confirmation | Phase 1 (P1-10) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
 | **Chat auto-scroll broken** | Chat window doesn't auto-scroll to follow new responses; gets stuck at previous position | UI fix needed |
 | **Text not selectable** | Cannot select or copy text from chat messages | UI fix needed |
+| **Confirmation dialog description empty** | Confirmation dialogs show tool name but description area is blank (C# default interface implementation issue) | P1-10 followup |
+| **Verbosity change may break context** | Changing context verbosity setting may cause selected element info to stop being sent | Investigation needed |
+| **get_grids incorrect coordinates** | `get_grids` tool returns incorrect/unreliable coordinate data for grid lines | P1-07 fix needed |
+| **Verbosity levels need refinement** | Standard mode should include all element parameters; Detailed should include project info and types | Settings enhancement |
 
 ### Not Yet Supported
 
