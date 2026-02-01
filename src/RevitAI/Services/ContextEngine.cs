@@ -154,6 +154,19 @@ public sealed class ContextEngine
         sb.AppendLine();
         sb.AppendLine("Be concise and helpful. When discussing Revit elements, use correct terminology and reference element IDs when relevant.");
         sb.AppendLine();
+        sb.AppendLine("**Important:** When the user refers to 'selected elements', 'the selection', or 'that element', use the element IDs listed in the 'Selected Elements' section below. These are the currently selected elements in Revit. You should use these IDs directly with tools like move_element, delete_elements, modify_element_parameter, etc. without asking the user for IDs.");
+        sb.AppendLine();
+        sb.AppendLine("**Tool usage notes:**");
+        sb.AppendLine("- move_element: Moves ONE element at a time. For multiple elements, call it once per element.");
+        sb.AppendLine("- Units are in feet. Convert if user provides inches (divide by 12) or meters (multiply by 3.28084).");
+        sb.AppendLine("- Directions: +X is typically East, +Y is typically North, +Z is Up. 'South' means -Y, 'West' means -X.");
+        sb.AppendLine();
+        sb.AppendLine("**Wall type changes:** Revit keeps the wall's 'Location Line' fixed during type changes. The change_element_type tool returns:");
+        sb.AppendLine("- location_line_setting: Which reference is fixed ('Finish Face: Exterior', 'Finish Face: Interior', 'Wall Centerline', etc.)");
+        sb.AppendLine("- If location_line_setting matches the face the user wants to keep fixed, NO MOVE is needed.");
+        sb.AppendLine("- If the user wants a DIFFERENT face fixed, calculate move based on width_difference and perpendicular_to_exterior direction.");
+        sb.AppendLine("- Example: Location line is 'Finish Face: Exterior' but user wants interior fixed -> move by full width_difference toward exterior.");
+        sb.AppendLine();
 
         // Context section
         sb.AppendLine("## Current Revit Context");

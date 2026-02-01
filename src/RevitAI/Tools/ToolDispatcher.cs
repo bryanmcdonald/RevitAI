@@ -165,7 +165,6 @@ public sealed class ToolDispatcher
         CancellationToken cancellationToken)
     {
         var toolList = toolUses.ToList();
-        var results = new List<ToolResultBlock>();
 
         // Check if any tools require transactions
         var anyRequiresTransaction = toolList.Any(t =>
@@ -175,104 +174,184 @@ public sealed class ToolDispatcher
         });
 
         // If we need transactions and have multiple tools, use a group for batching
+        // Execute ALL tools in a SINGLE Revit thread call to keep transactions in the same context
         var useGroup = anyRequiresTransaction && toolList.Count > 1;
-        var groupStarted = false;
 
-        try
+        if (useGroup)
         {
-            if (useGroup)
-            {
-                // Start transaction group on Revit thread
-                await App.ExecuteOnRevitThreadAsync(app =>
-                {
-                    var doc = app.ActiveUIDocument?.Document;
-                    if (doc != null)
-                    {
-                        _transactionManager.StartGroup(doc, "Tool Batch");
-                        groupStarted = true;
-                    }
-                }, cancellationToken);
-            }
-
+            return await ExecuteAllToolsInGroupAsync(toolList, cancellationToken);
+        }
+        else
+        {
+            // Single tool or no transactions - use simple sequential dispatch
+            var results = new List<ToolResultBlock>();
             foreach (var toolUse in toolList)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var result = await DispatchAsync(toolUse, cancellationToken);
                 results.Add(result);
+            }
+            return results;
+        }
+    }
 
-                // If any tool fails in a group, stop processing and rollback
-                if (result.IsError && groupStarted)
+    /// <summary>
+    /// Executes all tools within a single Revit thread call using a transaction group.
+    /// This ensures all transactions are within the same API context.
+    /// </summary>
+    private async Task<List<ToolResultBlock>> ExecuteAllToolsInGroupAsync(
+        List<ToolUseBlock> toolList,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await App.ExecuteOnRevitThreadAsync(app =>
+            {
+                var results = new List<ToolResultBlock>();
+                var doc = app.ActiveUIDocument?.Document;
+
+                if (doc == null)
                 {
-                    await App.ExecuteOnRevitThreadAsync(app =>
-                    {
-                        _transactionManager.RollbackGroup();
-                    }, cancellationToken);
-                    groupStarted = false;
-
-                    // Mark remaining tools as skipped
-                    var remainingIndex = toolList.IndexOf(toolUse) + 1;
-                    for (var i = remainingIndex; i < toolList.Count; i++)
+                    // No document - return errors for all tools
+                    foreach (var toolUse in toolList)
                     {
                         results.Add(new ToolResultBlock
                         {
-                            ToolUseId = toolList[i].Id,
-                            Content = "Skipped due to earlier tool failure in batch.",
+                            ToolUseId = toolUse.Id,
+                            Content = "No document is open. Cannot execute modification tool.",
                             IsError = true
                         });
                     }
-                    break;
+                    return results;
                 }
-            }
 
-            // Commit the group if all succeeded
-            if (groupStarted)
-            {
-                await App.ExecuteOnRevitThreadAsync(app =>
+                // Start transaction group
+                _transactionManager.StartGroup(doc, "Tool Batch");
+
+                try
                 {
+                    foreach (var toolUse in toolList)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        var tool = _registry.Get(toolUse.Name);
+                        if (tool == null)
+                        {
+                            var availableTools = _registry.GetAvailableToolNames();
+                            results.Add(new ToolResultBlock
+                            {
+                                ToolUseId = toolUse.Id,
+                                Content = $"Unknown tool: '{toolUse.Name}'. Available tools: {availableTools}",
+                                IsError = true
+                            });
+
+                            // Rollback and skip remaining
+                            _transactionManager.RollbackGroup();
+                            MarkRemainingAsSkipped(toolList, toolUse, results);
+                            return results;
+                        }
+
+                        ToolResult result;
+                        if (tool.RequiresTransaction)
+                        {
+                            using var scope = _transactionManager.StartTransaction(doc, toolUse.Name);
+                            try
+                            {
+                                // ExecuteAsync returns Task<ToolResult>, need to wait synchronously
+                                result = tool.ExecuteAsync(toolUse.Input, app, cancellationToken).GetAwaiter().GetResult();
+
+                                if (!result.IsError)
+                                {
+                                    scope.Commit();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                result = ToolResult.FromException(ex);
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                result = tool.ExecuteAsync(toolUse.Input, app, cancellationToken).GetAwaiter().GetResult();
+                            }
+                            catch (Exception ex)
+                            {
+                                result = ToolResult.FromException(ex);
+                            }
+                        }
+
+                        results.Add(new ToolResultBlock
+                        {
+                            ToolUseId = toolUse.Id,
+                            Content = result.Content,
+                            IsError = result.IsError
+                        });
+
+                        // If tool failed, rollback and skip remaining
+                        if (result.IsError)
+                        {
+                            _transactionManager.RollbackGroup();
+                            MarkRemainingAsSkipped(toolList, toolUse, results);
+                            return results;
+                        }
+                    }
+
+                    // All tools succeeded - commit the group
                     _transactionManager.CommitGroup();
-                }, cancellationToken);
-                groupStarted = false;
-            }
+                }
+                catch (OperationCanceledException)
+                {
+                    _transactionManager.EnsureGroupClosed();
+                    throw;
+                }
+                catch
+                {
+                    _transactionManager.EnsureGroupClosed();
+                    throw;
+                }
+
+                return results;
+            }, cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            // Ensure group is cleaned up on cancellation
-            if (groupStarted)
+            return toolList.Select(t => new ToolResultBlock
             {
-                try
-                {
-                    await App.ExecuteOnRevitThreadAsync(app =>
-                    {
-                        _transactionManager.EnsureGroupClosed();
-                    }, CancellationToken.None);
-                }
-                catch
-                {
-                    // Best effort cleanup
-                }
-            }
-            throw;
+                ToolUseId = t.Id,
+                Content = "Tool execution was cancelled.",
+                IsError = true
+            }).ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            // Ensure group is cleaned up on any exception
-            if (groupStarted)
+            return toolList.Select(t => new ToolResultBlock
             {
-                try
-                {
-                    await App.ExecuteOnRevitThreadAsync(app =>
-                    {
-                        _transactionManager.EnsureGroupClosed();
-                    }, CancellationToken.None);
-                }
-                catch
-                {
-                    // Best effort cleanup
-                }
-            }
-            throw;
+                ToolUseId = t.Id,
+                Content = $"Tool batch execution failed: {ex.Message}",
+                IsError = true
+            }).ToList();
         }
+    }
 
-        return results;
+    /// <summary>
+    /// Marks remaining tools as skipped after a failure.
+    /// </summary>
+    private static void MarkRemainingAsSkipped(
+        List<ToolUseBlock> toolList,
+        ToolUseBlock failedTool,
+        List<ToolResultBlock> results)
+    {
+        var remainingIndex = toolList.IndexOf(failedTool) + 1;
+        for (var i = remainingIndex; i < toolList.Count; i++)
+        {
+            results.Add(new ToolResultBlock
+            {
+                ToolUseId = toolList[i].Id,
+                Content = "Skipped due to earlier tool failure in batch.",
+                IsError = true
+            });
+        }
     }
 }

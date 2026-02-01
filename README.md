@@ -2,6 +2,33 @@
 
 A Revit plugin that embeds a Claude-powered conversational AI assistant directly into the Revit interface. Query model information, place and modify elements, and automate tasks using natural language.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Current Status](#current-status)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Quick Install](#quick-install)
+  - [Manual Build](#manual-build)
+- [Usage](#usage)
+  - [Opening the Chat Panel](#opening-the-chat-panel)
+  - [Configuring Settings](#configuring-settings)
+  - [Example Queries](#example-queries)
+  - [Context Awareness](#context-awareness)
+- [Available Tools](#available-tools)
+- [Development Status](#development-status)
+  - [Phase 1: Foundation (MVP)](#phase-1-foundation-mvp)
+  - [Phase 1.5: View & Navigation Foundation](#phase-15-view--navigation-foundation)
+  - [Phase 2: Enhanced Capabilities](#phase-2-enhanced-capabilities)
+  - [Phase 3: Advanced & Multi-Discipline](#phase-3-advanced--multi-discipline)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [Known Issues & Limitations](#known-issues--limitations)
+- [Team Deployment](#team-deployment)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
 ## Overview
 
 RevitAI provides a dockable chat panel where you interact with Claude to:
@@ -13,7 +40,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1 Foundation: 80% Complete**
+**Phase 1 Foundation: 90% Complete**
 
 | Feature | Status |
 |---------|--------|
@@ -24,7 +51,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 | Tool Framework | Complete |
 | Read-Only Tools (11 tools) | Complete |
 | Transaction Manager | Complete |
-| Modification Tools | Pending |
+| Modification Tools (10 tools) | Complete |
 | Safety & Confirmation | Pending |
 
 See [Development Status](#development-status) for details.
@@ -139,12 +166,19 @@ RevitAI provides Claude with tools to query your Revit model:
 | `get_warnings` | Model warnings and errors |
 | `get_room_info` | Room boundaries and areas |
 | `get_element_quantity_takeoff` | Element counts and summaries |
+| `select_elements` | Select elements by ID |
+| `zoom_to_element` | Zoom view to elements |
+| `move_element` | Move element by translation vector |
+| `delete_elements` | Delete elements by ID |
+| `modify_element_parameter` | Change element parameter values |
+| `change_element_type` | Change element to different type |
+| `place_wall` | Create wall between two points |
+| `place_column` | Place structural column |
+| `place_beam` | Place structural beam |
+| `place_floor` | Create floor from boundary |
 
 **Coming Soon (Phase 1 completion):**
-- Element placement (walls, columns, beams, floors)
-- Parameter modification
-- Element movement and deletion
-- Transaction management with undo support
+- Safety confirmations for destructive operations
 
 **Coming Soon (Phase 1.5):**
 - Screenshot capture for Claude vision analysis
@@ -165,7 +199,7 @@ Core infrastructure for a working AI assistant.
 - [x] **P1-06** Tool Framework & Registry
 - [x] **P1-07** Read-Only Tools (11 query tools)
 - [x] **P1-08** Transaction Manager
-- [ ] **P1-09** Modification Tools (10 tools)
+- [x] **P1-09** Modification Tools (10 tools)
 - [ ] **P1-10** Safety & Configuration
 
 ### Phase 1.5: View & Navigation Foundation
@@ -279,13 +313,14 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 | Limitation | Description | Planned Resolution |
 |------------|-------------|-------------------|
 | **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
-| **Read-only mode** | Cannot yet place or modify elements | Phase 1 (P1-08, P1-09) |
+| **No safety confirmations** | Destructive operations don't prompt for confirmation | Phase 1 (P1-10) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
+| **Chat auto-scroll broken** | Chat window doesn't auto-scroll to follow new responses; gets stuck at previous position | UI fix needed |
+| **Text not selectable** | Cannot select or copy text from chat messages | UI fix needed |
 
 ### Not Yet Supported
 
-- Element creation (walls, columns, beams, floors) - Coming in P1-09
 - Linked model queries
 - Worksharing-specific operations
 - Family editing context

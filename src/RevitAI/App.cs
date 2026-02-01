@@ -21,6 +21,7 @@ using Autodesk.Revit.UI;
 using RevitAI.Services;
 using RevitAI.Threading;
 using RevitAI.Tools;
+using RevitAI.Tools.ModifyTools;
 using RevitAI.Tools.ReadTools;
 using RevitAI.UI;
 
@@ -193,7 +194,19 @@ public class App : IExternalApplication
         registry.Register(new GetRoomInfoTool());
         registry.Register(new GetElementQuantityTakeoffTool());
 
-        // Modification tools registered here (P1-09)
+        // Modification tools (P1-09) - Non-transaction
+        registry.Register(new SelectElementsTool());
+        registry.Register(new ZoomToElementTool());
+
+        // Modification tools (P1-09) - Transaction-required
+        registry.Register(new MoveElementTool());
+        registry.Register(new DeleteElementsTool());
+        registry.Register(new ModifyElementParameterTool());
+        registry.Register(new ChangeElementTypeTool());
+        registry.Register(new PlaceWallTool());
+        registry.Register(new PlaceColumnTool());
+        registry.Register(new PlaceBeamTool());
+        registry.Register(new PlaceFloorTool());
     }
 
     /// <summary>
