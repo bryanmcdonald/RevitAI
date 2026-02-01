@@ -188,6 +188,52 @@ See [README.md](README.md#development-status) for detailed development status wi
 
 After making any meaningful changes to the codebase, ensure all documentation stays synchronized:
 
+### 0. Add GPL License Headers to New Files
+
+This project is licensed under GPL-3.0. **All new source files must include the GPL license header.**
+
+**For C# files (.cs):**
+```csharp
+// RevitAI - AI-powered assistant for Autodesk Revit
+// Copyright (C) 2025 Bryan McDonald
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
+
+**For XAML files (.xaml):**
+```xml
+<!--
+    RevitAI - AI-powered assistant for Autodesk Revit
+    Copyright (C) 2025 Bryan McDonald
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+```
+
+> **Note**: Auto-generated files in `obj/` directories do not need license headers.
+
 ### 1. Update CLAUDE.md
 - Reflect any architectural changes, new patterns, or workflow modifications
 - Update the "Current Status" section to track progress
@@ -256,3 +302,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.4 | Phase 1.5 | Added Phase 1.5 (View & Navigation Foundation) with 4 chunks: screenshot capture, view management, camera control, visual isolation |
 | 1.5 | Post-Change Reqs | Added Post-Change Requirements section with documentation sync guidelines |
 | 1.6 | Doc Cleanup | Consolidated status tracking to README.md, added NuGet deps, synced folder structure with Phase 1 README, removed duplicate tools from P2 |
+| 1.7 | GPL Headers | Added GPL-3.0 license headers to all source files; added license header templates to Post-Change Requirements |
