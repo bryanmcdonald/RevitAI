@@ -162,9 +162,9 @@ RevitAI/
 
 ## Current Status
 
-**Currently working on**: P1-02 Complete
+**Currently working on**: P1-03 Complete
 
-**Next chunk**: P1-03 (ExternalEvent Threading)
+**Next chunk**: P1-04 (Claude API Integration)
 
 ---
 

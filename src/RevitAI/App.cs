@@ -3,6 +3,7 @@ using System.Windows.Media.Imaging;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using RevitAI.Services;
+using RevitAI.Threading;
 using RevitAI.UI;
 
 namespace RevitAI;
@@ -28,10 +29,25 @@ public class App : IExternalApplication
     /// </summary>
     public static ChatPane? ChatPane => _chatPane;
 
+    /// <summary>
+    /// The ExternalEvent used to marshal commands to the Revit main thread.
+    /// </summary>
+    public static ExternalEvent? RevitEvent { get; private set; }
+
+    /// <summary>
+    /// The command queue for pending Revit thread operations.
+    /// </summary>
+    public static CommandQueue? CommandQueue { get; private set; }
+
     public Result OnStartup(UIControlledApplication application)
     {
         try
         {
+            // Initialize the threading infrastructure
+            CommandQueue = new CommandQueue();
+            var handler = new RevitEventHandler(CommandQueue);
+            RevitEvent = ExternalEvent.Create(handler);
+
             // Initialize the theme service
             ThemeService.Instance.Initialize(application);
 
@@ -52,10 +68,82 @@ public class App : IExternalApplication
 
     public Result OnShutdown(UIControlledApplication application)
     {
+        // Cancel any pending commands and dispose the ExternalEvent
+        CommandQueue?.CancelAll();
+        RevitEvent?.Dispose();
+        RevitEvent = null;
+        CommandQueue = null;
+
         // Dispose the theme service
         ThemeService.Instance.Dispose();
 
         return Result.Succeeded;
+    }
+
+    /// <summary>
+    /// Executes a function on the Revit main thread and returns the result.
+    /// Call from background threads to safely access Revit API.
+    /// </summary>
+    /// <typeparam name="T">The return type of the function.</typeparam>
+    /// <param name="func">The function to execute.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The result of the function.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if threading infrastructure is not initialized.</exception>
+    public static async Task<T> ExecuteOnRevitThreadAsync<T>(
+        Func<UIApplication, T> func,
+        CancellationToken cancellationToken = default)
+    {
+        if (CommandQueue == null || RevitEvent == null)
+        {
+            throw new InvalidOperationException("RevitAI threading infrastructure is not initialized.");
+        }
+
+        var command = new FuncCommand<T>(func, cancellationToken);
+        CommandQueue.Enqueue(command);
+
+        var result = RevitEvent.Raise();
+        // Accepted = event will fire, Pending = event already raised and will fire soon
+        // Both are valid - command is queued and will execute
+        if (result == ExternalEventRequest.Denied || result == ExternalEventRequest.TimedOut)
+        {
+            throw new InvalidOperationException(
+                $"Failed to raise ExternalEvent. Request result: {result}. " +
+                "This may occur if a modal dialog is open or Revit is busy.");
+        }
+
+        return await command.Task;
+    }
+
+    /// <summary>
+    /// Executes an action on the Revit main thread.
+    /// Call from background threads to safely access Revit API.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <exception cref="InvalidOperationException">Thrown if threading infrastructure is not initialized.</exception>
+    public static async Task ExecuteOnRevitThreadAsync(
+        Action<UIApplication> action,
+        CancellationToken cancellationToken = default)
+    {
+        if (CommandQueue == null || RevitEvent == null)
+        {
+            throw new InvalidOperationException("RevitAI threading infrastructure is not initialized.");
+        }
+
+        var command = new ActionCommand(action, cancellationToken);
+        CommandQueue.Enqueue(command);
+
+        var result = RevitEvent.Raise();
+        // Accepted = event will fire, Pending = event already raised and will fire soon
+        // Both are valid - command is queued and will execute
+        if (result == ExternalEventRequest.Denied || result == ExternalEventRequest.TimedOut)
+        {
+            throw new InvalidOperationException(
+                $"Failed to raise ExternalEvent. Request result: {result}. " +
+                "This may occur if a modal dialog is open or Revit is busy.");
+        }
+
+        await command.Task;
     }
 
     /// <summary>
@@ -110,6 +198,23 @@ public class App : IExternalApplication
         }
 
         panel.AddItem(showChatButtonData);
+
+#if DEBUG
+        // Add Test Threading button in DEBUG builds only
+        panel.AddSeparator();
+
+        var testThreadingButtonData = new PushButtonData(
+            "TestThreading",
+            "Test\nThreading",
+            assemblyPath,
+            "RevitAI.Commands.TestThreadingCommand")
+        {
+            ToolTip = "Test threading infrastructure",
+            LongDescription = "Runs tests to verify the ExternalEvent threading infrastructure is working correctly.",
+        };
+
+        panel.AddItem(testThreadingButtonData);
+#endif
     }
 
     /// <summary>
