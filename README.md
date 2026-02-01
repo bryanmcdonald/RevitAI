@@ -13,7 +13,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1 Foundation: 70% Complete**
+**Phase 1 Foundation: 80% Complete**
 
 | Feature | Status |
 |---------|--------|
@@ -23,7 +23,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 | Context Engine | Complete |
 | Tool Framework | Complete |
 | Read-Only Tools (11 tools) | Complete |
-| Transaction Manager | Pending |
+| Transaction Manager | Complete |
 | Modification Tools | Pending |
 | Safety & Confirmation | Pending |
 
@@ -164,7 +164,7 @@ Core infrastructure for a working AI assistant.
 - [x] **P1-05** Context Engine (selection, view, level awareness)
 - [x] **P1-06** Tool Framework & Registry
 - [x] **P1-07** Read-Only Tools (11 query tools)
-- [ ] **P1-08** Transaction Manager
+- [x] **P1-08** Transaction Manager
 - [ ] **P1-09** Modification Tools (10 tools)
 - [ ] **P1-10** Safety & Configuration
 
