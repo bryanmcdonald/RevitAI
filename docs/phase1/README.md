@@ -21,7 +21,7 @@ Phase 1 establishes the core plugin infrastructure: a dockable chat UI, Claude A
 | [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | ✅ Complete |
 | [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | ✅ Complete |
 | [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 | ✅ Complete |
-| [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 | Pending |
+| [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 | ✅ Complete |
 | [P1-08](P1-08-transaction-manager.md) | Transaction Manager | Transaction/TransactionGroup handling, undo support | P1-07 | Pending |
 | [P1-09](P1-09-modify-tools.md) | Modification Tools | 10 tools for element placement and modification | P1-08 | Pending |
 | [P1-10](P1-10-safety-config.md) | Safety & Configuration | Confirmation dialogs, settings UI, dry-run mode | P1-09 | Pending |
@@ -67,7 +67,20 @@ src/RevitAI/
 │   ├── ToolRegistry.cs                 # P1-06
 │   ├── ToolDispatcher.cs               # P1-06
 │   ├── EchoTool.cs                     # P1-06 (test tool)
-│   ├── ReadTools/                      # P1-07 (11 tools)
+│   ├── ReadTools/                      # P1-07
+│   │   ├── Helpers/
+│   │   │   └── CategoryHelper.cs       # P1-07 (category name mapping)
+│   │   ├── GetLevelsTool.cs            # P1-07
+│   │   ├── GetGridsTool.cs             # P1-07
+│   │   ├── GetProjectInfoTool.cs       # P1-07
+│   │   ├── GetViewInfoTool.cs          # P1-07
+│   │   ├── GetSelectedElementsTool.cs  # P1-07
+│   │   ├── GetWarningsTool.cs          # P1-07
+│   │   ├── GetAvailableTypesTool.cs    # P1-07
+│   │   ├── GetElementsByCategoryTool.cs # P1-07
+│   │   ├── GetElementPropertiesTool.cs # P1-07
+│   │   ├── GetRoomInfoTool.cs          # P1-07
+│   │   └── GetElementQuantityTakeoffTool.cs # P1-07
 │   └── ModifyTools/                    # P1-09 (10 tools)
 └── Transactions/
     ├── TransactionManager.cs           # P1-08
@@ -83,8 +96,8 @@ src/RevitAI/
 - [x] Claude API responds to messages (P1-04)
 - [x] Streaming responses display progressively (P1-04)
 - [x] Request cancellation works (P1-04)
-- [x] Context (selection, view, level) is captured and sent to Claude
-- [ ] Read-only tools return accurate model information
+- [x] Context (selection, view, level) is captured and sent to Claude (P1-05)
+- [x] Read-only tools return accurate model information (P1-07)
 - [ ] Modification tools create/modify elements successfully
 - [ ] All modifications can be undone with single Ctrl+Z
 - [ ] Destructive operations show confirmation dialog
