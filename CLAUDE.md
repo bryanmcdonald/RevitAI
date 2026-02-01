@@ -26,6 +26,31 @@ All Revit API calls MUST run on the main UI thread via `ExternalEvent` + `IExter
 
 ---
 
+## Public Repository Notice
+
+**This is a public open-source repository.** All code, commits, and documentation are publicly visible on GitHub.
+
+### Do NOT Include
+- Personal email addresses (use GitHub noreply emails for commits)
+- API keys, tokens, or credentials (even in comments or examples)
+- Personal file paths (e.g., `C:\Users\YourName\...`)
+- Private hostnames, IP addresses, or internal URLs
+- Any personally identifiable information (PII)
+
+### Safe Patterns
+- Use environment variables or secure storage for secrets
+- Use generic paths in examples: `%APPDATA%`, `C:\RevitSDK\2026\`
+- Use placeholder emails in examples: `your.email@example.com`
+- Configure git to use your GitHub noreply email:
+  ```
+  git config user.email "YOUR_ID+username@users.noreply.github.com"
+  ```
+
+### Before Committing
+Review your changes for any personal information. If you accidentally commit sensitive data, it must be scrubbed from git history (not just deleted in a new commit).
+
+---
+
 ## Development Environment Setup
 
 ### Prerequisites
@@ -303,3 +328,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.5 | Post-Change Reqs | Added Post-Change Requirements section with documentation sync guidelines |
 | 1.6 | Doc Cleanup | Consolidated status tracking to README.md, added NuGet deps, synced folder structure with Phase 1 README, removed duplicate tools from P2 |
 | 1.7 | GPL Headers | Added GPL-3.0 license headers to all source files; added license header templates to Post-Change Requirements |
+| 1.8 | Public Repo | Added Public Repository Notice section with guidelines for avoiding personal information in commits |
