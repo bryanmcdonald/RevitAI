@@ -205,7 +205,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P1-08 (Transaction Manager)
+**Next chunk to implement**: P1-09 (Modification Tools)
 
 ---
 

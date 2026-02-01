@@ -264,6 +264,19 @@ public class App : IExternalApplication
         };
 
         panel.AddItem(testThreadingButtonData);
+
+        // Add Test Transactions button in DEBUG builds only
+        var testTransactionButtonData = new PushButtonData(
+            "TestTransactions",
+            "Test\nTransactions",
+            assemblyPath,
+            "RevitAI.Commands.TestTransactionCommand")
+        {
+            ToolTip = "Test transaction infrastructure",
+            LongDescription = "Runs tests to verify the TransactionManager is working correctly.",
+        };
+
+        panel.AddItem(testTransactionButtonData);
 #endif
     }
 

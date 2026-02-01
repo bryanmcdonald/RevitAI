@@ -16,6 +16,7 @@
 
 using System.Text.Json;
 using RevitAI.Models;
+using RevitAI.Transactions;
 
 namespace RevitAI.Tools;
 
@@ -26,16 +27,20 @@ namespace RevitAI.Tools;
 public sealed class ToolDispatcher
 {
     private readonly ToolRegistry _registry;
+    private readonly TransactionManager _transactionManager;
 
-    public ToolDispatcher() : this(ToolRegistry.Instance) { }
+    public ToolDispatcher() : this(ToolRegistry.Instance, TransactionManager.Instance) { }
 
-    public ToolDispatcher(ToolRegistry registry)
+    public ToolDispatcher(ToolRegistry registry, TransactionManager transactionManager)
     {
         _registry = registry;
+        _transactionManager = transactionManager;
     }
 
     /// <summary>
     /// Dispatches a single tool call and returns the result.
+    /// If the tool requires a transaction and a group is already active, the transaction
+    /// is executed within that group. Otherwise, a standalone transaction is used.
     /// </summary>
     /// <param name="toolUse">The tool use block from Claude.</param>
     /// <param name="cancellationToken">Token for cancellation.</param>
@@ -59,26 +64,11 @@ public sealed class ToolDispatcher
             };
         }
 
-        // Check if transaction is required but TransactionManager not available
-        if (tool.RequiresTransaction)
-        {
-            return new ToolResultBlock
-            {
-                ToolUseId = toolUse.Id,
-                Content = $"Tool '{toolUse.Name}' requires a transaction, but the TransactionManager is not yet implemented. " +
-                         "This tool will be available after P1-08 (Transaction Manager) is complete.",
-                IsError = true
-            };
-        }
-
         try
         {
             // Execute on Revit thread to safely access Revit API
-            // Note: ExecuteOnRevitThreadAsync returns Task<T> where T is the return type of the func.
-            // Since tool.ExecuteAsync returns Task<ToolResult>, we get Task<Task<ToolResult>> back.
-            // We need to await the inner task.
             var resultTask = await App.ExecuteOnRevitThreadAsync(
-                app => tool.ExecuteAsync(toolUse.Input, app, cancellationToken),
+                app => ExecuteToolAsync(tool, toolUse, app, cancellationToken),
                 cancellationToken);
             var result = await resultTask;
 
@@ -120,8 +110,52 @@ public sealed class ToolDispatcher
     }
 
     /// <summary>
+    /// Executes a tool, wrapping it in a transaction if required.
+    /// Must be called on the Revit main thread.
+    /// </summary>
+    private async Task<ToolResult> ExecuteToolAsync(
+        IRevitTool tool,
+        ToolUseBlock toolUse,
+        Autodesk.Revit.UI.UIApplication app,
+        CancellationToken cancellationToken)
+    {
+        if (!tool.RequiresTransaction)
+        {
+            // Read-only tool, no transaction needed
+            return await tool.ExecuteAsync(toolUse.Input, app, cancellationToken);
+        }
+
+        // Tool requires a transaction
+        var doc = app.ActiveUIDocument?.Document;
+        if (doc == null)
+        {
+            return ToolResult.Error("No document is open. Cannot execute modification tool.");
+        }
+
+        using var scope = _transactionManager.StartTransaction(doc, toolUse.Name);
+        try
+        {
+            var result = await tool.ExecuteAsync(toolUse.Input, app, cancellationToken);
+
+            if (!result.IsError)
+            {
+                scope.Commit();
+            }
+            // If there's an error, the transaction will auto-rollback on dispose
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // Transaction auto-rollback on dispose
+            return ToolResult.FromException(ex);
+        }
+    }
+
+    /// <summary>
     /// Dispatches multiple tool calls and returns all results.
     /// Tools are executed sequentially to avoid concurrent Revit API access.
+    /// If any tools require transactions, they are batched into a single undo operation.
     /// </summary>
     /// <param name="toolUses">The tool use blocks from Claude.</param>
     /// <param name="cancellationToken">Token for cancellation.</param>
@@ -130,13 +164,113 @@ public sealed class ToolDispatcher
         IEnumerable<ToolUseBlock> toolUses,
         CancellationToken cancellationToken)
     {
+        var toolList = toolUses.ToList();
         var results = new List<ToolResultBlock>();
 
-        foreach (var toolUse in toolUses)
+        // Check if any tools require transactions
+        var anyRequiresTransaction = toolList.Any(t =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var result = await DispatchAsync(toolUse, cancellationToken);
-            results.Add(result);
+            var tool = _registry.Get(t.Name);
+            return tool?.RequiresTransaction == true;
+        });
+
+        // If we need transactions and have multiple tools, use a group for batching
+        var useGroup = anyRequiresTransaction && toolList.Count > 1;
+        var groupStarted = false;
+
+        try
+        {
+            if (useGroup)
+            {
+                // Start transaction group on Revit thread
+                await App.ExecuteOnRevitThreadAsync(app =>
+                {
+                    var doc = app.ActiveUIDocument?.Document;
+                    if (doc != null)
+                    {
+                        _transactionManager.StartGroup(doc, "Tool Batch");
+                        groupStarted = true;
+                    }
+                }, cancellationToken);
+            }
+
+            foreach (var toolUse in toolList)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var result = await DispatchAsync(toolUse, cancellationToken);
+                results.Add(result);
+
+                // If any tool fails in a group, stop processing and rollback
+                if (result.IsError && groupStarted)
+                {
+                    await App.ExecuteOnRevitThreadAsync(app =>
+                    {
+                        _transactionManager.RollbackGroup();
+                    }, cancellationToken);
+                    groupStarted = false;
+
+                    // Mark remaining tools as skipped
+                    var remainingIndex = toolList.IndexOf(toolUse) + 1;
+                    for (var i = remainingIndex; i < toolList.Count; i++)
+                    {
+                        results.Add(new ToolResultBlock
+                        {
+                            ToolUseId = toolList[i].Id,
+                            Content = "Skipped due to earlier tool failure in batch.",
+                            IsError = true
+                        });
+                    }
+                    break;
+                }
+            }
+
+            // Commit the group if all succeeded
+            if (groupStarted)
+            {
+                await App.ExecuteOnRevitThreadAsync(app =>
+                {
+                    _transactionManager.CommitGroup();
+                }, cancellationToken);
+                groupStarted = false;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ensure group is cleaned up on cancellation
+            if (groupStarted)
+            {
+                try
+                {
+                    await App.ExecuteOnRevitThreadAsync(app =>
+                    {
+                        _transactionManager.EnsureGroupClosed();
+                    }, CancellationToken.None);
+                }
+                catch
+                {
+                    // Best effort cleanup
+                }
+            }
+            throw;
+        }
+        catch
+        {
+            // Ensure group is cleaned up on any exception
+            if (groupStarted)
+            {
+                try
+                {
+                    await App.ExecuteOnRevitThreadAsync(app =>
+                    {
+                        _transactionManager.EnsureGroupClosed();
+                    }, CancellationToken.None);
+                }
+                catch
+                {
+                    // Best effort cleanup
+                }
+            }
+            throw;
         }
 
         return results;

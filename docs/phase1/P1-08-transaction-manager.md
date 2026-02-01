@@ -152,3 +152,94 @@ catch
 4. Press Ctrl+Z (Undo)
 5. Verify the modification is undone as a single operation
 6. Check that failed operations don't leave partial changes
+
+---
+
+## Implementation Notes (Completed)
+
+**Status**: Complete
+
+### Files Created
+
+1. **`src/RevitAI/Transactions/TransactionScope.cs`**
+   - IDisposable wrapper around Revit `Transaction`
+   - Auto-rollback on dispose if not explicitly committed
+   - Internal constructor (only `TransactionManager` creates instances)
+   - Properties: `Name`, `IsCommitted`, `Status`
+   - Methods: `Commit()`, `Rollback()`, `Dispose()`
+
+2. **`src/RevitAI/Transactions/TransactionManager.cs`**
+   - Singleton pattern (matches `ToolRegistry`, `ConfigurationService`)
+   - Transaction group support for batching consecutive tool calls
+   - Methods:
+     - `StartGroup(doc, name)` - Opens a `TransactionGroup`
+     - `CommitGroup()` - Calls `Assimilate()` for single undo
+     - `RollbackGroup()` - Undoes all changes in group
+     - `EnsureGroupClosed()` - Safe cleanup (no-throw)
+     - `StartTransaction(doc, name)` - Returns `TransactionScope`
+   - Property: `IsGroupActive`
+
+3. **`src/RevitAI/Commands/TestTransactionCommand.cs`**
+   - DEBUG-only test command with 6 tests:
+     - Single transaction commit
+     - Single transaction auto-rollback
+     - Transaction group commit
+     - Transaction group rollback
+     - IsGroupActive tracking
+     - EnsureGroupClosed safe cleanup
+
+### Files Modified
+
+1. **`src/RevitAI/Tools/ToolDispatcher.cs`**
+   - Added `TransactionManager` dependency injection
+   - Replaced placeholder error block with actual transaction handling
+   - Added `ExecuteToolAsync` helper that wraps tools in transactions
+   - Modified `DispatchAllAsync` for automatic batching:
+     - Starts `TransactionGroup` if any tools require transactions
+     - Commits group when all tools succeed
+     - Rolls back entire group if any tool fails
+     - Skips remaining tools after failure
+
+2. **`src/RevitAI/App.cs`**
+   - Added "Test Transactions" button in DEBUG build
+
+### Design Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Batching trigger | Automatic | Consecutive tool calls in one Claude response = one undo |
+| Transaction naming | "AI: {ToolName}" | Clear identification in undo history |
+| Failure behavior | Rollback entire group | Prevents partial changes from confusing users |
+| Manager pattern | Singleton | Consistent with existing services |
+
+### Transaction Flow
+
+```
+Claude response with tool_use(s)
+    │
+    ▼
+DispatchAllAsync()
+    │
+    ├─ StartGroup("Tool Batch")        ← if any tool requires transaction and >1 tool
+    │
+    ├─ For each tool:
+    │      │
+    │      ▼
+    │   DispatchAsync()
+    │      │
+    │      ├─ ExecuteToolAsync()
+    │      │      │
+    │      │      ├─ StartTransaction("AI: {ToolName}")
+    │      │      │
+    │      │      ├─ tool.ExecuteAsync()
+    │      │      │
+    │      │      ├─ scope.Commit() on success
+    │      │      │
+    │      │      └─ auto-rollback on failure/exception
+    │      │
+    │      └─ Return ToolResultBlock
+    │
+    ├─ CommitGroup() if all succeeded  ← Assimilate() combines into single undo
+    │
+    └─ RollbackGroup() on any failure  ← Undoes everything
+```
