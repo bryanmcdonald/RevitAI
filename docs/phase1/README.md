@@ -13,18 +13,18 @@ Phase 1 establishes the core plugin infrastructure: a dockable chat UI, Claude A
 
 ## Chunk Index
 
-| Chunk | Name | Description | Prerequisites |
-|-------|------|-------------|---------------|
-| [P1-01](P1-01-project-setup.md) | Project Setup & Hello World | Solution structure, minimal plugin that loads in Revit | Dev environment |
-| [P1-02](P1-02-chat-pane.md) | Dockable Chat Pane | WPF chat UI with message display, input, status | P1-01 |
-| [P1-03](P1-03-threading.md) | ExternalEvent Threading | Thread marshalling infrastructure for Revit API calls | P1-02 |
-| [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 |
-| [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 |
-| [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 |
-| [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 |
-| [P1-08](P1-08-transaction-manager.md) | Transaction Manager | Transaction/TransactionGroup handling, undo support | P1-07 |
-| [P1-09](P1-09-modify-tools.md) | Modification Tools | 10 tools for element placement and modification | P1-08 |
-| [P1-10](P1-10-safety-config.md) | Safety & Configuration | Confirmation dialogs, settings UI, dry-run mode | P1-09 |
+| Chunk | Name | Description | Prerequisites | Status |
+|-------|------|-------------|---------------|--------|
+| [P1-01](P1-01-project-setup.md) | Project Setup & Hello World | Solution structure, minimal plugin that loads in Revit | Dev environment | ✅ Complete |
+| [P1-02](P1-02-chat-pane.md) | Dockable Chat Pane | WPF chat UI with message display, input, status | P1-01 | Pending |
+| [P1-03](P1-03-threading.md) | ExternalEvent Threading | Thread marshalling infrastructure for Revit API calls | P1-02 | Pending |
+| [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | Pending |
+| [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | Pending |
+| [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 | Pending |
+| [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 | Pending |
+| [P1-08](P1-08-transaction-manager.md) | Transaction Manager | Transaction/TransactionGroup handling, undo support | P1-07 | Pending |
+| [P1-09](P1-09-modify-tools.md) | Modification Tools | 10 tools for element placement and modification | P1-08 | Pending |
+| [P1-10](P1-10-safety-config.md) | Safety & Configuration | Confirmation dialogs, settings UI, dry-run mode | P1-09 | Pending |
 
 ---
 
@@ -75,7 +75,7 @@ src/RevitAI/
 
 ## Phase 1 Completion Criteria
 
-- [ ] Plugin loads in Revit 2026 without errors
+- [x] Plugin loads in Revit 2026 without errors (P1-01)
 - [ ] Dockable chat pane displays and accepts input
 - [ ] Claude API responds to messages
 - [ ] Context (selection, view, level) is captured and sent to Claude
