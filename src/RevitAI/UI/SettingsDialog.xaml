@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="RevitAI Settings"
         Width="450"
-        Height="400"
+        Height="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
@@ -138,6 +138,29 @@
                                  BorderThickness="1"/>
                         <TextBlock Style="{StaticResource DescriptionStyle}">
                             Maximum length of the response (100-128000).
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Context Settings Section -->
+                <Border Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Context Verbosity"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <ComboBox x:Name="VerbosityComboBox"
+                                  Padding="8,6"
+                                  Background="White">
+                            <ComboBoxItem Content="Minimal (view name, selection count)" Tag="0"/>
+                            <ComboBoxItem Content="Standard (+ element details, level)" Tag="1"/>
+                            <ComboBoxItem Content="Detailed (+ project info, all params, types)" Tag="2"/>
+                        </ComboBox>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            Controls how much Revit context is sent with each message. Higher levels provide more detail but use more tokens.
                         </TextBlock>
                     </StackPanel>
                 </Border>

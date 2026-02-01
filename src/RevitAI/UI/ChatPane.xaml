@@ -266,11 +266,60 @@
                 Padding="16">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBox Grid.Column="0"
+                <!-- Screenshot Toggle -->
+                <ToggleButton Grid.Column="0"
+                              x:Name="ScreenshotToggle"
+                              IsChecked="{Binding IncludeScreenshot}"
+                              ToolTip="Include screenshot of current view with message"
+                              Padding="8"
+                              Margin="0,0,8,0"
+                              VerticalAlignment="Bottom"
+                              MinWidth="36"
+                              MinHeight="36">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="4"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                    <!-- Camera icon using Unicode -->
+                    <TextBlock Text="&#x1F4F7;"
+                               FontSize="14"
+                               FontFamily="Segoe UI Emoji"/>
+                </ToggleButton>
+
+                <TextBox Grid.Column="1"
                          x:Name="InputTextBox"
                          Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource InputTextBoxStyle}"
@@ -284,7 +333,7 @@
                     </TextBox.InputBindings>
                 </TextBox>
 
-                <StackPanel Grid.Column="1"
+                <StackPanel Grid.Column="2"
                             Orientation="Vertical"
                             VerticalAlignment="Bottom">
                     <!-- Send Button -->

@@ -16,6 +16,7 @@ public partial class ChatViewModel : ObservableObject
     private readonly ConversationPersistenceService _persistenceService;
     private readonly ConfigurationService _configService;
     private readonly ClaudeApiService _apiService;
+    private readonly ContextEngine _contextEngine;
     private readonly Dispatcher _dispatcher;
     private CancellationTokenSource? _cancellationTokenSource;
 
@@ -33,6 +34,12 @@ public partial class ChatViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showStatus;
+
+    /// <summary>
+    /// Gets or sets whether to include a screenshot of the active view with messages.
+    /// </summary>
+    [ObservableProperty]
+    private bool _includeScreenshot;
 
     /// <summary>
     /// Collection of chat messages in the current conversation.
@@ -60,25 +67,12 @@ Please click the gear icon (⚙) in the header to configure your Anthropic API k
 
 You can get an API key from [console.anthropic.com](https://console.anthropic.com).";
 
-    /// <summary>
-    /// System prompt for RevitAI conversations.
-    /// </summary>
-    private const string SystemPrompt = @"You are RevitAI, an AI assistant embedded in Autodesk Revit. You help users with their Revit models through natural language conversation.
-
-Your capabilities include:
-- Answering questions about Revit and BIM workflows
-- Helping users understand their model structure
-- Providing guidance on Revit best practices
-
-Be concise and helpful. When discussing Revit elements, use correct terminology.
-
-Note: Tool-based model queries and modifications will be available in future updates.";
-
     public ChatViewModel()
     {
         _persistenceService = new ConversationPersistenceService();
         _configService = ConfigurationService.Instance;
         _apiService = new ClaudeApiService(_configService);
+        _contextEngine = new ContextEngine();
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
         // Add welcome message
@@ -121,21 +115,33 @@ Note: Tool-based model queries and modifications will be available in future upd
         // Start processing
         IsProcessing = true;
         ShowStatus = true;
-        StatusText = "Thinking...";
+        StatusText = "Gathering context...";
 
         _cancellationTokenSource = new CancellationTokenSource();
 
         try
         {
+            // Gather context and optionally capture screenshot
+            var systemPrompt = await BuildContextualSystemPromptAsync(_cancellationTokenSource.Token);
+            byte[]? screenshot = null;
+
+            if (IncludeScreenshot)
+            {
+                StatusText = "Capturing view...";
+                screenshot = await CaptureScreenshotAsync(_cancellationTokenSource.Token);
+            }
+
+            StatusText = "Thinking...";
+
             // Create assistant message in streaming mode
             var assistantMessage = ChatMessage.CreateAssistantMessage(isStreaming: true);
             Messages.Add(assistantMessage);
 
             // Build conversation history for Claude
-            var claudeMessages = BuildClaudeMessages();
+            var claudeMessages = BuildClaudeMessages(screenshot);
 
             // Send streaming request to Claude
-            await StreamClaudeResponseAsync(claudeMessages, assistantMessage, _cancellationTokenSource.Token);
+            await StreamClaudeResponseAsync(systemPrompt, claudeMessages, assistantMessage, _cancellationTokenSource.Token);
 
             assistantMessage.CompleteStreaming();
 
@@ -182,25 +188,82 @@ Note: Tool-based model queries and modifications will be available in future upd
     }
 
     /// <summary>
+    /// Builds a system prompt with current Revit context.
+    /// </summary>
+    private async Task<string> BuildContextualSystemPromptAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var verbosity = _configService.ContextVerbosity;
+
+            var context = await App.ExecuteOnRevitThreadAsync(
+                app => _contextEngine.GatherContext(app, verbosity),
+                cancellationToken);
+
+            return _contextEngine.BuildSystemPrompt(context, verbosity);
+        }
+        catch (InvalidOperationException)
+        {
+            // Threading infrastructure not initialized - use fallback
+            return ContextEngine.BuildFallbackSystemPrompt();
+        }
+        catch (Exception)
+        {
+            // Any other error - use fallback
+            return ContextEngine.BuildFallbackSystemPrompt();
+        }
+    }
+
+    /// <summary>
+    /// Captures a screenshot of the active Revit view.
+    /// </summary>
+    private async Task<byte[]?> CaptureScreenshotAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await App.ExecuteOnRevitThreadAsync(
+                app => _contextEngine.CaptureActiveView(app),
+                cancellationToken);
+        }
+        catch
+        {
+            // Screenshot capture failed - continue without image
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Builds the conversation history in Claude message format.
     /// </summary>
-    private List<ClaudeMessage> BuildClaudeMessages()
+    /// <param name="screenshot">Optional screenshot to include with the last user message.</param>
+    private List<ClaudeMessage> BuildClaudeMessages(byte[]? screenshot = null)
     {
         var claudeMessages = new List<ClaudeMessage>();
+        var userMessages = Messages
+            .Where(m => m.Role != MessageRole.System && !string.IsNullOrEmpty(m.Content) && !m.IsStreaming)
+            .ToList();
 
-        foreach (var msg in Messages)
+        for (int i = 0; i < userMessages.Count; i++)
         {
-            // Skip system messages (they go in the system prompt)
-            if (msg.Role == MessageRole.System)
-                continue;
+            var msg = userMessages[i];
+            var isLastUserMessage = i == userMessages.Count - 1 && msg.Role == MessageRole.User;
 
-            // Skip empty or streaming messages
-            if (string.IsNullOrEmpty(msg.Content) || msg.IsStreaming)
-                continue;
-
-            claudeMessages.Add(msg.Role == MessageRole.User
-                ? ClaudeMessage.User(msg.Content)
-                : ClaudeMessage.Assistant(msg.Content));
+            if (msg.Role == MessageRole.User)
+            {
+                // Include screenshot only with the most recent user message
+                if (isLastUserMessage && screenshot != null && screenshot.Length > 0)
+                {
+                    claudeMessages.Add(ClaudeMessage.UserWithImage(msg.Content, screenshot));
+                }
+                else
+                {
+                    claudeMessages.Add(ClaudeMessage.User(msg.Content));
+                }
+            }
+            else
+            {
+                claudeMessages.Add(ClaudeMessage.Assistant(msg.Content));
+            }
         }
 
         return claudeMessages;
@@ -210,6 +273,7 @@ Note: Tool-based model queries and modifications will be available in future upd
     /// Streams a response from Claude API.
     /// </summary>
     private async Task StreamClaudeResponseAsync(
+        string systemPrompt,
         List<ClaudeMessage> messages,
         ChatMessage assistantMessage,
         CancellationToken cancellationToken)
@@ -220,7 +284,7 @@ Note: Tool-based model queries and modifications will be available in future upd
         await Task.Run(async () =>
         {
             await foreach (var streamEvent in _apiService.SendMessageStreamingAsync(
-                systemPrompt: SystemPrompt,
+                systemPrompt: systemPrompt,
                 messages: messages,
                 tools: null,
                 settingsOverride: null,

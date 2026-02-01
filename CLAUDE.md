@@ -162,9 +162,9 @@ RevitAI/
 
 ## Current Status
 
-**Currently working on**: P1-04 Complete
+**Currently working on**: P1-05 Complete
 
-**Next chunk**: P1-05 (Context Engine)
+**Next chunk**: P1-06 (Tool Framework & Registry)
 
 ### Known Limitations / Deferred Items
 - **Markdown rendering in chat** - Chat messages display raw markdown (e.g., `**bold**` instead of **bold**). RichTextBox binding requires custom attached behavior. Deferred to P2-05 (Visual Feedback System).

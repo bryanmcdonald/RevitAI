@@ -19,7 +19,7 @@ Phase 1 establishes the core plugin infrastructure: a dockable chat UI, Claude A
 | [P1-02](P1-02-chat-pane.md) | Dockable Chat Pane | WPF chat UI with message display, input, status | P1-01 | ✅ Complete |
 | [P1-03](P1-03-threading.md) | ExternalEvent Threading | Thread marshalling infrastructure for Revit API calls | P1-02 | ✅ Complete |
 | [P1-04](P1-04-claude-api.md) | Claude API Integration | Messages API, streaming, configuration service | P1-03 | ✅ Complete |
-| [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | Pending |
+| [P1-05](P1-05-context-engine.md) | Context Engine | Selection/view/level tracking, system prompt injection | P1-04 | ✅ Complete |
 | [P1-06](P1-06-tool-framework.md) | Tool Framework & Registry | IRevitTool interface, registry, dispatcher | P1-05 | Pending |
 | [P1-07](P1-07-read-tools.md) | Read-Only Tools | 11 query tools for model information | P1-06 | Pending |
 | [P1-08](P1-08-transaction-manager.md) | Transaction Manager | Transaction/TransactionGroup handling, undo support | P1-07 | Pending |
@@ -83,7 +83,7 @@ src/RevitAI/
 - [x] Claude API responds to messages (P1-04)
 - [x] Streaming responses display progressively (P1-04)
 - [x] Request cancellation works (P1-04)
-- [ ] Context (selection, view, level) is captured and sent to Claude
+- [x] Context (selection, view, level) is captured and sent to Claude
 - [ ] Read-only tools return accurate model information
 - [ ] Modification tools create/modify elements successfully
 - [ ] All modifications can be undone with single Ctrl+Z

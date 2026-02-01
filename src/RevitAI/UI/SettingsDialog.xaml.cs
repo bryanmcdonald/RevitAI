@@ -38,6 +38,9 @@ public partial class SettingsDialog : Window
 
         // Load max tokens
         MaxTokensTextBox.Text = _configService.MaxTokens.ToString();
+
+        // Load context verbosity
+        VerbosityComboBox.SelectedIndex = _configService.ContextVerbosity;
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -78,6 +81,7 @@ public partial class SettingsDialog : Window
         _configService.Model = model;
         _configService.Temperature = TemperatureSlider.Value;
         _configService.MaxTokens = maxTokens;
+        _configService.ContextVerbosity = VerbosityComboBox.SelectedIndex;
 
         DialogResult = true;
         Close();
