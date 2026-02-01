@@ -78,6 +78,31 @@ public sealed class ClaudeMessage
         Role = "user",
         Content = results.Cast<object>().ToList()
     };
+
+    /// <summary>
+    /// Creates a user message with text and an optional image.
+    /// </summary>
+    /// <param name="text">The text content.</param>
+    /// <param name="imageBytes">Optional PNG image bytes to include.</param>
+    public static ClaudeMessage UserWithImage(string text, byte[]? imageBytes = null)
+    {
+        if (imageBytes == null || imageBytes.Length == 0)
+        {
+            return User(text);
+        }
+
+        var contentBlocks = new List<object>
+        {
+            ImageContentBlock.FromPngBytes(imageBytes),
+            new TextContentBlock { Text = text }
+        };
+
+        return new ClaudeMessage
+        {
+            Role = "user",
+            Content = contentBlocks
+        };
+    }
 }
 
 /// <summary>
@@ -143,6 +168,7 @@ public sealed class Usage
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(TextContentBlock), "text")]
+[JsonDerivedType(typeof(ImageContentBlock), "image")]
 [JsonDerivedType(typeof(ToolUseBlock), "tool_use")]
 [JsonDerivedType(typeof(ToolResultBlock), "tool_result")]
 public abstract class ContentBlock
@@ -160,6 +186,48 @@ public sealed class TextContentBlock : ContentBlock
 
     [JsonPropertyName("text")]
     public required string Text { get; init; }
+}
+
+/// <summary>
+/// Image content block for sending images to Claude.
+/// </summary>
+public sealed class ImageContentBlock : ContentBlock
+{
+    public override string Type => "image";
+
+    [JsonPropertyName("source")]
+    public required ImageSource Source { get; init; }
+
+    /// <summary>
+    /// Creates an image content block from base64-encoded PNG data.
+    /// </summary>
+    public static ImageContentBlock FromPngBytes(byte[] imageBytes)
+    {
+        return new ImageContentBlock
+        {
+            Source = new ImageSource
+            {
+                Type = "base64",
+                MediaType = "image/png",
+                Data = Convert.ToBase64String(imageBytes)
+            }
+        };
+    }
+}
+
+/// <summary>
+/// Source for image content.
+/// </summary>
+public sealed class ImageSource
+{
+    [JsonPropertyName("type")]
+    public required string Type { get; init; }
+
+    [JsonPropertyName("media_type")]
+    public required string MediaType { get; init; }
+
+    [JsonPropertyName("data")]
+    public required string Data { get; init; }
 }
 
 /// <summary>
