@@ -8,4 +8,12 @@
     <VendorId>RevitAI</VendorId>
     <VendorDescription>RevitAI - Claude-powered assistant for Revit</VendorDescription>
   </AddIn>
+  <AddIn Type="Command">
+    <Name>Show RevitAI Chat</Name>
+    <Assembly>RevitAI.dll</Assembly>
+    <FullClassName>RevitAI.Commands.ShowChatPaneCommand</FullClassName>
+    <ClientId>8A9B0C1D-2E3F-4A5B-6C7D-8E9F0A1B2C3E</ClientId>
+    <VendorId>RevitAI</VendorId>
+    <VendorDescription>RevitAI - Claude-powered assistant for Revit</VendorDescription>
+  </AddIn>
 </RevitAddIns>

@@ -9,6 +9,8 @@
     <RootNamespace>RevitAI</RootNamespace>
     <AssemblyName>RevitAI</AssemblyName>
     <PlatformTarget>x64</PlatformTarget>
+    <!-- Copy NuGet dependencies to output folder for Revit deployment -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,13 +24,36 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Markdig" Version="0.34.0" />
+    <PackageReference Include="Neo.Markdig.Xaml" Version="1.0.10" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('Resources\ChatIcon16.png')">
+    <EmbeddedResource Include="Resources\ChatIcon16.png" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('Resources\ChatIcon32.png')">
+    <EmbeddedResource Include="Resources\ChatIcon32.png" />
+  </ItemGroup>
+
   <Target Name="DeployAddin" AfterTargets="Build">
     <PropertyGroup>
       <AddinFolder>$(APPDATA)\Autodesk\Revit\Addins\2026</AddinFolder>
     </PropertyGroup>
     <MakeDir Directories="$(AddinFolder)" Condition="!Exists('$(AddinFolder)')" />
+    <!-- Copy main assembly -->
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(AddinFolder)" />
+    <!-- Copy all dependency DLLs -->
+    <ItemGroup>
+      <DependencyDlls Include="$(TargetDir)*.dll" Exclude="$(TargetPath)" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DependencyDlls)" DestinationFolder="$(AddinFolder)" SkipUnchangedFiles="true" />
+    <!-- Copy addin manifest -->
     <Copy SourceFiles="$(ProjectDir)..\..\RevitAI.addin" DestinationFolder="$(AddinFolder)" />
   </Target>
 
+  
 </Project>
