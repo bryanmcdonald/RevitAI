@@ -162,9 +162,9 @@ RevitAI/
 
 ## Current Status
 
-**Currently working on**: Not started
+**Currently working on**: P1-01 Complete
 
-**Next chunk**: P1-01 (Project Setup & Hello World)
+**Next chunk**: P1-02 (Dockable Chat Pane)
 
 ---
 
