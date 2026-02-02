@@ -181,9 +181,9 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_column` | Place structural column |
 | `place_beam` | Place structural beam |
 | `place_floor` | Create floor from boundary |
+| `capture_screenshot` | Capture Revit window or active view for Claude vision analysis |
 
 **Coming Soon (Phase 1.5):**
-- Screenshot capture for Claude vision analysis
 - View switching and creation
 - Camera control (zoom, pan, 3D navigation)
 - Visual isolation and graphics overrides
@@ -207,7 +207,7 @@ Core infrastructure for a working AI assistant.
 ### Phase 1.5: View & Navigation Foundation
 View manipulation and visual context tools for enhanced AI understanding.
 
-- [ ] **P1.5-01** Screenshot Capture (view snapshots for Claude vision)
+- [x] **P1.5-01** Screenshot Capture (view snapshots for Claude vision)
 - [ ] **P1.5-02** View Management (switch views, create views, list views)
 - [ ] **P1.5-03** Camera Control (zoom, pan, 3D orbit, section boxes)
 - [ ] **P1.5-04** Visual Isolation (isolate, hide, override graphics)

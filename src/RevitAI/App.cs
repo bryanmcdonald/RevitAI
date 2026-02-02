@@ -23,6 +23,7 @@ using RevitAI.Threading;
 using RevitAI.Tools;
 using RevitAI.Tools.ModifyTools;
 using RevitAI.Tools.ReadTools;
+using RevitAI.Tools.ViewTools;
 using RevitAI.UI;
 
 namespace RevitAI;
@@ -207,6 +208,9 @@ public class App : IExternalApplication
         registry.Register(new PlaceColumnTool());
         registry.Register(new PlaceBeamTool());
         registry.Register(new PlaceFloorTool());
+
+        // View tools (P1.5)
+        registry.Register(new CaptureScreenshotTool());
     }
 
     /// <summary>

@@ -249,7 +249,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P1.5-01 (Screenshot Capture)
+**Next chunk to implement**: P1.5-02 (View Management)
 
 ---
 

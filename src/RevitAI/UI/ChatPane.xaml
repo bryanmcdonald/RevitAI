@@ -294,26 +294,27 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Screenshot Toggle -->
-                <ToggleButton Grid.Column="0"
-                              x:Name="ScreenshotToggle"
-                              IsChecked="{Binding IncludeScreenshot}"
-                              ToolTip="Include screenshot of current view with message"
-                              Padding="8"
-                              Margin="0,0,8,0"
-                              VerticalAlignment="Bottom"
-                              MinWidth="36"
-                              MinHeight="36">
-                    <ToggleButton.Style>
-                        <Style TargetType="ToggleButton">
+                <!-- Screenshot State Button (cycles: Off -> OneTime -> Always -> Off) -->
+                <Button Grid.Column="0"
+                        x:Name="ScreenshotStateButton"
+                        Command="{Binding CycleScreenshotStateCommand}"
+                        ToolTip="{Binding ScreenshotStateTooltip}"
+                        Padding="4"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Bottom"
+                        MinWidth="48"
+                        MinHeight="36">
+                    <Button.Style>
+                        <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
                             <Setter Property="Template">
                                 <Setter.Value>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="{TemplateBinding Background}"
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
                                                 CornerRadius="4"
@@ -321,26 +322,45 @@
                                             <ContentPresenter HorizontalAlignment="Center"
                                                               VerticalAlignment="Center"/>
                                         </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
+                            <!-- Change appearance based on ScreenshotState -->
                             <Style.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
+                                <!-- OneTime mode: Blue background -->
+                                <DataTrigger Binding="{Binding ScreenshotState}" Value="OneTime">
                                     <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
                                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                                     <Setter Property="Foreground" Value="White"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                                </Trigger>
+                                </DataTrigger>
+                                <!-- Always mode: Green background -->
+                                <DataTrigger Binding="{Binding ScreenshotState}" Value="Always">
+                                    <Setter Property="Background" Value="#2E7D32"/>
+                                    <Setter Property="BorderBrush" Value="#2E7D32"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </ToggleButton.Style>
-                    <!-- Camera icon using Unicode -->
-                    <TextBlock Text="&#x1F4F7;"
-                               FontSize="14"
-                               FontFamily="Segoe UI Emoji"/>
-                </ToggleButton>
+                    </Button.Style>
+                    <StackPanel Orientation="Horizontal" Margin="2,0">
+                        <!-- Camera icon -->
+                        <TextBlock Text="&#x1F4F7;"
+                                   FontSize="12"
+                                   FontFamily="Segoe UI Emoji"
+                                   VerticalAlignment="Center"/>
+                        <!-- State text -->
+                        <TextBlock Text="{Binding ScreenshotStateText}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="3,0,0,0"/>
+                    </StackPanel>
+                </Button>
 
                 <TextBox Grid.Column="1"
                          x:Name="InputTextBox"

@@ -18,7 +18,7 @@ namespace RevitAI.Tools;
 
 /// <summary>
 /// Represents the result of a tool execution.
-/// Immutable wrapper with success/error states.
+/// Immutable wrapper with success/error states, optional image data.
 /// </summary>
 public sealed class ToolResult
 {
@@ -37,6 +37,21 @@ public sealed class ToolResult
     /// </summary>
     public string Content { get; }
 
+    /// <summary>
+    /// Gets the base64-encoded image data, if any.
+    /// </summary>
+    public string? ImageBase64 { get; private init; }
+
+    /// <summary>
+    /// Gets the media type of the image (e.g., "image/png"), if any.
+    /// </summary>
+    public string? ImageMediaType { get; private init; }
+
+    /// <summary>
+    /// Gets whether this result contains an image.
+    /// </summary>
+    public bool HasImage => !string.IsNullOrEmpty(ImageBase64);
+
     private ToolResult(bool success, string content)
     {
         Success = success;
@@ -48,6 +63,21 @@ public sealed class ToolResult
     /// </summary>
     /// <param name="content">The result content.</param>
     public static ToolResult Ok(string content) => new(true, content);
+
+    /// <summary>
+    /// Creates a successful result with an image.
+    /// </summary>
+    /// <param name="imageBase64">The base64-encoded image data.</param>
+    /// <param name="mediaType">The media type (e.g., "image/png").</param>
+    /// <param name="textContent">Optional text content to include with the image.</param>
+    public static ToolResult SuccessWithImage(string imageBase64, string mediaType, string? textContent = null)
+    {
+        return new ToolResult(true, textContent ?? "Screenshot captured successfully.")
+        {
+            ImageBase64 = imageBase64,
+            ImageMediaType = mediaType
+        };
+    }
 
     /// <summary>
     /// Creates an error result with the given message.
