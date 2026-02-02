@@ -21,6 +21,7 @@ A Revit plugin that embeds a Claude-powered conversational AI assistant directly
   - [Phase 1.5: View & Navigation Foundation](#phase-15-view--navigation-foundation)
   - [Phase 2: Enhanced Capabilities](#phase-2-enhanced-capabilities)
   - [Phase 3: Advanced & Multi-Discipline](#phase-3-advanced--multi-discipline)
+  - [Phase 4: Agentic Mode](#phase-4-agentic-mode)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [Troubleshooting](#troubleshooting)
@@ -243,6 +244,16 @@ Discipline-specific tool packs and advanced features.
 - [ ] **P3-06** Model Health Tools
 - [ ] **P3-07** Custom Prompt Templates
 
+### Phase 4: Agentic Mode
+Autonomous planning and execution for complex multi-step operations.
+
+- [ ] **P4-01** Extended Thinking (deeper reasoning before responding)
+- [ ] **P4-02** Planning Tools (create, update, complete execution plans)
+- [ ] **P4-03** Agentic Session State (plan tracking within conversations)
+- [ ] **P4-04** Auto-Verification Loop (screenshot + analysis after modifications)
+- [ ] **P4-05** Agentic UI (plan progress panel, step visualization)
+- [ ] **P4-06** Error Recovery & Adaptation (retry strategies, user escalation)
+
 ## Project Structure
 
 ```
@@ -264,6 +275,7 @@ RevitAI/
 │   ├── phase1.5/             # Phase 1.5 view & navigation specs
 │   ├── phase2/               # Phase 2 specifications
 │   ├── phase3/               # Phase 3 specifications
+│   ├── phase4/               # Phase 4 agentic mode specs
 │   └── appendix.md           # API patterns & reference
 ├── RevitAI.sln               # Visual Studio solution
 ├── RevitAI.addin             # Revit add-in manifest
