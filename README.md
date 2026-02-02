@@ -46,8 +46,8 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 |---------|--------|
 | Phase 1 Foundation (10 chunks) | ✅ Complete |
 | P1.5-01 Screenshot Capture | ✅ Complete |
-| P1.5-02 View Management | 🔄 Next |
-| P1.5-03 Camera Control | Planned |
+| P1.5-02 View Management | ✅ Complete |
+| P1.5-03 Camera Control | 🔄 Next |
 | P1.5-04 Visual Isolation | Planned |
 
 See [Development Status](#development-status) for details.
@@ -178,9 +178,21 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_beam` | Place structural beam |
 | `place_floor` | Create floor from boundary |
 | `capture_screenshot` | Capture Revit window or active view for Claude vision analysis |
+| `get_view_list` | List all views with optional type filtering |
+| `switch_view` | Switch active view by ID |
+| `open_view` | Open view by name (partial match) |
+| `create_floor_plan_view` | Create floor plan for a level |
+| `create_ceiling_plan_view` | Create ceiling plan for a level |
+| `create_3d_view` | Create 3D view with orientation preset |
+| `create_section_view` | Create section at location/direction |
+| `create_elevation_view` | Create elevation at location |
+| `create_schedule_view` | Create schedule with fields |
+| `create_drafting_view` | Create blank drafting view |
+| `duplicate_view` | Duplicate view with options |
+| `rename_view` | Rename an existing view |
+| `delete_view` | Delete a view (requires confirmation) |
 
 **Coming Soon (Phase 1.5):**
-- View switching and creation
 - Camera control (zoom, pan, 3D navigation)
 - Visual isolation and graphics overrides
 
@@ -204,7 +216,7 @@ Core infrastructure for a working AI assistant.
 View manipulation and visual context tools for enhanced AI understanding.
 
 - [x] **P1.5-01** Screenshot Capture (view snapshots for Claude vision)
-- [ ] **P1.5-02** View Management (switch views, create views, list views)
+- [x] **P1.5-02** View Management (13 tools: list, switch, open, create, duplicate, rename, delete views)
 - [ ] **P1.5-03** Camera Control (zoom, pan, 3D orbit, section boxes)
 - [ ] **P1.5-04** Visual Isolation (isolate, hide, override graphics)
 

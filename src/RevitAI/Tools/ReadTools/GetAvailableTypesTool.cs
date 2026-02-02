@@ -58,7 +58,9 @@ public sealed class GetAvailableTypesTool : IRevitTool
 
     public string Name => "get_available_types";
 
-    public string Description => "Returns available family types for a given category (e.g., 'Walls', 'Doors', 'Windows'). Use this to see what types can be placed or to help users choose a type.";
+    public string Description => "Returns available family types for a given category (e.g., 'Walls', 'Doors', 'Windows'). " +
+        "Use this to see what types can be placed or to help users choose a type. " +
+        "Special: Use category='ViewFamilyType' to list ViewFamilyTypes grouped by ViewFamily (for view creation).";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -79,6 +81,12 @@ public sealed class GetAvailableTypesTool : IRevitTool
         var categoryName = categoryElement.GetString();
         if (string.IsNullOrWhiteSpace(categoryName))
             return Task.FromResult(ToolResult.Error("Parameter 'category' cannot be empty"));
+
+        // Special case: ViewFamilyType
+        if (categoryName.Equals("ViewFamilyType", StringComparison.OrdinalIgnoreCase))
+        {
+            return GetViewFamilyTypes(doc);
+        }
 
         // Resolve category
         if (!CategoryHelper.TryGetCategory(categoryName, out var builtInCategory))
@@ -118,6 +126,46 @@ public sealed class GetAvailableTypesTool : IRevitTool
         }
     }
 
+    private Task<ToolResult> GetViewFamilyTypes(Document doc)
+    {
+        try
+        {
+            var viewFamilyTypes = new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewFamilyType))
+                .Cast<ViewFamilyType>()
+                .GroupBy(vft => vft.ViewFamily)
+                .OrderBy(g => g.Key.ToString())
+                .Select(g => new ViewFamilyGroup
+                {
+                    ViewFamily = g.Key.ToString(),
+                    Types = g.OrderBy(vft => vft.Name)
+                        .Take(MaxTypes)
+                        .Select(vft => new ViewFamilyTypeData
+                        {
+                            Id = vft.Id.Value,
+                            Name = vft.Name
+                        })
+                        .ToList()
+                })
+                .ToList();
+
+            var totalCount = viewFamilyTypes.Sum(g => g.Types.Count);
+
+            var result = new GetViewFamilyTypesResult
+            {
+                Category = "ViewFamilyType",
+                ViewFamilies = viewFamilyTypes,
+                TotalCount = totalCount
+            };
+
+            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(ToolResult.Error($"Failed to get view family types: {ex.Message}"));
+        }
+    }
+
     private static string? GetFamilyName(ElementType elemType)
     {
         var familyParam = elemType.get_Parameter(BuiltInParameter.ALL_MODEL_FAMILY_NAME);
@@ -147,5 +195,24 @@ public sealed class GetAvailableTypesTool : IRevitTool
         public int Count { get; set; }
         public bool Truncated { get; set; }
         public string? TruncatedMessage { get; set; }
+    }
+
+    private sealed class ViewFamilyTypeData
+    {
+        public long Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class ViewFamilyGroup
+    {
+        public string ViewFamily { get; set; } = string.Empty;
+        public List<ViewFamilyTypeData> Types { get; set; } = new();
+    }
+
+    private sealed class GetViewFamilyTypesResult
+    {
+        public string Category { get; set; } = string.Empty;
+        public List<ViewFamilyGroup> ViewFamilies { get; set; } = new();
+        public int TotalCount { get; set; }
     }
 }
