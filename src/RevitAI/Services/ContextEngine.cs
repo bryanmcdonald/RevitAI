@@ -155,6 +155,44 @@ public sealed class ContextEngine
         sb.AppendLine("- Example: Location line is 'Finish Face: Exterior' but user wants interior fixed -> move by full width_difference toward exterior.");
         sb.AppendLine();
 
+        // Screenshot QC guidance (only when screenshots are enabled)
+        var configService = ConfigurationService.Instance;
+        if (configService.ScreenshotToolEnabled == ScreenshotToolState.Always)
+        {
+            sb.AppendLine("**CRITICAL: Screenshot-based Quality Control**");
+            sb.AppendLine();
+            sb.AppendLine("You MUST use the `capture_screenshot` tool to rigorously verify your work. The primary value of an AI assistant in Revit is producing CLEAN, ACCURATE, PRODUCTION-READY work. A superficial 'looks good' check is NOT acceptable.");
+            sb.AppendLine();
+            sb.AppendLine("AFTER EVERY modification, take a screenshot and critically examine for ALL of these issues:");
+            sb.AppendLine();
+            sb.AppendLine("**Structural/Framing QC:**");
+            sb.AppendLine("- Are beam/column connections correct? (Should frame INTO supporting members, not extend to centerlines)");
+            sb.AppendLine("- Are there visual clashes? (Elements passing through each other)");
+            sb.AppendLine("- Do framing members align with grids appropriately?");
+            sb.AppendLine("- Are structural elements at the correct elevation/level?");
+            sb.AppendLine();
+            sb.AppendLine("**Annotation/Documentation QC:**");
+            sb.AppendLine("- Are NEW elements missing tags? (Beam tags, column tags, door/window tags)");
+            sb.AppendLine("- Do existing annotation styles match? (New elements should have same tag style as similar elements)");
+            sb.AppendLine("- Are dimensions still valid or do they need updating?");
+            sb.AppendLine("- Are there any orphaned annotations pointing to nothing?");
+            sb.AppendLine();
+            sb.AppendLine("**Visual/Drafting QC:**");
+            sb.AppendLine("- Does the linework look correct? (No gaps, overlaps, or artifacts)");
+            sb.AppendLine("- Are elements displaying with correct line weights/styles?");
+            sb.AppendLine("- Is the view still readable and professional-looking?");
+            sb.AppendLine("- Would this view be acceptable on a construction document?");
+            sb.AppendLine();
+            sb.AppendLine("**Reporting Issues:**");
+            sb.AppendLine("Even if you cannot fix an issue (no tool available yet), you MUST report it to the user:");
+            sb.AppendLine("- 'I notice the new beams are missing tags - you may want to add beam tags'");
+            sb.AppendLine("- 'The beam appears to extend to the column centerline which may cause a clash - consider adjusting the framing connection'");
+            sb.AppendLine("- 'The view may need dimension updates to reflect the new elements'");
+            sb.AppendLine();
+            sb.AppendLine("Your goal is to leave the model in BETTER condition than you found it, or at minimum, clearly communicate what additional work the user needs to do.");
+            sb.AppendLine();
+        }
+
         // Context section
         sb.AppendLine("## Current Revit Context");
         sb.AppendLine();

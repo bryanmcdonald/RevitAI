@@ -24,6 +24,7 @@ using CommunityToolkit.Mvvm.Input;
 using RevitAI.Models;
 using RevitAI.Services;
 using RevitAI.Tools;
+using RevitAI.Tools.ViewTools;
 
 namespace RevitAI.UI;
 
@@ -56,15 +57,39 @@ public partial class ChatViewModel : ObservableObject
     private bool _showStatus;
 
     /// <summary>
-    /// Gets or sets whether to include a screenshot of the active view with messages.
+    /// Gets or sets the screenshot tool state (Off, OneTime, Always).
     /// </summary>
     [ObservableProperty]
-    private bool _includeScreenshot;
+    [NotifyPropertyChangedFor(nameof(ScreenshotStateText))]
+    [NotifyPropertyChangedFor(nameof(ScreenshotStateTooltip))]
+    private ScreenshotToolState _screenshotState = ScreenshotToolState.Off;
 
     /// <summary>
     /// Collection of chat messages in the current conversation.
     /// </summary>
     public ObservableCollection<ChatMessage> Messages { get; } = new();
+
+    /// <summary>
+    /// Gets display text for the current screenshot state.
+    /// </summary>
+    public string ScreenshotStateText => ScreenshotState switch
+    {
+        ScreenshotToolState.Off => "Off",
+        ScreenshotToolState.OneTime => "1x",
+        ScreenshotToolState.Always => "Auto",
+        _ => "Off"
+    };
+
+    /// <summary>
+    /// Gets tooltip text for the current screenshot state.
+    /// </summary>
+    public string ScreenshotStateTooltip => ScreenshotState switch
+    {
+        ScreenshotToolState.Off => "Screenshots disabled. Click to enable one-time screenshot mode.",
+        ScreenshotToolState.OneTime => "Screenshot will be attached to each message you send. Click to enable AI-controlled mode.",
+        ScreenshotToolState.Always => "AI can capture screenshots as needed. Click to disable.",
+        _ => "Screenshot settings"
+    };
 
     /// <summary>
     /// Gets the welcome message text.
@@ -104,6 +129,27 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         {
             Messages.Add(ChatMessage.CreateSystemMessage(NoApiKeyMessage));
         }
+
+        // Initialize screenshot state from config
+        ScreenshotState = _configService.ScreenshotToolEnabled;
+    }
+
+    /// <summary>
+    /// Cycles through screenshot states: Off -> OneTime -> Always -> Off.
+    /// </summary>
+    [RelayCommand]
+    private void CycleScreenshotState()
+    {
+        ScreenshotState = ScreenshotState switch
+        {
+            ScreenshotToolState.Off => ScreenshotToolState.OneTime,
+            ScreenshotToolState.OneTime => ScreenshotToolState.Always,
+            ScreenshotToolState.Always => ScreenshotToolState.Off,
+            _ => ScreenshotToolState.Off
+        };
+
+        // Persist to config
+        _configService.ScreenshotToolEnabled = ScreenshotState;
     }
 
     /// <summary>
@@ -138,6 +184,9 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         ShowStatus = true;
         StatusText = "Gathering context...";
 
+        // Reset screenshot counter for this new response
+        ScreenshotCounter.Instance.Reset();
+
         _cancellationTokenSource = new CancellationTokenSource();
 
         try
@@ -146,7 +195,8 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
             var systemPrompt = await BuildContextualSystemPromptAsync(_cancellationTokenSource.Token);
             byte[]? screenshot = null;
 
-            if (IncludeScreenshot)
+            // In OneTime mode, capture and attach screenshot to user message
+            if (ScreenshotState == ScreenshotToolState.OneTime)
             {
                 StatusText = "Capturing view...";
                 screenshot = await CaptureScreenshotAsync(_cancellationTokenSource.Token);
@@ -301,8 +351,8 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     {
         await _dispatcher.InvokeAsync(() => StatusText = "Receiving...");
 
-        // Get tool definitions from registry
-        var toolDefinitions = ToolRegistry.Instance.GetDefinitions();
+        // Get tool definitions from registry (filtered based on screenshot settings)
+        var toolDefinitions = ToolRegistry.Instance.GetDefinitionsForRequest();
         var hasTools = toolDefinitions.Count > 0;
 
         // Keep conversation messages for multi-turn tool use

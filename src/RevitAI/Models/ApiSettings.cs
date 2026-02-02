@@ -17,6 +17,39 @@
 namespace RevitAI.Models;
 
 /// <summary>
+/// Screenshot resolution presets with corresponding pixel widths.
+/// </summary>
+public enum ScreenshotResolution
+{
+    /// <summary>800px width - Quick overview, layout verification (~500-700 tokens).</summary>
+    Low,
+
+    /// <summary>1280px width - General analysis, element identification (~800-1000 tokens).</summary>
+    Medium,
+
+    /// <summary>1920px width - Detail work, reading small text (~1500-2000 tokens).</summary>
+    High,
+
+    /// <summary>2560px width - Fine detail, dimension reading (~2500-3500 tokens).</summary>
+    Max
+}
+
+/// <summary>
+/// Controls how screenshots are captured and when Claude can request them.
+/// </summary>
+public enum ScreenshotToolState
+{
+    /// <summary>No screenshots. Claude cannot use capture_screenshot tool.</summary>
+    Off,
+
+    /// <summary>Auto-attach screenshot to each user message. Claude cannot request screenshots.</summary>
+    OneTime,
+
+    /// <summary>Claude can call capture_screenshot tool whenever it needs visual context.</summary>
+    Always
+}
+
+/// <summary>
 /// Immutable settings for a single Claude API request.
 /// Use with expressions to create modified copies for per-request overrides.
 /// </summary>

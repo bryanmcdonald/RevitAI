@@ -107,12 +107,13 @@ public sealed class ToolDispatcher
                 cancellationToken);
             var result = await resultTask;
 
-            return new ToolResultBlock
+            // Handle image results
+            if (result.HasImage)
             {
-                ToolUseId = toolUse.Id,
-                Content = result.Content,
-                IsError = result.IsError
-            };
+                return ToolResultBlock.FromImage(toolUse.Id, result.ImageBase64!, result.ImageMediaType!, result.Content);
+            }
+
+            return ToolResultBlock.FromText(toolUse.Id, result.Content, result.IsError);
         }
         catch (OperationCanceledException)
         {
@@ -393,12 +394,15 @@ public sealed class ToolDispatcher
                             }
                         }
 
-                        results.Add(new ToolResultBlock
+                        // Handle image results in batch
+                        if (result.HasImage)
                         {
-                            ToolUseId = toolUse.Id,
-                            Content = result.Content,
-                            IsError = result.IsError
-                        });
+                            results.Add(ToolResultBlock.FromImage(toolUse.Id, result.ImageBase64!, result.ImageMediaType!, result.Content));
+                        }
+                        else
+                        {
+                            results.Add(ToolResultBlock.FromText(toolUse.Id, result.Content, result.IsError));
+                        }
 
                         // If tool failed, rollback and skip remaining
                         if (result.IsError)

@@ -17,6 +17,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using RevitAI.Models;
+using RevitAI.Services;
 
 namespace RevitAI.Tools;
 
@@ -74,6 +75,32 @@ public sealed class ToolRegistry
     public List<ToolDefinition> GetDefinitions()
     {
         return _tools.Values.Select(tool => new ToolDefinition
+        {
+            Name = tool.Name,
+            Description = tool.Description,
+            InputSchema = tool.InputSchema
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Gets tool definitions filtered based on current configuration.
+    /// Claude only gets the screenshot tool when in Always mode.
+    /// </summary>
+    /// <returns>A filtered list of tool definitions for the API request.</returns>
+    public List<ToolDefinition> GetDefinitionsForRequest()
+    {
+        var configService = ConfigurationService.Instance;
+
+        // Filter out capture_screenshot unless in Always mode
+        // Off = no screenshots, OneTime = user-attached only (Claude can't request)
+        var tools = _tools.Values.AsEnumerable();
+
+        if (configService.ScreenshotToolEnabled != ScreenshotToolState.Always)
+        {
+            tools = tools.Where(t => t.Name != "capture_screenshot");
+        }
+
+        return tools.Select(tool => new ToolDefinition
         {
             Name = tool.Name,
             Description = tool.Description,

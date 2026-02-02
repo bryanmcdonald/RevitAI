@@ -265,6 +265,7 @@ public sealed class ToolUseBlock : ContentBlock
 
 /// <summary>
 /// Tool result content block (user providing tool output).
+/// Supports both text-only and image+text results.
 /// </summary>
 public sealed class ToolResultBlock : ContentBlock
 {
@@ -273,12 +274,66 @@ public sealed class ToolResultBlock : ContentBlock
     [JsonPropertyName("tool_use_id")]
     public required string ToolUseId { get; init; }
 
+    /// <summary>
+    /// The content can be either a string (text only) or a list of content blocks (for images).
+    /// </summary>
     [JsonPropertyName("content")]
-    public required string Content { get; init; }
+    public required object Content { get; init; }
 
     [JsonPropertyName("is_error")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool IsError { get; init; }
+
+    /// <summary>
+    /// Creates a tool result with text content only.
+    /// </summary>
+    public static ToolResultBlock FromText(string toolUseId, string text, bool isError = false)
+    {
+        return new ToolResultBlock
+        {
+            ToolUseId = toolUseId,
+            Content = text,
+            IsError = isError
+        };
+    }
+
+    /// <summary>
+    /// Creates a tool result with an image and optional text.
+    /// Text is placed BEFORE the image so Claude sees metadata first.
+    /// </summary>
+    public static ToolResultBlock FromImage(string toolUseId, string base64, string mediaType, string? text = null)
+    {
+        var contentBlocks = new List<object>();
+
+        // Add text block FIRST if provided (so Claude sees metadata before image)
+        if (!string.IsNullOrEmpty(text))
+        {
+            contentBlocks.Add(new
+            {
+                type = "text",
+                text = text
+            });
+        }
+
+        // Then add the image
+        contentBlocks.Add(new
+        {
+            type = "image",
+            source = new
+            {
+                type = "base64",
+                media_type = mediaType,
+                data = base64
+            }
+        });
+
+        return new ToolResultBlock
+        {
+            ToolUseId = toolUseId,
+            Content = contentBlocks,
+            IsError = false
+        };
+    }
 }
 
 /// <summary>

@@ -170,6 +170,55 @@ public sealed class ConfigurationService
     }
 
     /// <summary>
+    /// Gets or sets the default screenshot resolution.
+    /// </summary>
+    public ScreenshotResolution DefaultScreenshotResolution
+    {
+        get => _config.DefaultScreenshotResolution;
+        set
+        {
+            if (_config.DefaultScreenshotResolution != value)
+            {
+                _config.DefaultScreenshotResolution = value;
+                Save();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the screenshot tool state (Off, OneTime, Always).
+    /// </summary>
+    public ScreenshotToolState ScreenshotToolEnabled
+    {
+        get => _config.ScreenshotToolEnabled;
+        set
+        {
+            if (_config.ScreenshotToolEnabled != value)
+            {
+                _config.ScreenshotToolEnabled = value;
+                Save();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum number of screenshots allowed per AI response.
+    /// </summary>
+    public int MaxScreenshotsPerResponse
+    {
+        get => _config.MaxScreenshotsPerResponse;
+        set
+        {
+            var clamped = Math.Clamp(value, 1, 50);
+            if (_config.MaxScreenshotsPerResponse != clamped)
+            {
+                _config.MaxScreenshotsPerResponse = clamped;
+                Save();
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets the default API settings based on current configuration.
     /// </summary>
     public ApiSettings DefaultApiSettings => new()
@@ -256,5 +305,14 @@ public sealed class ConfigurationService
 
         [JsonPropertyName("dryRunMode")]
         public bool DryRunMode { get; set; }
+
+        [JsonPropertyName("defaultScreenshotResolution")]
+        public ScreenshotResolution DefaultScreenshotResolution { get; set; } = ScreenshotResolution.Medium;
+
+        [JsonPropertyName("screenshotToolEnabled")]
+        public ScreenshotToolState ScreenshotToolEnabled { get; set; } = ScreenshotToolState.Off;
+
+        [JsonPropertyName("maxScreenshotsPerResponse")]
+        public int MaxScreenshotsPerResponse { get; set; } = 10;
     }
 }
