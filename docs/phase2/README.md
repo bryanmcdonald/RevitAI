@@ -22,6 +22,7 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 | [P2-05](P2-05-visual-feedback.md) | Visual Feedback System | Element highlighting, preview graphics, status display, **markdown rendering** | P2-04 |
 | [P2-06](P2-06-parameter-schedule.md) | Parameter & Schedule Tools | Bulk modify, schedule read/create, data export | P2-05 |
 | [P2-07](P2-07-conversation-memory.md) | Conversation Memory | Persist history, change tracking, undo all | P2-06 |
+| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds | P2-01 |
 
 ---
 
@@ -47,6 +48,17 @@ src/RevitAI/
 │       ├── PlaceScopeBoxTool.cs          # P2-02
 │       ├── BulkModifyParametersTool.cs   # P2-06
 │       └── ExportElementDataTool.cs      # P2-06
+│   └── DraftingTools/
+│       ├── PlaceDetailArcTool.cs         # P2-08
+│       ├── PlaceDetailCurveTool.cs       # P2-08
+│       ├── PlaceFilledRegionTool.cs      # P2-08
+│       ├── PlaceMaskingRegionTool.cs     # P2-08
+│       ├── PlaceDetailComponentTool.cs   # P2-08
+│       ├── PlaceViewportTool.cs          # P2-08
+│       ├── PlaceCalloutTool.cs           # P2-08
+│       ├── CreateLegendTool.cs           # P2-08
+│       ├── PlaceLegendComponentTool.cs   # P2-08
+│       └── PlaceRevisionCloudTool.cs     # P2-08
 ├── Tools/
 │   └── ReadTools/
 │       └── ReadScheduleDataTool.cs       # P2-06
@@ -78,3 +90,4 @@ src/RevitAI/
 - [ ] Schedule data can be read and created
 - [ ] Conversation history persists across sessions
 - [ ] Change tracking summarizes AI modifications
+- [ ] All 10 drafting tools working (arcs, curves, regions, viewports, callouts, legends, revision clouds)

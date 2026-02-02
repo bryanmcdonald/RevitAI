@@ -223,24 +223,25 @@ View manipulation and visual context tools for enhanced AI understanding.
 ### Phase 2: Enhanced Capabilities
 Advanced features and improved workflows.
 
-- [ ] Advanced Placement Tools (grids, levels, dimensions, tags)
-- [ ] Element Manipulation (copy, mirror, array, align)
-- [ ] Multi-Step Design Operations
-- [ ] Smart Context Awareness (grid snapping, type inference)
-- [ ] Visual Feedback (element highlighting, previews)
-- [ ] Parameter & Schedule Operations
-- [ ] Conversation Memory & Persistence
+- [ ] **P2-01** Advanced Placement Tools (grids, levels, dimensions, tags)
+- [ ] **P2-02** Element Manipulation (copy, mirror, array, align)
+- [ ] **P2-03** Multi-Step Design Operations
+- [ ] **P2-04** Smart Context Awareness (grid snapping, type inference)
+- [ ] **P2-05** Visual Feedback (element highlighting, previews)
+- [ ] **P2-06** Parameter & Schedule Operations
+- [ ] **P2-07** Conversation Memory & Persistence
+- [ ] **P2-08** Drafting & Documentation Tools (arcs, curves, filled regions, viewports, callouts, legends, revision clouds)
 
 ### Phase 3: Advanced & Multi-Discipline
 Discipline-specific tool packs and advanced features.
 
-- [ ] Structural Tool Pack
-- [ ] MEP Tool Pack
-- [ ] Fire Protection Tool Pack
-- [ ] Architecture Tool Pack
-- [ ] Export & Reporting Tools
-- [ ] Model Health Tools
-- [ ] Custom Prompt Templates
+- [ ] **P3-01** Structural Tool Pack
+- [ ] **P3-02** MEP Tool Pack
+- [ ] **P3-03** Fire Protection Tool Pack
+- [ ] **P3-04** Architecture Tool Pack
+- [ ] **P3-05** Export & Reporting Tools
+- [ ] **P3-06** Model Health Tools
+- [ ] **P3-07** Custom Prompt Templates
 
 ## Project Structure
 
@@ -331,7 +332,6 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 - Linked model queries
 - Worksharing-specific operations
 - Family editing context
-- Detail views and drafting operations
 
 ## Team Deployment
 

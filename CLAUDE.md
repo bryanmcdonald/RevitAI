@@ -154,7 +154,8 @@ RevitAI/
 │   │   │   ├── ToolDispatcher.cs
 │   │   │   ├── ReadTools/              # P1-07: Query tools
 │   │   │   ├── ModifyTools/            # P1-09: Modification tools
-│   │   │   └── ViewTools/              # P1.5: View/navigation tools
+│   │   │   ├── ViewTools/              # P1.5: View/navigation tools
+│   │   │   └── DraftingTools/          # P2-08: Drafting & documentation
 │   │   ├── Threading/
 │   │   │   ├── RevitEventHandler.cs
 │   │   │   ├── CommandQueue.cs
@@ -197,7 +198,7 @@ RevitAI/
 |-------|-------------|--------|---------------|
 | **Phase 1** | Foundation (MVP) | P1-01 to P1-10 | [docs/phase1/README.md](docs/phase1/README.md) |
 | **Phase 1.5** | View & Navigation Foundation | P1.5-01 to P1.5-04 | [docs/phase1.5/README.md](docs/phase1.5/README.md) |
-| **Phase 2** | Enhanced Capabilities | P2-01 to P2-07 | [docs/phase2/README.md](docs/phase2/README.md) |
+| **Phase 2** | Enhanced Capabilities | P2-01 to P2-08 | [docs/phase2/README.md](docs/phase2/README.md) |
 | **Phase 3** | Advanced & Multi-Discipline | P3-01 to P3-07 | [docs/phase3/README.md](docs/phase3/README.md) |
 | **Appendix** | API Patterns & Reference | A.1 to A.8 | [docs/appendix.md](docs/appendix.md) |
 
@@ -236,6 +237,7 @@ RevitAI/
 | P2-05 | Visual Feedback System | [P2-05-visual-feedback.md](docs/phase2/P2-05-visual-feedback.md) |
 | P2-06 | Parameter & Schedule Tools | [P2-06-parameter-schedule.md](docs/phase2/P2-06-parameter-schedule.md) |
 | P2-07 | Conversation Memory | [P2-07-conversation-memory.md](docs/phase2/P2-07-conversation-memory.md) |
+| P2-08 | Drafting & Documentation Tools | [P2-08-drafting-tools.md](docs/phase2/P2-08-drafting-tools.md) |
 
 ### Phase 3 Quick Links
 
@@ -385,3 +387,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.6 | Doc Cleanup | Consolidated status tracking to README.md, added NuGet deps, synced folder structure with Phase 1 README, removed duplicate tools from P2 |
 | 1.7 | GPL Headers | Added GPL-3.0 license headers to all source files; added license header templates to Post-Change Requirements |
 | 1.8 | Public Repo | Added Public Repository Notice section with guidelines for avoiding personal information in commits |
+| 1.9 | P2-08 | Added P2-08 Drafting & Documentation Tools chunk with 10 tools for advanced linework, regions, viewports, callouts, legends, and revision clouds |
