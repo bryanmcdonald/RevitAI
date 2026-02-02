@@ -45,7 +45,7 @@ public partial class ConfirmationDialog : Window
     }
 
     /// <summary>
-    /// Shows the confirmation dialog for a tool operation.
+    /// Configures the dialog with the tool name and description.
     /// </summary>
     /// <param name="toolName">The name of the tool being executed.</param>
     /// <param name="description">A description of what the tool will do.</param>
@@ -57,11 +57,11 @@ public partial class ConfirmationDialog : Window
         // Ensure we always have a description to show
         if (string.IsNullOrWhiteSpace(description))
         {
-            DescriptionText.Text = $"This tool ({ToolName}) will modify the Revit model. Do you want to proceed?";
+            DescriptionLabel.Text = $"This tool ({ToolName}) will modify the Revit model. Do you want to proceed?";
         }
         else
         {
-            DescriptionText.Text = description;
+            DescriptionLabel.Text = description;
         }
     }
 

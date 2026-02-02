@@ -467,19 +467,30 @@ public sealed class ToolDispatcher
     }
 
     /// <summary>
-    /// Gets the dry-run description for a tool, handling default interface implementation quirks.
-    /// Uses dynamic dispatch to call the concrete implementation.
+    /// Gets the dry-run description for a tool.
+    /// Uses reflection to bypass Default Interface Method dispatch issues.
     /// </summary>
     private static string GetToolDryRunDescription(IRevitTool tool, JsonElement input)
     {
         try
         {
-            // Use dynamic to bypass interface dispatch and call the concrete implementation
-            var description = ((dynamic)tool).GetDryRunDescription(input) as string;
+            // Use reflection to get the concrete type's method, bypassing DIM dispatch issues.
+            // Default Interface Methods have known issues where calling through an interface
+            // reference may invoke the default instead of the class's implementation.
+            var concreteType = tool.GetType();
+            var method = concreteType.GetMethod("GetDryRunDescription",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance,
+                null,
+                new[] { typeof(JsonElement) },
+                null);
 
-            if (!string.IsNullOrWhiteSpace(description))
+            if (method != null && method.DeclaringType != typeof(IRevitTool))
             {
-                return description;
+                var result = method.Invoke(tool, new object[] { input });
+                if (result is string description && !string.IsNullOrWhiteSpace(description))
+                {
+                    return description;
+                }
             }
         }
         catch

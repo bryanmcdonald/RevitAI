@@ -171,8 +171,14 @@ public sealed class SafetyService
     }
 
     /// <summary>
-    /// Gets the dry-run description for a tool, handling default interface implementation quirks.
+    /// Gets the dry-run description for a tool.
+    /// Uses reflection to bypass Default Interface Method (DIM) dispatch issues.
     /// </summary>
+    /// <remarks>
+    /// C# Default Interface Methods have known issues where calling through an interface
+    /// reference may invoke the default implementation instead of the class's override.
+    /// Using reflection ensures we call the concrete type's implementation.
+    /// </remarks>
     private static string GetToolDescription(IRevitTool tool, JsonElement input)
     {
         // Build fallback first so we always have something
@@ -186,19 +192,26 @@ public sealed class SafetyService
 
         try
         {
-            // Use dynamic to bypass interface dispatch and call the concrete implementation
-            dynamic dynamicTool = tool;
-            object result = dynamicTool.GetDryRunDescription(input);
-            var description = result as string;
+            // Use reflection to get the concrete type's method, bypassing DIM dispatch issues.
+            var concreteType = tool.GetType();
+            var method = concreteType.GetMethod("GetDryRunDescription",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance,
+                null,
+                new[] { typeof(JsonElement) },
+                null);
 
-            if (!string.IsNullOrWhiteSpace(description))
+            if (method != null && method.DeclaringType != typeof(IRevitTool))
             {
-                return description;
+                var result = method.Invoke(tool, new object[] { input });
+                if (result is string description && !string.IsNullOrWhiteSpace(description))
+                {
+                    return description;
+                }
             }
         }
         catch
         {
-            // Fall through to fallback
+            // Fall through to fallback on any error
         }
 
         return fallback;

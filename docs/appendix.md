@@ -404,6 +404,8 @@ public bool RequiresConfirmation(string toolName) =>
 | Parameter read-only | Built-in parameter | Check `param.IsReadOnly` before setting |
 | Selection empty | Document not open | Check `uidoc.ActiveView != null` |
 | View override fails | View template | Check if view is controlled by template |
+| WPF text invisible | System dark mode + Border | Avoid nesting text inside Border; see note below |
+| Default interface method not called | DIM dispatch issue | Use reflection to call concrete type's method |
 
 ### Common Exceptions
 
@@ -414,6 +416,47 @@ public bool RequiresConfirmation(string toolName) =>
 | `ArgumentNullException` | Element deleted | Verify element exists before use |
 | `ModificationForbiddenException` | Read-only document | Check `doc.IsModifiable` |
 | `ModificationOutsideTransactionException` | Missing transaction | Wrap in `Transaction` |
+
+### WPF Rendering in Revit with System Dark Mode
+
+When running WPF dialogs inside Revit 2026 with Windows system dark mode enabled, text inside `Border` elements may become invisible. This appears to be a theming conflict where the system overrides text colors.
+
+**Symptoms:**
+- Text is set correctly (verified via logging)
+- TextBlock has proper dimensions (ActualWidth/ActualHeight > 0)
+- Foreground color reports correctly (#FF333333)
+- But text is not visible on screen
+
+**Solution:** Avoid wrapping text controls inside `Border` elements. Place TextBlocks directly in the Grid:
+
+```xaml
+<!-- PROBLEMATIC: Text may be invisible in Revit with dark mode -->
+<Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
+    <TextBlock Text="Description" Foreground="#333333"/>
+</Border>
+
+<!-- WORKING: Text renders correctly -->
+<TextBlock Text="Description" Foreground="#1976D2"/>
+```
+
+### Default Interface Method (DIM) Dispatch Issues
+
+C# Default Interface Methods have a known quirk: calling through an interface reference may invoke the default implementation instead of the concrete class's override. This affects `IRevitTool.GetDryRunDescription()`.
+
+**Solution:** Use reflection to explicitly call the concrete type's method:
+
+```csharp
+var concreteType = tool.GetType();
+var method = concreteType.GetMethod("GetDryRunDescription",
+    BindingFlags.Public | BindingFlags.Instance,
+    null, new[] { typeof(JsonElement) }, null);
+
+if (method != null && method.DeclaringType != typeof(IRevitTool))
+{
+    var result = method.Invoke(tool, new object[] { input });
+    // Use result...
+}
+```
 
 ### Debug Tips
 

@@ -317,7 +317,6 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 | **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
-| **Confirmation dialog description empty** | Confirmation dialogs show tool name but description area is blank (C# default interface implementation issue) | P1-10 followup |
 
 ### Not Yet Supported
 
