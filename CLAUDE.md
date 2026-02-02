@@ -169,6 +169,7 @@ RevitAI/
 │   ├── phase1.5/                   # Phase 1.5 chunks (view & navigation)
 │   ├── phase2/                     # Phase 2 chunks
 │   ├── phase3/                     # Phase 3 chunks
+│   ├── phase4/                     # Phase 4 chunks (agentic mode)
 │   └── appendix.md                 # API patterns, threading, troubleshooting
 ├── RevitAI.sln
 ├── RevitAI.addin                   # Manifest file
@@ -200,6 +201,7 @@ RevitAI/
 | **Phase 1.5** | View & Navigation Foundation | P1.5-01 to P1.5-04 | [docs/phase1.5/README.md](docs/phase1.5/README.md) |
 | **Phase 2** | Enhanced Capabilities | P2-01 to P2-08 | [docs/phase2/README.md](docs/phase2/README.md) |
 | **Phase 3** | Advanced & Multi-Discipline | P3-01 to P3-07 | [docs/phase3/README.md](docs/phase3/README.md) |
+| **Phase 4** | Agentic Mode | P4-01 to P4-06 | [docs/phase4/README.md](docs/phase4/README.md) |
 | **Appendix** | API Patterns & Reference | A.1 to A.8 | [docs/appendix.md](docs/appendix.md) |
 
 ### Phase 1 Quick Links
@@ -250,6 +252,17 @@ RevitAI/
 | P3-05 | Export & Reporting Tools | [P3-05-export-tools.md](docs/phase3/P3-05-export-tools.md) |
 | P3-06 | Model Health Tools | [P3-06-model-health.md](docs/phase3/P3-06-model-health.md) |
 | P3-07 | Custom Prompt Templates | [P3-07-prompt-templates.md](docs/phase3/P3-07-prompt-templates.md) |
+
+### Phase 4 Quick Links
+
+| Chunk | Description | File |
+|-------|-------------|------|
+| P4-01 | Extended Thinking | [P4-01-extended-thinking.md](docs/phase4/P4-01-extended-thinking.md) |
+| P4-02 | Planning Tools | [P4-02-planning-tools.md](docs/phase4/P4-02-planning-tools.md) |
+| P4-03 | Agentic Session State | [P4-03-session-state.md](docs/phase4/P4-03-session-state.md) |
+| P4-04 | Auto-Verification Loop | [P4-04-auto-verification.md](docs/phase4/P4-04-auto-verification.md) |
+| P4-05 | Agentic UI | [P4-05-agentic-ui.md](docs/phase4/P4-05-agentic-ui.md) |
+| P4-06 | Error Recovery & Adaptation | [P4-06-error-recovery.md](docs/phase4/P4-06-error-recovery.md) |
 
 ---
 
@@ -349,6 +362,7 @@ When creating new tools:
 - `P1.5-XX`: Phase 1.5 - View & Navigation Foundation
 - `P2-XX`: Phase 2 - Enhanced Capabilities
 - `P3-XX`: Phase 3 - Advanced & Multi-Discipline
+- `P4-XX`: Phase 4 - Agentic Mode
 
 ### Each Chunk Includes
 - **Goal**: What we're building
@@ -388,3 +402,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.7 | GPL Headers | Added GPL-3.0 license headers to all source files; added license header templates to Post-Change Requirements |
 | 1.8 | Public Repo | Added Public Repository Notice section with guidelines for avoiding personal information in commits |
 | 1.9 | P2-08 | Added P2-08 Drafting & Documentation Tools chunk with 10 tools for advanced linework, regions, viewports, callouts, legends, and revision clouds |
+| 2.0 | Phase 4 | **Major version**: Added Phase 4 (Agentic Mode) with 6 chunks: extended thinking, planning tools, session state, auto-verification, agentic UI, error recovery. This is a major feature addition enabling autonomous operation. |
