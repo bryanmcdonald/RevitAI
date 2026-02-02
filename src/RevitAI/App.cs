@@ -211,6 +211,21 @@ public class App : IExternalApplication
 
         // View tools (P1.5)
         registry.Register(new CaptureScreenshotTool());
+
+        // View management tools (P1.5-02)
+        registry.Register(new GetViewListTool());
+        registry.Register(new SwitchViewTool());
+        registry.Register(new OpenViewTool());
+        registry.Register(new CreateFloorPlanViewTool());
+        registry.Register(new CreateCeilingPlanViewTool());
+        registry.Register(new Create3DViewTool());
+        registry.Register(new CreateSectionViewTool());
+        registry.Register(new CreateElevationViewTool());
+        registry.Register(new CreateScheduleViewTool());
+        registry.Register(new CreateDraftingViewTool());
+        registry.Register(new DuplicateViewTool());
+        registry.Register(new RenameViewTool());
+        registry.Register(new DeleteViewTool());
     }
 
     /// <summary>
