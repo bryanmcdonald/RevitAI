@@ -40,19 +40,15 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1 Foundation: Complete**
+**Phase 1.5 View & Navigation: In Progress** (Phase 1 Foundation complete)
 
 | Feature | Status |
 |---------|--------|
-| Dockable Chat UI | Complete |
-| Claude API Integration | Complete |
-| Streaming Responses | Complete |
-| Context Engine | Complete |
-| Tool Framework | Complete |
-| Read-Only Tools (11 tools) | Complete |
-| Transaction Manager | Complete |
-| Modification Tools (10 tools) | Complete |
-| Safety & Confirmation | Complete |
+| Phase 1 Foundation (10 chunks) | ✅ Complete |
+| P1.5-01 Screenshot Capture | ✅ Complete |
+| P1.5-02 View Management | 🔄 Next |
+| P1.5-03 Camera Control | Planned |
+| P1.5-04 Visual Isolation | Planned |
 
 See [Development Status](#development-status) for details.
 
@@ -144,7 +140,7 @@ RevitAI automatically provides Claude with context about your Revit session. The
 | Verbosity Level | What Claude Sees |
 |-----------------|------------------|
 | **Minimal** | Active view, level, and selected element IDs with category/type |
-| **Standard** | Above + element level associations and all parameters (up to 200) |
+| **Standard** | Above + element level associations and all parameters (up to 200 per element, max 20 elements) |
 | **Detailed** | Above + project info and available family types |
 
 Element IDs are always included so Claude can reference selected elements with modification tools (move, delete, etc.).
