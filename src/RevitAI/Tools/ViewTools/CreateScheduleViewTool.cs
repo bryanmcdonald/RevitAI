@@ -67,7 +67,8 @@ public sealed class CreateScheduleViewTool : IRevitTool
 
     public string Description =>
         "Creates a schedule view for the specified category with the specified fields. " +
-        "Use get_available_types to see schedulable categories. Common fields: Type, Family, Level, Count, Area, Length.";
+        "Use get_available_types to see schedulable categories. Common fields: Type, Family, Level, Count, Area, Length. " +
+        "After creation, use switch_view with the returned view ID to open the new schedule.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -185,9 +186,6 @@ public sealed class CreateScheduleViewTool : IRevitTool
             {
                 result.Warning = $"Could not add {failedFields.Count} field(s). Use schedule field editor to see available fields.";
             }
-
-            // Switch to the newly created schedule
-            uiDoc.ActiveView = schedule;
 
             return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
         }

@@ -67,7 +67,8 @@ public sealed class Create3DViewTool : IRevitTool
 
     public string Description =>
         "Creates a new 3D view. Optionally specify an orientation preset: " +
-        "Isometric (default), Front, Back, Left, Right, Top, Bottom.";
+        "Isometric (default), Front, Back, Left, Right, Top, Bottom. " +
+        "After creation, use switch_view with the returned view ID to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -151,9 +152,6 @@ public sealed class Create3DViewTool : IRevitTool
                     view.SetOrientation(viewOrientation);
                 }
             }
-
-            // Switch to the newly created view
-            uiDoc.ActiveView = view;
 
             var result = new Create3DViewResult
             {

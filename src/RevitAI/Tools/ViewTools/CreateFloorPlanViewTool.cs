@@ -65,7 +65,8 @@ public sealed class CreateFloorPlanViewTool : IRevitTool
 
     public string Description =>
         "Creates a new floor plan view for the specified level. " +
-        "Optionally specify a view family type (use get_available_types with category='ViewFamilyType' to list options).";
+        "Optionally specify a view family type (use get_available_types with category='ViewFamilyType' to list options). " +
+        "After creation, use switch_view with the returned view ID to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -140,9 +141,6 @@ public sealed class CreateFloorPlanViewTool : IRevitTool
                 return Task.FromResult(ToolResult.Error(
                     $"A view named '{viewName}' already exists. Please choose a different name."));
             }
-
-            // Switch to the newly created view
-            uiDoc.ActiveView = view;
 
             var result = new CreateViewResult
             {

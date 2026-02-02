@@ -66,7 +66,8 @@ public sealed class CreateDraftingViewTool : IRevitTool
 
     public string Description =>
         "Creates a new drafting view (2D detail view not associated with model geometry). " +
-        "Useful for creating 2D details, diagrams, and standard details.";
+        "Useful for creating 2D details, diagrams, and standard details. " +
+        "After creation, use switch_view with the returned view ID to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -143,9 +144,6 @@ public sealed class CreateDraftingViewTool : IRevitTool
 
             // Set the scale
             view.Scale = scale;
-
-            // Switch to the newly created view
-            uiDoc.ActiveView = view;
 
             var result = new CreateDraftingResult
             {

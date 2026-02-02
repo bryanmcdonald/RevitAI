@@ -98,7 +98,8 @@ public sealed class CreateSectionViewTool : IRevitTool
 
     public string Description =>
         "Creates a section view at the specified origin point, looking in the specified direction. " +
-        "The section plane is perpendicular to the direction vector.";
+        "The section plane is perpendicular to the direction vector. " +
+        "After creation, use switch_view with the returned view ID to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -220,9 +221,6 @@ public sealed class CreateSectionViewTool : IRevitTool
                 return Task.FromResult(ToolResult.Error(
                     $"A view named '{viewName}' already exists. Please choose a different name."));
             }
-
-            // Switch to the newly created view
-            uiDoc.ActiveView = view;
 
             var result = new CreateSectionResult
             {

@@ -87,7 +87,8 @@ public sealed class CreateElevationViewTool : IRevitTool
 
     public string Description =>
         "Creates an elevation view at the specified location, looking in the specified direction. " +
-        "Directions: North (+Y), South (-Y), East (+X), West (-X). An elevation marker will be placed on a plan view.";
+        "Directions: North (+Y), South (-Y), East (+X), West (-X). An elevation marker will be placed on a plan view. " +
+        "After creation, use switch_view with the returned view ID to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -204,9 +205,6 @@ public sealed class CreateElevationViewTool : IRevitTool
                 return Task.FromResult(ToolResult.Error(
                     $"A view named '{viewName}' already exists. Please choose a different name."));
             }
-
-            // Switch to the newly created view
-            uiDoc.ActiveView = view;
 
             var result = new CreateElevationResult
             {

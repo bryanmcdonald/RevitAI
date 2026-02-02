@@ -67,7 +67,8 @@ public sealed class DuplicateViewTool : IRevitTool
 
     public string Description =>
         "Duplicates an existing view with a new name. Options: " +
-        "Duplicate (view only), AsDependent (linked to original), WithDetailing (includes annotations).";
+        "Duplicate (view only), AsDependent (linked to original), WithDetailing (includes annotations). " +
+        "After creation, use switch_view with the returned view ID to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -160,9 +161,6 @@ public sealed class DuplicateViewTool : IRevitTool
                 return Task.FromResult(ToolResult.Error(
                     $"A view named '{newName}' already exists. Please choose a different name."));
             }
-
-            // Switch to the newly created view
-            uiDoc.ActiveView = newView;
 
             var result = new DuplicateViewResult
             {
