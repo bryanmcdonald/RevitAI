@@ -27,6 +27,11 @@
 /// <summary>
 /// Handles error recovery and adaptation during agentic execution.
 /// </summary>
+/// <remarks>
+/// Design note: RecoveryService depends on AgenticModeService for session state access.
+/// AgenticModeService does NOT depend on RecoveryService, avoiding circular dependency.
+/// Recovery logic is invoked by ToolDispatcher, which orchestrates the interaction.
+/// </remarks>
 public class RecoveryService
 {
     private readonly ConfigurationService _configService;
@@ -235,8 +240,10 @@ public class RecoveryService
                 };
 
             case RecoveryAction.RollbackAndRetry:
-                // Rollback current transaction if active
-                _transactionManager.RollbackIfActive();
+                // Rollback current transaction group if active
+                // Uses EnsureGroupClosed() from TransactionManager (P1-08)
+                // which safely handles both active and inactive states
+                _transactionManager.EnsureGroupClosed();
                 if (strategy.RetryDelay > TimeSpan.Zero)
                 {
                     await Task.Delay(strategy.RetryDelay, ct);
@@ -360,7 +367,7 @@ public enum ErrorType
 ### 2. ToolDispatcher Integration
 
 ```csharp
-// In ToolDispatcher.cs, add retry logic
+// In ToolDispatcher.cs, add retry logic with cancellation support
 
 public class ToolDispatcher
 {
@@ -382,6 +389,9 @@ public class ToolDispatcher
 
         while (true)
         {
+            // Check for cancellation at the start of each retry attempt
+            ct.ThrowIfCancellationRequested();
+
             attempt++;
 
             try
@@ -392,6 +402,9 @@ public class ToolDispatcher
                 {
                     return CreateSuccessResult(toolUse.Id, result);
                 }
+
+                // Check for cancellation before recovery analysis
+                ct.ThrowIfCancellationRequested();
 
                 // Tool returned error - analyze and potentially recover
                 var strategy = _recoveryService.AnalyzeFailure(
@@ -408,6 +421,7 @@ public class ToolDispatcher
                     strategy.SuggestedModification ?? "Retry"
                 );
 
+                // Pass cancellation token to recovery (respects delays)
                 var recovery = await _recoveryService.ExecuteRecoveryAsync(strategy, stepNumber, ct);
 
                 if (!recovery.ShouldRetry)
@@ -424,6 +438,11 @@ public class ToolDispatcher
 
                 // Will retry - modification hint can be used by Claude
                 // For now, just retry with same input after delay
+            }
+            catch (OperationCanceledException)
+            {
+                // User cancelled - don't treat as error, let caller handle
+                throw;
             }
             catch (Exception ex)
             {

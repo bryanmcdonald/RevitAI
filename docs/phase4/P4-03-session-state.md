@@ -28,6 +28,7 @@
 
 /// <summary>
 /// Represents a single step in an execution plan.
+/// Note: P4-04 extends this model with verification-related properties.
 /// </summary>
 public class PlanStep
 {
@@ -90,6 +91,29 @@ public class PlanStep
     /// When this step completed/failed.
     /// </summary>
     public DateTime? CompletedAt { get; set; }
+
+    // Verification fields (populated by P4-04 verification loop)
+
+    /// <summary>
+    /// Verification status for this step (set by auto-verification in P4-04).
+    /// VerificationStatus enum is defined in P4-04.
+    /// </summary>
+    public VerificationStatus? VerificationStatus { get; set; }
+
+    /// <summary>
+    /// Observations recorded during verification.
+    /// </summary>
+    public string? VerificationObservations { get; set; }
+
+    /// <summary>
+    /// Issues found during verification.
+    /// </summary>
+    public List<string> VerificationIssues { get; set; } = new();
+
+    /// <summary>
+    /// When this step was verified.
+    /// </summary>
+    public DateTime? VerifiedAt { get; set; }
 }
 
 /// <summary>

@@ -194,6 +194,34 @@ Each plan step that modifies the model uses a transaction group:
 | `AutoVerification` | `true` | Auto-capture screenshots after modifications |
 | `MaxRetries` | `2` | Max retry attempts per failed step |
 
+### Settings Migration
+
+When users upgrade from Phase 1-3 to Phase 4, the new agentic settings are automatically added with their default values. The `ConfigurationService` handles missing properties gracefully:
+
+```csharp
+// In ConfigurationService.LoadSettings(), new properties get defaults
+public ApiSettings LoadSettings()
+{
+    var settings = LoadFromFile() ?? new ApiSettings();
+
+    // New Phase 4 settings will be null/default if upgrading from earlier version
+    // Defaults are defined in ApiSettings class, so no migration code needed
+    return settings;
+}
+```
+
+### Agentic Mode Indicator
+
+When agentic mode is enabled, the UI should indicate this to users so they understand Claude is operating autonomously. Consider adding a visual indicator in the chat header:
+
+```xml
+<!-- In ChatPane.xaml header -->
+<StackPanel Orientation="Horizontal" Visibility="{Binding IsAgenticModeEnabled, Converter={StaticResource BoolToVis}}">
+    <TextBlock Text="[AUTO]" Foreground="#FFA500" FontWeight="Bold" Margin="8,0"/>
+    <TextBlock Text="Agentic Mode" Foreground="#888888" FontSize="11"/>
+</StackPanel>
+```
+
 ---
 
 ## Phase 4 Completion Criteria

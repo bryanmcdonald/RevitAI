@@ -313,7 +313,7 @@ public class ResponseAccumulator
 
 ### Extended Thinking Requirements
 
-1. **Model Support**: Extended thinking works with Claude claude-sonnet-4-5-20250929 and later models
+1. **Model Support**: Extended thinking works with claude-sonnet-4-5-20250929 and later models
 2. **Streaming Required**: Extended thinking responses should use streaming
 3. **Token Budget**: `budget_tokens` is separate from `max_tokens` - thinking doesn't reduce output capacity
 4. **Response Time**: Expect 10-60 seconds for complex planning with extended thinking

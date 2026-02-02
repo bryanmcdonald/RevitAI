@@ -330,8 +330,9 @@ public partial class PlanProgressViewModel : ObservableObject
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
+                    <!-- Note: Using text instead of emoji for WPF compatibility in Revit -->
                     <TextBlock Grid.Column="0"
-                               Text="📋 Plan"
+                               Text="[Plan]"
                                FontWeight="SemiBold"
                                Foreground="#CCCCCC"
                                VerticalAlignment="Center"/>
@@ -405,8 +406,8 @@ public partial class PlanProgressViewModel : ObservableObject
                                                  Foreground="#CCCCCC"/>
                                         </TextBlock>
 
-                                        <!-- Verification badge -->
-                                        <TextBlock Text="🔍 Verification"
+                                        <!-- Verification badge (text for WPF compatibility) -->
+                                        <TextBlock Text="[QC]"
                                                    FontSize="10"
                                                    Foreground="#6C757D"
                                                    Visibility="{Binding IsVerificationStep, Converter={StaticResource BoolToVis}}"/>
@@ -530,6 +531,8 @@ public partial class ChatViewModel : ObservableObject
 | Completed | ● | Filled circle |
 | Failed | ✕ | X mark |
 | Skipped | ○ | Empty circle (dimmed) |
+
+> **WPF Compatibility Note**: The status icons above use Unicode characters (○ ◐ ● ✕) which render reliably in WPF. Emojis should be avoided in Revit-hosted WPF as they may render as empty boxes or incorrect glyphs depending on the system font configuration. Use text alternatives like `[Plan]`, `[QC]`, or Unicode symbols instead.
 
 ### Animations
 

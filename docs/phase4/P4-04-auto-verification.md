@@ -267,6 +267,9 @@ private async Task TriggerVerificationAsync(
     List<ToolResultBlock> results,
     CancellationToken ct)
 {
+    // Check for cancellation before triggering verification
+    ct.ThrowIfCancellationRequested();
+
     // Collect affected element IDs from results
     var elementIds = ExtractElementIdsFromResults(results);
 
@@ -388,12 +391,43 @@ public void RecordVerification(
     OnStepVerified?.Invoke(this, step);
 }
 
-// Add to PlanStep model:
-public VerificationStatus? VerificationStatus { get; set; }
-public string? VerificationObservations { get; set; }
-public List<string> VerificationIssues { get; set; } = new();
-public DateTime? VerifiedAt { get; set; }
+// Note: These fields are already defined in PlanStep (P4-03) with forward references to
+// the VerificationStatus enum defined above in this file (VerificationService.cs).
 ```
+
+---
+
+## Cancellation Support
+
+Verification respects cancellation tokens throughout the agentic loop:
+
+```csharp
+private async Task StreamClaudeResponseAsync(CancellationToken ct)
+{
+    while (true)
+    {
+        // Check for cancellation at loop start
+        ct.ThrowIfCancellationRequested();
+
+        var accumulator = await StreamResponseWithToolsAsync(ct);
+
+        // ... tool execution ...
+
+        // Cancellation is checked before verification
+        if (_verificationService.ShouldVerifyAfterTools(toolResults, executedTools!))
+        {
+            ct.ThrowIfCancellationRequested();
+            await TriggerVerificationAsync(toolBlocks, toolResults, ct);
+        }
+    }
+}
+```
+
+When the user clicks "Stop" during agentic execution:
+1. The `CancellationToken` is triggered
+2. Current tool execution completes (transactions commit or rollback)
+3. Verification loop exits gracefully
+4. Plan is marked as cancelled with partial progress preserved
 
 ---
 
