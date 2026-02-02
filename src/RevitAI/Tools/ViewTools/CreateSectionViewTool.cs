@@ -99,7 +99,7 @@ public sealed class CreateSectionViewTool : IRevitTool
     public string Description =>
         "Creates a section view at the specified origin point, looking in the specified direction. " +
         "The section plane is perpendicular to the direction vector. " +
-        "After creation, use switch_view with the returned view ID to open the new view.";
+        "IMPORTANT: Always call switch_view immediately after to open the new view.";
 
     public JsonElement InputSchema => _inputSchema;
 
