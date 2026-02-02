@@ -97,9 +97,11 @@ public sealed class CreateElevationViewTool : IRevitTool
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var doc = app.ActiveUIDocument?.Document;
-        if (doc == null)
+        var uiDoc = app.ActiveUIDocument;
+        if (uiDoc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
+
+        var doc = uiDoc.Document;
 
         // Get required parameters
         if (!input.TryGetProperty("name", out var nameElement))
@@ -111,6 +113,11 @@ public sealed class CreateElevationViewTool : IRevitTool
         var viewName = nameElement.GetString();
         if (string.IsNullOrWhiteSpace(viewName))
             return Task.FromResult(ToolResult.Error("Parameter 'name' cannot be empty."));
+
+        // Validate name doesn't contain invalid characters
+        if (viewName.Contains(':'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain colons (:). Please remove the colon from the name."));
 
         // Parse origin
         var origin = new XYZ(
@@ -198,6 +205,9 @@ public sealed class CreateElevationViewTool : IRevitTool
                     $"A view named '{viewName}' already exists. Please choose a different name."));
             }
 
+            // Switch to the newly created view
+            uiDoc.ActiveView = view;
+
             var result = new CreateElevationResult
             {
                 CreatedViewId = view.Id.Value,
@@ -218,17 +228,18 @@ public sealed class CreateElevationViewTool : IRevitTool
 
     /// <summary>
     /// Maps direction name to elevation marker index.
-    /// Marker indices: 0=+Y (North), 1=+X (East), 2=-Y (South), 3=-X (West)
+    /// Based on observed behavior, marker indices are:
+    /// 0=West (-X), 1=North (+Y), 2=East (+X), 3=South (-Y)
     /// </summary>
     private static int GetDirectionIndex(string direction)
     {
         return direction switch
         {
-            "North" => 0,
-            "East" => 1,
-            "South" => 2,
-            "West" => 3,
-            _ => 0 // Default to North
+            "North" => 1,
+            "East" => 2,
+            "South" => 3,
+            "West" => 0,
+            _ => 1 // Default to North
         };
     }
 

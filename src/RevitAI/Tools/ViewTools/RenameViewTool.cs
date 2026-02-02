@@ -60,7 +60,8 @@ public sealed class RenameViewTool : IRevitTool
     public string Name => "rename_view";
 
     public string Description =>
-        "Renames an existing view. View names must be unique within the project.";
+        "Renames an existing view. View names must be unique within the project. " +
+        "IMPORTANT: View names cannot contain colons (:), curly braces ({}), or other special characters.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -86,6 +87,15 @@ public sealed class RenameViewTool : IRevitTool
 
         if (string.IsNullOrWhiteSpace(newName))
             return Task.FromResult(ToolResult.Error("Parameter 'new_name' cannot be empty."));
+
+        // Validate name doesn't contain invalid characters
+        if (newName.Contains(':'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain colons (:). Please remove the colon from the name."));
+
+        if (newName.Contains('{') || newName.Contains('}'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain curly braces ({}). Please remove them from the name."));
 
         try
         {

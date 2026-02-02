@@ -77,9 +77,11 @@ public sealed class DuplicateViewTool : IRevitTool
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var doc = app.ActiveUIDocument?.Document;
-        if (doc == null)
+        var uiDoc = app.ActiveUIDocument;
+        if (uiDoc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
+
+        var doc = uiDoc.Document;
 
         // Get required parameters
         if (!input.TryGetProperty("view_id", out var viewIdElement))
@@ -93,6 +95,11 @@ public sealed class DuplicateViewTool : IRevitTool
 
         if (string.IsNullOrWhiteSpace(newName))
             return Task.FromResult(ToolResult.Error("Parameter 'new_name' cannot be empty."));
+
+        // Validate name doesn't contain invalid characters
+        if (newName.Contains(':'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain colons (:). Please remove the colon from the name."));
 
         // Get duplicate option (default Duplicate)
         var duplicateOption = ViewDuplicateOption.Duplicate;
@@ -153,6 +160,9 @@ public sealed class DuplicateViewTool : IRevitTool
                 return Task.FromResult(ToolResult.Error(
                     $"A view named '{newName}' already exists. Please choose a different name."));
             }
+
+            // Switch to the newly created view
+            uiDoc.ActiveView = newView;
 
             var result = new DuplicateViewResult
             {

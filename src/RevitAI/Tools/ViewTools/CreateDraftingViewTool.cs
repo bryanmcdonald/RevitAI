@@ -76,9 +76,11 @@ public sealed class CreateDraftingViewTool : IRevitTool
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var doc = app.ActiveUIDocument?.Document;
-        if (doc == null)
+        var uiDoc = app.ActiveUIDocument;
+        if (uiDoc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
+
+        var doc = uiDoc.Document;
 
         // Get required parameters
         if (!input.TryGetProperty("name", out var nameElement))
@@ -87,6 +89,11 @@ public sealed class CreateDraftingViewTool : IRevitTool
         var viewName = nameElement.GetString();
         if (string.IsNullOrWhiteSpace(viewName))
             return Task.FromResult(ToolResult.Error("Parameter 'name' cannot be empty."));
+
+        // Validate name doesn't contain invalid characters
+        if (viewName.Contains(':'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain colons (:). Please remove the colon from the name."));
 
         // Get optional scale (default 48)
         var scale = 48;
@@ -136,6 +143,9 @@ public sealed class CreateDraftingViewTool : IRevitTool
 
             // Set the scale
             view.Scale = scale;
+
+            // Switch to the newly created view
+            uiDoc.ActiveView = view;
 
             var result = new CreateDraftingResult
             {

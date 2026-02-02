@@ -77,9 +77,11 @@ public sealed class Create3DViewTool : IRevitTool
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var doc = app.ActiveUIDocument?.Document;
-        if (doc == null)
+        var uiDoc = app.ActiveUIDocument;
+        if (uiDoc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
+
+        var doc = uiDoc.Document;
 
         // Get required parameters
         if (!input.TryGetProperty("name", out var nameElement))
@@ -88,6 +90,11 @@ public sealed class Create3DViewTool : IRevitTool
         var viewName = nameElement.GetString();
         if (string.IsNullOrWhiteSpace(viewName))
             return Task.FromResult(ToolResult.Error("Parameter 'name' cannot be empty."));
+
+        // Validate name doesn't contain invalid characters
+        if (viewName.Contains(':'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain colons (:). Please remove the colon from the name."));
 
         // Get optional orientation
         var orientation = "Isometric";
@@ -135,12 +142,18 @@ public sealed class Create3DViewTool : IRevitTool
                     $"A view named '{viewName}' already exists. Please choose a different name."));
             }
 
-            // Apply orientation
-            var viewOrientation = GetViewOrientation(orientation);
-            if (viewOrientation != null)
+            // Apply orientation (skip for Isometric - Revit's CreateIsometric default is already good)
+            if (orientation != "Isometric")
             {
-                view.SetOrientation(viewOrientation);
+                var viewOrientation = GetViewOrientation(orientation);
+                if (viewOrientation != null)
+                {
+                    view.SetOrientation(viewOrientation);
+                }
             }
+
+            // Switch to the newly created view
+            uiDoc.ActiveView = view;
 
             var result = new Create3DViewResult
             {
@@ -161,7 +174,7 @@ public sealed class Create3DViewTool : IRevitTool
     private static ViewOrientation3D? GetViewOrientation(string preset)
     {
         // Standard orientations looking at origin from distance
-        // These are relative positions; Revit will normalize the view direction
+        // Note: Isometric is handled by Revit's default CreateIsometric, not here
         var eye = preset switch
         {
             "Front" => new XYZ(0, -100, 0),
@@ -170,16 +183,15 @@ public sealed class Create3DViewTool : IRevitTool
             "Right" => new XYZ(100, 0, 0),
             "Top" => new XYZ(0, 0, 100),
             "Bottom" => new XYZ(0, 0, -100),
-            "Isometric" => new XYZ(100, -100, 100),
             _ => null
         };
 
         if (eye == null) return null;
 
-        // Determine up vector
+        // Determine up vector (for top/bottom views, use Y as up since Z is the view direction)
         var up = preset is "Top" or "Bottom" ? XYZ.BasisY : XYZ.BasisZ;
 
-        // Calculate forward direction (from eye to target at origin)
+        // Calculate forward direction (from eye toward origin)
         var forward = (-eye).Normalize();
 
         return new ViewOrientation3D(eye, up, forward);

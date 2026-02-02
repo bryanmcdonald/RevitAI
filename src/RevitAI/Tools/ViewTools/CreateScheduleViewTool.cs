@@ -77,9 +77,11 @@ public sealed class CreateScheduleViewTool : IRevitTool
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var doc = app.ActiveUIDocument?.Document;
-        if (doc == null)
+        var uiDoc = app.ActiveUIDocument;
+        if (uiDoc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
+
+        var doc = uiDoc.Document;
 
         // Get required parameters
         if (!input.TryGetProperty("name", out var nameElement))
@@ -94,6 +96,11 @@ public sealed class CreateScheduleViewTool : IRevitTool
         var viewName = nameElement.GetString();
         if (string.IsNullOrWhiteSpace(viewName))
             return Task.FromResult(ToolResult.Error("Parameter 'name' cannot be empty."));
+
+        // Validate name doesn't contain invalid characters
+        if (viewName.Contains(':'))
+            return Task.FromResult(ToolResult.Error(
+                "View names cannot contain colons (:). Please remove the colon from the name."));
 
         var categoryStr = categoryElement.GetString();
         if (string.IsNullOrWhiteSpace(categoryStr))
@@ -178,6 +185,9 @@ public sealed class CreateScheduleViewTool : IRevitTool
             {
                 result.Warning = $"Could not add {failedFields.Count} field(s). Use schedule field editor to see available fields.";
             }
+
+            // Switch to the newly created schedule
+            uiDoc.ActiveView = schedule;
 
             return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
         }
