@@ -230,6 +230,7 @@ Advanced features and improved workflows.
 - [ ] Visual Feedback (element highlighting, previews)
 - [ ] Parameter & Schedule Operations
 - [ ] Conversation Memory & Persistence
+- [ ] Drafting & Documentation Tools (arcs, curves, filled regions, viewports, callouts, legends, revision clouds)
 
 ### Phase 3: Advanced & Multi-Discipline
 Discipline-specific tool packs and advanced features.
@@ -331,7 +332,6 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 - Linked model queries
 - Worksharing-specific operations
 - Family editing context
-- Detail views and drafting operations
 
 ## Team Deployment
 
