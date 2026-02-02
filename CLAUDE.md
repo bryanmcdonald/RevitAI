@@ -77,9 +77,15 @@ When the user asks to create a PR (or when a set of changes is complete):
 4. Include a summary of all commits in the PR body
 5. After the PR is merged on GitHub, main is updated with the changes
 
+### Merging a Pull Request
+This repo has branch protection and disallows merge commits. Always use:
+```
+gh pr merge <number> --squash --delete-branch --admin
+```
+
 ### After PR is Merged
-- Switch back to `main` and pull: `git checkout main && git pull`
-- Delete the merged feature branch if desired
+- The command above automatically updates local main and deletes the feature branch
+- If needed manually: `git checkout main && git pull`
 
 ### Exception: Documentation-Only Changes
 Minor documentation updates (typo fixes, small clarifications, README tweaks) can be committed directly to `main` without a PR. Use a PR for documentation changes only when:
