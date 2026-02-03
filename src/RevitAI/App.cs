@@ -226,6 +226,15 @@ public class App : IExternalApplication
         registry.Register(new DuplicateViewTool());
         registry.Register(new RenameViewTool());
         registry.Register(new DeleteViewTool());
+
+        // Camera control tools (P1.5-03)
+        registry.Register(new ZoomToFitTool());
+        registry.Register(new ZoomToElementsTool());
+        registry.Register(new ZoomToBoundsTool());
+        registry.Register(new ZoomByPercentTool());
+        registry.Register(new PanViewTool());
+        registry.Register(new OrbitViewTool());
+        registry.Register(new SetViewOrientationTool());
     }
 
     /// <summary>

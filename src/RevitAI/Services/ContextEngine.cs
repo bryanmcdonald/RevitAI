@@ -148,6 +148,13 @@ public sealed class ContextEngine
         sb.AppendLine("- Units are in feet. Convert if user provides inches (divide by 12) or meters (multiply by 3.28084).");
         sb.AppendLine("- Directions: +X is typically East, +Y is typically North, +Z is Up. 'South' means -Y, 'West' means -X.");
         sb.AppendLine();
+        sb.AppendLine("**View & Camera Control:**");
+        sb.AppendLine("- If you need to see something from a different angle, use the camera tools (zoom, pan, orbit, set_view_orientation).");
+        sb.AppendLine("- Before working on elements, consider using zoom_to_elements to get a better view of them.");
+        sb.AppendLine("- In 3D views, use orbit_view or set_view_orientation to see the model from the optimal angle for the task.");
+        sb.AppendLine("- After placing or modifying elements, consider zooming to them to verify the result visually.");
+        sb.AppendLine("- Use zoom_to_fit to reset the view if you've zoomed in too far.");
+        sb.AppendLine();
         sb.AppendLine("**Wall type changes:** Revit keeps the wall's 'Location Line' fixed during type changes. The change_element_type tool returns:");
         sb.AppendLine("- location_line_setting: Which reference is fixed ('Finish Face: Exterior', 'Finish Face: Interior', 'Wall Centerline', etc.)");
         sb.AppendLine("- If location_line_setting matches the face the user wants to keep fixed, NO MOVE is needed.");
