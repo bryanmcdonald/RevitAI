@@ -235,6 +235,14 @@ public class App : IExternalApplication
         registry.Register(new PanViewTool());
         registry.Register(new OrbitViewTool());
         registry.Register(new SetViewOrientationTool());
+
+        // Visual isolation tools (P1.5-04)
+        registry.Register(new IsolateElementsTool());
+        registry.Register(new HideElementsTool());
+        registry.Register(new ResetVisibilityTool());
+        registry.Register(new Set3DSectionBoxTool());
+        registry.Register(new ClearSectionBoxTool());
+        registry.Register(new SetDisplayStyleTool());
     }
 
     /// <summary>
