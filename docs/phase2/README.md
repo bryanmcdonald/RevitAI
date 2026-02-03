@@ -31,35 +31,34 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 ```
 src/RevitAI/
 ├── Tools/
-│   └── ModifyTools/
-│       ├── PlaceGridTool.cs              # P2-01
-│       ├── PlaceLevelTool.cs             # P2-01
-│       ├── PlaceDimensionTool.cs         # P2-01
-│       ├── PlaceTagTool.cs               # P2-01
-│       ├── CreateSheetTool.cs            # P2-01
-│       ├── PlaceDetailLineTool.cs        # P2-01
-│       ├── PlaceTextNoteTool.cs          # P2-01
-│       ├── CreateAssemblyTool.cs         # P2-02
-│       ├── CreateGroupTool.cs            # P2-02
-│       ├── CopyElementTool.cs            # P2-02
-│       ├── MirrorElementTool.cs          # P2-02
-│       ├── ArrayElementsTool.cs          # P2-02
-│       ├── AlignElementsTool.cs          # P2-02
-│       ├── PlaceScopeBoxTool.cs          # P2-02
-│       ├── BulkModifyParametersTool.cs   # P2-06
-│       └── ExportElementDataTool.cs      # P2-06
-│   └── DraftingTools/
-│       ├── PlaceDetailArcTool.cs         # P2-08
-│       ├── PlaceDetailCurveTool.cs       # P2-08
-│       ├── PlaceFilledRegionTool.cs      # P2-08
-│       ├── PlaceMaskingRegionTool.cs     # P2-08
-│       ├── PlaceDetailComponentTool.cs   # P2-08
-│       ├── PlaceViewportTool.cs          # P2-08
-│       ├── PlaceCalloutTool.cs           # P2-08
-│       ├── CreateLegendTool.cs           # P2-08
-│       ├── PlaceLegendComponentTool.cs   # P2-08
-│       └── PlaceRevisionCloudTool.cs     # P2-08
-├── Tools/
+│   ├── ModifyTools/
+│   │   ├── PlaceGridTool.cs              # P2-01
+│   │   ├── PlaceLevelTool.cs             # P2-01
+│   │   ├── PlaceDimensionTool.cs         # P2-01
+│   │   ├── PlaceTagTool.cs               # P2-01
+│   │   ├── CreateSheetTool.cs            # P2-01
+│   │   ├── PlaceDetailLineTool.cs        # P2-01
+│   │   ├── PlaceTextNoteTool.cs          # P2-01
+│   │   ├── CreateAssemblyTool.cs         # P2-02
+│   │   ├── CreateGroupTool.cs            # P2-02
+│   │   ├── CopyElementTool.cs            # P2-02
+│   │   ├── MirrorElementTool.cs          # P2-02
+│   │   ├── ArrayElementsTool.cs          # P2-02
+│   │   ├── AlignElementsTool.cs          # P2-02
+│   │   ├── PlaceScopeBoxTool.cs          # P2-02
+│   │   ├── BulkModifyParametersTool.cs   # P2-06
+│   │   └── ExportElementDataTool.cs      # P2-06
+│   ├── DraftingTools/
+│   │   ├── PlaceDetailArcTool.cs         # P2-08
+│   │   ├── PlaceDetailCurveTool.cs       # P2-08
+│   │   ├── PlaceFilledRegionTool.cs      # P2-08
+│   │   ├── PlaceMaskingRegionTool.cs     # P2-08
+│   │   ├── PlaceDetailComponentTool.cs   # P2-08
+│   │   ├── PlaceViewportTool.cs          # P2-08
+│   │   ├── PlaceCalloutTool.cs           # P2-08
+│   │   ├── CreateLegendTool.cs           # P2-08
+│   │   ├── PlaceLegendComponentTool.cs   # P2-08
+│   │   └── PlaceRevisionCloudTool.cs     # P2-08
 │   └── ReadTools/
 │       └── ReadScheduleDataTool.cs       # P2-06
 ├── Services/

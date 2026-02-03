@@ -41,17 +41,15 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1.5 View & Navigation: Complete** (Phase 1 Foundation complete)
+**Ready for Phase 2** (Phase 1 + 1.5 Foundation complete)
 
-| Feature | Status |
-|---------|--------|
+| Phase | Status |
+|-------|--------|
 | Phase 1 Foundation (10 chunks) | ✅ Complete |
-| P1.5-01 Screenshot Capture | ✅ Complete |
-| P1.5-02 View Management | ✅ Complete |
-| P1.5-03 Camera Control | ✅ Complete |
-| P1.5-04 Visual Isolation | ✅ Complete |
+| Phase 1.5 View & Navigation (4 chunks) | ✅ Complete |
+| Phase 2 Enhanced Capabilities | 🔜 Next |
 
-See [Development Status](#development-status) for details.
+See [Development Status](#development-status) for full details.
 
 ## Requirements
 

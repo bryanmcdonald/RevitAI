@@ -2,7 +2,7 @@
 
 **Goal**: Add tools for grids, levels, dimensions, tags, sections, sheets, and annotations.
 
-**Prerequisites**: Phase 1 complete.
+**Prerequisites**: Phase 1.5 complete.
 
 **Key Files to Create**:
 - `src/RevitAI/Tools/ModifyTools/PlaceGridTool.cs`
