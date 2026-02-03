@@ -270,7 +270,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P1.5-04 (Visual Isolation)
+**Next chunk to implement**: P2-01 (Advanced Placement Tools)
 
 ---
 

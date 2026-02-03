@@ -41,7 +41,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Phase 1.5 View & Navigation: In Progress** (Phase 1 Foundation complete)
+**Phase 1.5 View & Navigation: Complete** (Phase 1 Foundation complete)
 
 | Feature | Status |
 |---------|--------|
@@ -49,7 +49,7 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 | P1.5-01 Screenshot Capture | ✅ Complete |
 | P1.5-02 View Management | ✅ Complete |
 | P1.5-03 Camera Control | ✅ Complete |
-| P1.5-04 Visual Isolation | 🔄 Next |
+| P1.5-04 Visual Isolation | ✅ Complete |
 
 See [Development Status](#development-status) for details.
 
@@ -199,9 +199,17 @@ RevitAI provides Claude with tools to query your Revit model:
 | `pan_view` | Pan view by direction, element, or point |
 | `orbit_view` | Orbit 3D view around model |
 | `set_view_orientation` | Set 3D view to preset orientation |
+| `isolate_elements` | Isolate elements (temporary or permanent) |
+| `hide_elements` | Hide elements (temporary or permanent) |
+| `reset_visibility` | Reset visibility overrides |
+| `set_3d_section_box` | Create 3D section box around elements or bounds |
+| `clear_section_box` | Remove section box from 3D view |
+| `set_display_style` | Change view display style |
 
-**Coming Soon (Phase 1.5):**
-- Visual isolation and graphics overrides
+**Coming Soon (Phase 2):**
+- Advanced placement tools (grids, levels, dimensions, tags)
+- Element manipulation (copy, mirror, array, align)
+- Drafting & documentation tools
 
 ## Development Status
 
@@ -225,7 +233,7 @@ View manipulation and visual context tools for enhanced AI understanding.
 - [x] **P1.5-01** Screenshot Capture (view snapshots for Claude vision)
 - [x] **P1.5-02** View Management (13 tools: list, switch, open, create, duplicate, rename, delete views)
 - [x] **P1.5-03** Camera Control (7 tools: zoom, pan, orbit, orientation presets)
-- [ ] **P1.5-04** Visual Isolation (isolate, hide, override graphics)
+- [x] **P1.5-04** Visual Isolation (6 tools: isolate, hide, reset visibility, section box, display style)
 
 ### Phase 2: Enhanced Capabilities
 Advanced features and improved workflows.
