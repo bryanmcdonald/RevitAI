@@ -48,8 +48,8 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 | Phase 1 Foundation (10 chunks) | ✅ Complete |
 | P1.5-01 Screenshot Capture | ✅ Complete |
 | P1.5-02 View Management | ✅ Complete |
-| P1.5-03 Camera Control | 🔄 Next |
-| P1.5-04 Visual Isolation | Planned |
+| P1.5-03 Camera Control | ✅ Complete |
+| P1.5-04 Visual Isolation | 🔄 Next |
 
 See [Development Status](#development-status) for details.
 
@@ -192,9 +192,15 @@ RevitAI provides Claude with tools to query your Revit model:
 | `duplicate_view` | Duplicate view with options |
 | `rename_view` | Rename an existing view |
 | `delete_view` | Delete a view (requires confirmation) |
+| `zoom_to_fit` | Zoom view to fit all visible content |
+| `zoom_to_elements` | Zoom view to frame specific elements |
+| `zoom_to_bounds` | Zoom view to coordinate bounds |
+| `zoom_by_percent` | Zoom in/out by percentage |
+| `pan_view` | Pan view by direction, element, or point |
+| `orbit_view` | Orbit 3D view around model |
+| `set_view_orientation` | Set 3D view to preset orientation |
 
 **Coming Soon (Phase 1.5):**
-- Camera control (zoom, pan, 3D navigation)
 - Visual isolation and graphics overrides
 
 ## Development Status
@@ -218,7 +224,7 @@ View manipulation and visual context tools for enhanced AI understanding.
 
 - [x] **P1.5-01** Screenshot Capture (view snapshots for Claude vision)
 - [x] **P1.5-02** View Management (13 tools: list, switch, open, create, duplicate, rename, delete views)
-- [ ] **P1.5-03** Camera Control (zoom, pan, 3D orbit, section boxes)
+- [x] **P1.5-03** Camera Control (7 tools: zoom, pan, orbit, orientation presets)
 - [ ] **P1.5-04** Visual Isolation (isolate, hide, override graphics)
 
 ### Phase 2: Enhanced Capabilities

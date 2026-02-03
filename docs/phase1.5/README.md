@@ -15,9 +15,9 @@ Phase 1.5 adds foundational view navigation, camera control, and visual context 
 
 | Chunk | Name | Description | Prerequisites | Status |
 |-------|------|-------------|---------------|--------|
-| [P1.5-01](P1.5-01-screenshot-capture.md) | Screenshot Capture | Capture Revit window for Claude vision analysis | P1-08 | Pending |
-| [P1.5-02](P1.5-02-view-management.md) | View Management | List, switch, open, and create views | P1.5-01 | Pending |
-| [P1.5-03](P1.5-03-camera-control.md) | Camera Control | Zoom, pan, orbit, and view orientation tools | P1.5-02 | Pending |
+| [P1.5-01](P1.5-01-screenshot-capture.md) | Screenshot Capture | Capture Revit window for Claude vision analysis | P1-08 | ✅ Complete |
+| [P1.5-02](P1.5-02-view-management.md) | View Management | List, switch, open, and create views | P1.5-01 | ✅ Complete |
+| [P1.5-03](P1.5-03-camera-control.md) | Camera Control | Zoom, pan, orbit, and view orientation tools | P1.5-02 | ✅ Complete |
 | [P1.5-04](P1.5-04-visual-isolation.md) | Visual Isolation | Isolate/hide elements, section boxes, display styles | P1.5-03 | Pending |
 
 ---
@@ -60,14 +60,14 @@ src/RevitAI/
 
 ## Phase 1.5 Completion Criteria
 
-- [ ] Screenshot captures full Revit window and returns base64 image
-- [ ] Claude can analyze screenshots via vision API
-- [ ] All view types can be listed with `get_view_list`
-- [ ] Views can be switched and opened by name or ID
-- [ ] All 5 view creation tools work (floor plan, 3D, section, schedule, drafting)
-- [ ] All zoom modes work (fit, elements, bounds, percent)
-- [ ] Pan works by direction and by centering on element/point
-- [ ] Orbit works in 3D views (free rotation + preset orientations)
+- [x] Screenshot captures full Revit window and returns base64 image
+- [x] Claude can analyze screenshots via vision API
+- [x] All view types can be listed with `get_view_list`
+- [x] Views can be switched and opened by name or ID
+- [x] All 5 view creation tools work (floor plan, 3D, section, schedule, drafting)
+- [x] All zoom modes work (fit, elements, bounds, percent)
+- [x] Pan works by direction and by centering on element/point
+- [x] Orbit works in 3D views (free rotation + preset orientations)
 - [ ] Elements can be isolated/hidden (temporary and permanent)
 - [ ] 3D section boxes can be created around elements
 - [ ] Display styles can be changed

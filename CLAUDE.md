@@ -270,7 +270,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P1.5-03 (Camera Control)
+**Next chunk to implement**: P1.5-04 (Visual Isolation)
 
 ---
 
