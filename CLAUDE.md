@@ -7,18 +7,19 @@
 
 ## Project Overview
 
-**RevitAI** is a Revit plugin that embeds a Claude-powered conversational AI assistant directly into the Revit interface. Users interact via a dockable chat panel to query model information, place/modify elements, and automate tasks.
+**RevitAI** is a Revit plugin that embeds an AI-powered conversational assistant directly into the Revit interface. Supports **Claude** (Anthropic) and **Google Gemini** as AI providers. Users interact via a dockable chat panel to query model information, place/modify elements, and automate tasks.
 
 ### Tech Stack
 - **Target**: Revit 2026 (.NET 8)
 - **UI**: WPF (IDockablePaneProvider)
-- **API**: Claude Messages API via HttpClient
-- **Model**: claude-sonnet-4-5-20250929 (configurable)
+- **AI Providers**: Claude (Anthropic) and Google Gemini via `IAiProvider` abstraction
+- **API**: Messages API via HttpClient (both providers)
+- **Default Models**: claude-sonnet-4-5-20250929 (Claude), gemini-3-pro-preview (Gemini)
 
 ### Architecture Layers
 1. **UI Layer** - WPF dockable chat pane
 2. **Context Engine** - Selection/view/level tracking
-3. **Claude API Service** - Message construction, tool definitions, response parsing
+3. **AI Provider Service** - `IAiProvider` interface with Claude and Gemini implementations; message construction, tool definitions, response parsing
 4. **Command Execution** - ExternalEvent marshalling, transactions, tool dispatch
 
 ### Critical Threading Rule
@@ -106,7 +107,7 @@ Minor documentation updates (typo fixes, small clarifications, README tweaks) ca
 - Visual Studio 2022 (17.8+) with .NET 8 SDK
 - Revit 2026 installed
 - Revit 2026 SDK (download from Autodesk Developer Portal)
-- Anthropic API key
+- API key (Anthropic for Claude, or Google for Gemini)
 
 ### Revit SDK Setup
 1. Download Revit 2026 SDK from Autodesk Developer Portal
@@ -136,7 +137,10 @@ RevitAI/
 │   │   │   ├── SettingsViewModel.cs
 │   │   │   └── ConfirmationDialog.xaml
 │   │   ├── Services/
-│   │   │   ├── ClaudeApiService.cs
+│   │   │   ├── IAiProvider.cs           # Provider interface
+│   │   │   ├── AiProviderFactory.cs     # Creates provider from config
+│   │   │   ├── ClaudeApiService.cs      # Claude implementation
+│   │   │   ├── GeminiApiService.cs      # Gemini implementation
 │   │   │   ├── ConfigurationService.cs
 │   │   │   ├── SecureStorage.cs
 │   │   │   ├── ContextEngine.cs
@@ -145,6 +149,7 @@ RevitAI/
 │   │   ├── Models/
 │   │   │   ├── ApiSettings.cs
 │   │   │   ├── ClaudeModels.cs
+│   │   │   ├── GeminiModels.cs          # Gemini API DTOs
 │   │   │   ├── StreamEvents.cs
 │   │   │   └── RevitContext.cs
 │   │   ├── Tools/
@@ -403,3 +408,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.8 | Public Repo | Added Public Repository Notice section with guidelines for avoiding personal information in commits |
 | 1.9 | P2-08 | Added P2-08 Drafting & Documentation Tools chunk with 10 tools for advanced linework, regions, viewports, callouts, legends, and revision clouds |
 | 2.0 | Phase 4 | **Major version**: Added Phase 4 (Agentic Mode) with 6 chunks: extended thinking, planning tools, session state, auto-verification, agentic UI, error recovery. This is a major feature addition enabling autonomous operation. |
+| 2.1 | Multi-Provider | Added Google Gemini as AI provider. New `IAiProvider` abstraction, `AiProviderFactory`, `GeminiApiService`, provider-aware settings UI, per-provider API keys and model selection. |

@@ -31,6 +31,7 @@ public partial class SettingsDialog : Window
 {
     private readonly ConfigurationService _configService;
     private readonly UsageTracker _usageTracker;
+    private bool _isLoading;
 
     public SettingsDialog()
     {
@@ -41,7 +42,10 @@ public partial class SettingsDialog : Window
         // Subscribe to usage tracker changes
         _usageTracker.PropertyChanged += UsageTracker_PropertyChanged;
 
+        _isLoading = true;
         LoadSettings();
+        _isLoading = false;
+
         UpdateUsageDisplay();
     }
 
@@ -68,15 +72,25 @@ public partial class SettingsDialog : Window
 
     private void LoadSettings()
     {
-        // Load API key (if set, show placeholder)
+        // Load provider selection
+        var provider = _configService.AiProvider;
+        ProviderComboBox.SelectedIndex = provider == "Gemini" ? 1 : 0;
+
+        // Load Claude API key
         if (_configService.HasApiKey)
         {
-            // Don't show actual key, just indicate one is set
             ApiKeyBox.Password = _configService.ApiKey ?? string.Empty;
         }
 
-        // Load model
-        ModelComboBox.Text = _configService.Model;
+        // Load Gemini API key
+        if (_configService.HasGeminiApiKey)
+        {
+            GeminiApiKeyBox.Password = _configService.GeminiApiKey ?? string.Empty;
+        }
+
+        // Load model (provider-specific)
+        UpdateModelListForProvider(provider);
+        ModelComboBox.Text = provider == "Gemini" ? _configService.GeminiModel : _configService.Model;
 
         // Load temperature
         TemperatureSlider.Value = _configService.Temperature;
@@ -90,6 +104,60 @@ public partial class SettingsDialog : Window
         // Load safety settings
         SkipConfirmationsCheckBox.IsChecked = _configService.SkipConfirmations;
         DryRunModeCheckBox.IsChecked = _configService.DryRunMode;
+
+        // Update UI visibility
+        UpdateProviderVisibility(provider);
+    }
+
+    private void ProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading) return;
+
+        var selectedItem = ProviderComboBox.SelectedItem as ComboBoxItem;
+        var provider = selectedItem?.Tag?.ToString() ?? "Claude";
+
+        UpdateProviderVisibility(provider);
+        UpdateModelListForProvider(provider);
+    }
+
+    private void UpdateProviderVisibility(string provider)
+    {
+        var isGemini = provider == "Gemini";
+
+        if (ClaudeApiKeySection != null)
+            ClaudeApiKeySection.Visibility = isGemini ? Visibility.Collapsed : Visibility.Visible;
+        if (GeminiApiKeySection != null)
+            GeminiApiKeySection.Visibility = isGemini ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void UpdateModelListForProvider(string provider)
+    {
+        if (ModelComboBox == null) return;
+
+        ModelComboBox.Items.Clear();
+
+        if (provider == "Gemini")
+        {
+            ModelComboBox.Items.Add(new ComboBoxItem { Content = "gemini-3-pro-preview" });
+            ModelComboBox.Text = _configService.GeminiModel;
+            if (ModelDescriptionText != null)
+                ModelDescriptionText.Text = "The Gemini model to use. Gemini 3 Pro is recommended.";
+        }
+        else
+        {
+            ModelComboBox.Items.Add(new ComboBoxItem { Content = "claude-sonnet-4-5-20250929" });
+            ModelComboBox.Items.Add(new ComboBoxItem { Content = "claude-opus-4-5-20251101" });
+            ModelComboBox.Items.Add(new ComboBoxItem { Content = "claude-haiku-4-5-20251001" });
+            ModelComboBox.Text = _configService.Model;
+            if (ModelDescriptionText != null)
+                ModelDescriptionText.Text = "The Claude model to use. Sonnet is recommended for most tasks.";
+        }
+    }
+
+    private string GetSelectedProvider()
+    {
+        var selectedItem = ProviderComboBox.SelectedItem as ComboBoxItem;
+        return selectedItem?.Tag?.ToString() ?? "Claude";
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -119,15 +187,36 @@ public partial class SettingsDialog : Window
             return;
         }
 
-        // Save API key only if changed (not empty and not the placeholder)
-        var newApiKey = ApiKeyBox.Password;
-        if (!string.IsNullOrEmpty(newApiKey))
+        var provider = GetSelectedProvider();
+
+        // Save provider
+        _configService.AiProvider = provider;
+
+        // Save Claude API key if changed
+        var newClaudeKey = ApiKeyBox.Password;
+        if (!string.IsNullOrEmpty(newClaudeKey))
         {
-            _configService.ApiKey = newApiKey;
+            _configService.ApiKey = newClaudeKey;
         }
 
-        // Save other settings
-        _configService.Model = model;
+        // Save Gemini API key if changed
+        var newGeminiKey = GeminiApiKeyBox.Password;
+        if (!string.IsNullOrEmpty(newGeminiKey))
+        {
+            _configService.GeminiApiKey = newGeminiKey;
+        }
+
+        // Save model for the selected provider
+        if (provider == "Gemini")
+        {
+            _configService.GeminiModel = model;
+        }
+        else
+        {
+            _configService.Model = model;
+        }
+
+        // Save shared settings
         _configService.Temperature = TemperatureSlider.Value;
         _configService.MaxTokens = maxTokens;
         _configService.ContextVerbosity = VerbosityComboBox.SelectedIndex;
@@ -148,10 +237,12 @@ public partial class SettingsDialog : Window
 
     private async void TestConnectionButton_Click(object sender, RoutedEventArgs e)
     {
-        var apiKey = ApiKeyBox.Password;
+        var provider = GetSelectedProvider();
+        var apiKey = provider == "Gemini" ? GeminiApiKeyBox.Password : ApiKeyBox.Password;
+
         if (string.IsNullOrEmpty(apiKey))
         {
-            ShowConnectionStatus("Please enter an API key first.", isError: true);
+            ShowConnectionStatus($"Please enter a {provider} API key first.", isError: true);
             return;
         }
 
@@ -161,39 +252,34 @@ public partial class SettingsDialog : Window
         try
         {
             // Temporarily save the API key for testing
-            var originalKey = _configService.ApiKey;
-            _configService.ApiKey = apiKey;
-
-            using var apiService = new ClaudeApiService(_configService);
-
-            // Send a minimal test message
-            var testMessages = new List<ClaudeMessage>
+            if (provider == "Gemini")
             {
-                ClaudeMessage.User("Say 'ok' and nothing else.")
-            };
+                var originalKey = _configService.GeminiApiKey;
+                _configService.GeminiApiKey = apiKey;
 
-            var testSettings = new ApiSettings
-            {
-                Model = ModelComboBox.Text ?? "claude-sonnet-4-5-20250929",
-                MaxTokens = 10,
-                Temperature = 0
-            };
+                // Temporarily set provider for the factory
+                var originalProvider = _configService.AiProvider;
+                _configService.AiProvider = "Gemini";
 
-            var response = await apiService.SendMessageAsync(
-                systemPrompt: null,
-                messages: testMessages,
-                tools: null,
-                settingsOverride: testSettings);
-
-            if (response != null)
-            {
-                ShowConnectionStatus("Connection successful!", isError: false);
+                try
+                {
+                    using var aiProvider = AiProviderFactory.Create(_configService);
+                    await TestProviderConnection(aiProvider, provider);
+                }
+                finally
+                {
+                    _configService.AiProvider = originalProvider;
+                }
             }
             else
             {
-                // Restore original key if test failed
-                _configService.ApiKey = originalKey;
-                ShowConnectionStatus("Connection failed: No response received.", isError: true);
+                var originalKey = _configService.ApiKey;
+                _configService.ApiKey = apiKey;
+
+                using var aiProvider = new ClaudeApiService(_configService);
+                await TestProviderConnection(aiProvider, provider);
+
+                // Note: key stays saved if test succeeded (same as before)
             }
         }
         catch (ClaudeApiException ex)
@@ -207,6 +293,40 @@ public partial class SettingsDialog : Window
         finally
         {
             TestConnectionButton.IsEnabled = true;
+        }
+    }
+
+    private async Task TestProviderConnection(IAiProvider aiProvider, string provider)
+    {
+        var testMessages = new List<ClaudeMessage>
+        {
+            ClaudeMessage.User("Say 'ok' and nothing else.")
+        };
+
+        var defaultModel = provider == "Gemini"
+            ? (ModelComboBox.Text ?? "gemini-3-pro-preview")
+            : (ModelComboBox.Text ?? "claude-sonnet-4-5-20250929");
+
+        var testSettings = new ApiSettings
+        {
+            Model = defaultModel,
+            MaxTokens = 10,
+            Temperature = 0
+        };
+
+        var response = await aiProvider.SendMessageAsync(
+            systemPrompt: null,
+            messages: testMessages,
+            tools: null,
+            settingsOverride: testSettings);
+
+        if (response != null)
+        {
+            ShowConnectionStatus($"{provider} connection successful!", isError: false);
+        }
+        else
+        {
+            ShowConnectionStatus("Connection failed: No response received.", isError: true);
         }
     }
 

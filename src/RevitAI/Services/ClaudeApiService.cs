@@ -28,7 +28,7 @@ namespace RevitAI.Services;
 /// Service for communicating with the Claude Messages API.
 /// Supports both streaming and non-streaming requests.
 /// </summary>
-public sealed class ClaudeApiService : IDisposable
+public sealed class ClaudeApiService : IAiProvider
 {
     private const string ApiBaseUrl = "https://api.anthropic.com/v1/messages";
     private const string ApiVersion = "2023-06-01";
@@ -44,9 +44,10 @@ public sealed class ClaudeApiService : IDisposable
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    /// <summary>
-    /// Event raised when a streaming response completes, providing usage statistics.
-    /// </summary>
+    /// <inheritdoc/>
+    public string ProviderName => "Claude";
+
+    /// <inheritdoc/>
     public event EventHandler<Usage>? StreamCompleted;
 
     public ClaudeApiService() : this(ConfigurationService.Instance)

@@ -141,6 +141,8 @@ public sealed class ContextEngine
         sb.AppendLine();
         sb.AppendLine("Be concise and helpful. When discussing Revit elements, use correct terminology and reference element IDs when relevant.");
         sb.AppendLine();
+        sb.AppendLine("**IMPORTANT - Do NOT output your reasoning process.** When you need to use tools, call them directly without narrating your plan or thought process. Do not output text like 'Let me try...' or 'I will now...' before tool calls. Just call the tools, then present the results to the user concisely.");
+        sb.AppendLine();
         sb.AppendLine("**CRITICAL - Selection Context:** The 'Current Revit Context' section below is refreshed with EVERY message. When the user says 'this element', 'the selection', 'selected elements', or similar references, ALWAYS use the element IDs from the CURRENT context below - NOT element IDs from earlier in the conversation. The user may have changed their selection between messages. Use these current IDs directly with tools like move_element, delete_elements, modify_element_parameter, etc.");
         sb.AppendLine();
         sb.AppendLine("**Tool usage notes:**");
