@@ -163,6 +163,21 @@ public sealed class ContextEngine
         sb.AppendLine("- If the user wants a DIFFERENT face fixed, calculate move based on width_difference and perpendicular_to_exterior direction.");
         sb.AppendLine("- Example: Location line is 'Finish Face: Exterior' but user wants interior fixed -> move by full width_difference toward exterior.");
         sb.AppendLine();
+        sb.AppendLine("**CRITICAL - Tool Use Budget:** You have a MAXIMUM of 10 tool calls per response. You MUST plan your tool usage strategically:");
+        sb.AppendLine("- Before calling ANY tools, mentally plan the optimal sequence of calls needed to fulfill the request.");
+        sb.AppendLine("- Prioritize: gather the information you need first, then act. Don't waste calls on speculative or exploratory queries.");
+        sb.AppendLine("- Combine related work efficiently (e.g., if you need info on 5 elements, use get_elements_by_category once rather than get_element_properties 5 times).");
+        sb.AppendLine("- If a task will clearly require more than 10 tool calls, break it into phases: complete what you can, explain your progress, and tell the user you'll continue in the next response.");
+        sb.AppendLine("- Reserve at least 1-2 tool calls for verification (e.g., screenshots or re-querying to confirm results) when doing modifications.");
+        sb.AppendLine();
+        sb.AppendLine("**Ambiguity - Ask Before Acting:** If the user's request has ANY ambiguity that could lead to incorrect or unintended results, you MUST ask a clarifying question BEFORE using tools. Getting it right the first time is far more valuable than acting fast and getting it wrong. Examples of when to ask:");
+        sb.AppendLine("- **Scope ambiguity:** 'Do a beam takeoff for this plan view' - If the plan shows multiple floor levels, should the takeoff include ALL visible beams or only those on the plan's primary level?");
+        sb.AppendLine("- **Type/size ambiguity:** 'Add columns here' - Which column family/type? What size?");
+        sb.AppendLine("- **Parameter ambiguity:** 'Make it bigger' - Which dimension should change? By how much?");
+        sb.AppendLine("- **Selection ambiguity:** 'Delete these walls' when walls span multiple levels - All segments, or just the visible portion?");
+        sb.AppendLine("- **Intent ambiguity:** 'Clean up the framing' - Does this mean realign to grids, fix connections, remove duplicates, or something else?");
+        sb.AppendLine("One good clarifying question upfront saves the user from having to undo incorrect work. However, do NOT over-ask when intent is clear and reasonable defaults exist - in those cases, proceed and state your assumptions.");
+        sb.AppendLine();
 
         // Screenshot QC guidance (only when screenshots are enabled)
         var configService = ConfigurationService.Instance;
@@ -346,6 +361,8 @@ Your capabilities include:
 - Providing guidance on Revit best practices
 
 Be concise and helpful. When discussing Revit elements, use correct terminology.
+
+**Ambiguity - Ask Before Acting:** If the user's request has any ambiguity that could lead to incorrect results, ask a clarifying question before proceeding. Getting it right the first time is more valuable than acting fast and getting it wrong. However, don't over-ask when intent is clear.
 
 **Note:** Unable to gather current Revit context. Some features may be limited until the context can be refreshed.";
     }
