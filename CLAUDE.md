@@ -275,7 +275,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-02 (Element Manipulation Tools)
+**Next chunk to implement**: P2-03 (Multi-Step Design Operations)
 
 ---
 
@@ -409,3 +409,4 @@ The plugin will be considered successful when it meets these criteria:
 | 1.9 | P2-08 | Added P2-08 Drafting & Documentation Tools chunk with 10 tools for advanced linework, regions, viewports, callouts, legends, and revision clouds |
 | 2.0 | Phase 4 | **Major version**: Added Phase 4 (Agentic Mode) with 6 chunks: extended thinking, planning tools, session state, auto-verification, agentic UI, error recovery. This is a major feature addition enabling autonomous operation. |
 | 2.1 | Multi-Provider | Added Google Gemini as AI provider. New `IAiProvider` abstraction, `AiProviderFactory`, `GeminiApiService`, provider-aware settings UI, per-provider API keys and model selection. |
+| 2.2 | P2-02 | Added 7 element manipulation tools: copy, mirror, rotate, array (linear/radial), align, create group, create assembly. Replaced `place_scope_box` with `rotate_element`. |

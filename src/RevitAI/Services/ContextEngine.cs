@@ -157,6 +157,15 @@ public sealed class ContextEngine
         sb.AppendLine("- After placing or modifying elements, consider zooming to them to verify the result visually.");
         sb.AppendLine("- Use zoom_to_fit to reset the view if you've zoomed in too far.");
         sb.AppendLine();
+        sb.AppendLine("**Element Manipulation:**");
+        sb.AppendLine("- copy_element: Copies elements with a translation offset. Returns new element IDs.");
+        sb.AppendLine("- mirror_element: Mirrors about a vertical plane defined by two [x,y] points. Default creates copies; set copy=false to move in place.");
+        sb.AppendLine("- rotate_element: Rotates around a center point. Positive angle = counterclockwise from above. If no center given, uses bounding box center.");
+        sb.AppendLine("- array_elements: Creates linear (spacing vector) or radial (center point + angle) arrays. Count is number of additional copies.");
+        sb.AppendLine("- align_elements: Aligns elements to a reference element by bounding box edge (left/right/top/bottom) or center.");
+        sb.AppendLine("- create_group: Groups elements into a Model Group (min 2 elements). Optionally name the group type.");
+        sb.AppendLine("- create_assembly: Creates an Assembly from elements. Auto-detects naming category from most common element category.");
+        sb.AppendLine();
         sb.AppendLine("**Wall type changes:** Revit keeps the wall's 'Location Line' fixed during type changes. The change_element_type tool returns:");
         sb.AppendLine("- location_line_setting: Which reference is fixed ('Finish Face: Exterior', 'Finish Face: Interior', 'Wall Centerline', etc.)");
         sb.AppendLine("- If location_line_setting matches the face the user wants to keep fixed, NO MOVE is needed.");
