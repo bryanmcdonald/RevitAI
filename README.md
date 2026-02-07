@@ -179,6 +179,13 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_column` | Place structural column |
 | `place_beam` | Place structural beam |
 | `place_floor` | Create floor from boundary |
+| `place_level` | Create level at elevation |
+| `place_grid` | Create grid line between two points |
+| `place_detail_line` | Draw detail line in a view |
+| `place_text_note` | Place text note annotation |
+| `create_sheet` | Create sheet with title block and optional views |
+| `place_tag` | Tag an element by category |
+| `place_dimension` | Dimension between grids, levels, or walls |
 | `capture_screenshot` | Capture Revit window or active view for Claude vision analysis |
 | `get_view_list` | List all views with optional type filtering |
 | `switch_view` | Switch active view by ID |
@@ -208,7 +215,6 @@ RevitAI provides Claude with tools to query your Revit model:
 | `set_display_style` | Change view display style |
 
 **Coming Soon (Phase 2):**
-- Advanced placement tools (grids, levels, dimensions, tags)
 - Element manipulation (copy, mirror, array, align)
 - Drafting & documentation tools
 
@@ -239,7 +245,7 @@ View manipulation and visual context tools for enhanced AI understanding.
 ### Phase 2: Enhanced Capabilities
 Advanced features and improved workflows.
 
-- [ ] **P2-01** Advanced Placement Tools (grids, levels, dimensions, tags)
+- [x] **P2-01** Advanced Placement Tools (7 tools: grids, levels, detail lines, text notes, sheets, tags, dimensions)
 - [ ] **P2-02** Element Manipulation (copy, mirror, array, align)
 - [ ] **P2-03** Multi-Step Design Operations
 - [ ] **P2-04** Smart Context Awareness (grid snapping, type inference)

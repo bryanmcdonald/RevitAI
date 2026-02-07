@@ -275,7 +275,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-01 (Advanced Placement Tools)
+**Next chunk to implement**: P2-02 (Element Manipulation Tools)
 
 ---
 
