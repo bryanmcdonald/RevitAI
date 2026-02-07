@@ -277,6 +277,242 @@ public static class ElementLookupHelper
                 string.Equals(fs.Name, trimmedName, StringComparison.OrdinalIgnoreCase));
     }
 
+    // ────────────────────────────────────────────────────────────────
+    // Title Block lookups (P2-01)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds a title block FamilySymbol by name (case-insensitive).
+    /// Supports "Family: Type" or just the family/type name.
+    /// </summary>
+    public static FamilySymbol? FindTitleBlockType(Document doc, string name)
+    {
+        return FindFamilySymbolInCategory(doc, BuiltInCategory.OST_TitleBlocks, name);
+    }
+
+    /// <summary>
+    /// Gets available title block names in the document.
+    /// </summary>
+    public static string GetAvailableTitleBlockNames(Document doc, int maxCount = 20)
+    {
+        return GetAvailableTypeNames(doc, BuiltInCategory.OST_TitleBlocks, maxCount);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // TextNoteType lookups (P2-01)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds a TextNoteType by name (case-insensitive).
+    /// </summary>
+    public static TextNoteType? FindTextNoteType(Document doc, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var trimmedName = name.Trim();
+
+        return new FilteredElementCollector(doc)
+            .OfClass(typeof(TextNoteType))
+            .Cast<TextNoteType>()
+            .FirstOrDefault(t =>
+                string.Equals(t.Name, trimmedName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(GetFullTypeName(t), trimmedName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Gets available text note type names in the document.
+    /// </summary>
+    public static string GetAvailableTextNoteTypeNames(Document doc, int maxCount = 20)
+    {
+        var types = new FilteredElementCollector(doc)
+            .OfClass(typeof(TextNoteType))
+            .Cast<TextNoteType>()
+            .OrderBy(t => t.Name)
+            .Take(maxCount)
+            .Select(t => t.Name)
+            .ToList();
+
+        if (types.Count == 0)
+            return "No text note types found in the document.";
+
+        var result = string.Join(", ", types);
+        if (types.Count == maxCount)
+            result += ", ...";
+
+        return result;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // DimensionType lookups (P2-01)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds a DimensionType by name (case-insensitive).
+    /// </summary>
+    public static DimensionType? FindDimensionType(Document doc, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var trimmedName = name.Trim();
+
+        return new FilteredElementCollector(doc)
+            .OfClass(typeof(DimensionType))
+            .Cast<DimensionType>()
+            .FirstOrDefault(t =>
+                string.Equals(t.Name, trimmedName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(GetFullTypeName(t), trimmedName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Gets available dimension type names in the document.
+    /// </summary>
+    public static string GetAvailableDimensionTypeNames(Document doc, int maxCount = 20)
+    {
+        var types = new FilteredElementCollector(doc)
+            .OfClass(typeof(DimensionType))
+            .Cast<DimensionType>()
+            .OrderBy(t => t.Name)
+            .Take(maxCount)
+            .Select(t => t.Name)
+            .ToList();
+
+        if (types.Count == 0)
+            return "No dimension types found in the document.";
+
+        var result = string.Join(", ", types);
+        if (types.Count == maxCount)
+            result += ", ...";
+
+        return result;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Line Style lookups (P2-01)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds a line style (GraphicsStyle) by name (case-insensitive).
+    /// Searches among line-type subcategories of the Lines category.
+    /// </summary>
+    public static GraphicsStyle? FindLineStyle(Document doc, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var trimmedName = name.Trim();
+
+        var lineCategory = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines);
+        if (lineCategory == null)
+            return null;
+
+        foreach (Category subCat in lineCategory.SubCategories)
+        {
+            if (string.Equals(subCat.Name, trimmedName, StringComparison.OrdinalIgnoreCase))
+            {
+                return subCat.GetGraphicsStyle(GraphicsStyleType.Projection);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets available line style names in the document.
+    /// </summary>
+    public static string GetAvailableLineStyleNames(Document doc, int maxCount = 20)
+    {
+        var lineCategory = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines);
+        if (lineCategory == null)
+            return "No line styles found in the document.";
+
+        var names = new List<string>();
+        foreach (Category subCat in lineCategory.SubCategories)
+        {
+            names.Add(subCat.Name);
+            if (names.Count >= maxCount)
+                break;
+        }
+
+        if (names.Count == 0)
+            return "No line styles found in the document.";
+
+        names.Sort(StringComparer.OrdinalIgnoreCase);
+        var result = string.Join(", ", names.Take(maxCount));
+        if (names.Count >= maxCount)
+            result += ", ...";
+
+        return result;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Tag type lookups (P2-01)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Maps element categories to their corresponding tag categories.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<BuiltInCategory, BuiltInCategory> TagCategoryMap = new Dictionary<BuiltInCategory, BuiltInCategory>()
+    {
+        { BuiltInCategory.OST_Walls, BuiltInCategory.OST_WallTags },
+        { BuiltInCategory.OST_Doors, BuiltInCategory.OST_DoorTags },
+        { BuiltInCategory.OST_Windows, BuiltInCategory.OST_WindowTags },
+        { BuiltInCategory.OST_Rooms, BuiltInCategory.OST_RoomTags },
+        { BuiltInCategory.OST_StructuralColumns, BuiltInCategory.OST_StructuralColumnTags },
+        { BuiltInCategory.OST_StructuralFraming, BuiltInCategory.OST_StructuralFramingTags },
+        { BuiltInCategory.OST_StructuralFoundation, BuiltInCategory.OST_StructuralFoundationTags },
+        { BuiltInCategory.OST_Floors, BuiltInCategory.OST_FloorTags },
+        { BuiltInCategory.OST_Ceilings, BuiltInCategory.OST_CeilingTags },
+        { BuiltInCategory.OST_Roofs, BuiltInCategory.OST_RoofTags },
+        { BuiltInCategory.OST_Columns, BuiltInCategory.OST_ColumnTags },
+        { BuiltInCategory.OST_Furniture, BuiltInCategory.OST_FurnitureTags },
+        { BuiltInCategory.OST_MechanicalEquipment, BuiltInCategory.OST_MechanicalEquipmentTags },
+        { BuiltInCategory.OST_Parking, BuiltInCategory.OST_ParkingTags },
+        { BuiltInCategory.OST_GenericModel, BuiltInCategory.OST_GenericModelTags },
+    };
+
+    /// <summary>
+    /// Finds an appropriate tag FamilySymbol for the given element's category.
+    /// If tagTypeName is specified, searches for that specific type; otherwise returns the first available.
+    /// </summary>
+    public static FamilySymbol? FindTagTypeForElement(Document doc, Element element, string? tagTypeName = null)
+    {
+        var elementCategoryId = element.Category?.BuiltInCategory;
+        if (elementCategoryId == null)
+            return null;
+
+        if (!TagCategoryMap.TryGetValue(elementCategoryId.Value, out var tagCategory))
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(tagTypeName))
+        {
+            return FindFamilySymbolInCategory(doc, tagCategory, tagTypeName);
+        }
+
+        // Return first available tag type for this category
+        return new FilteredElementCollector(doc)
+            .OfCategory(tagCategory)
+            .OfClass(typeof(FamilySymbol))
+            .Cast<FamilySymbol>()
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Gets available tag type names for the given element's category.
+    /// </summary>
+    public static string GetAvailableTagTypesForCategory(Document doc, Element element, int maxCount = 20)
+    {
+        var elementCategoryId = element.Category?.BuiltInCategory;
+        if (elementCategoryId == null)
+            return "Element has no category.";
+
+        if (!TagCategoryMap.TryGetValue(elementCategoryId.Value, out var tagCategory))
+            return $"No tag types available for category '{element.Category?.Name}'.";
+
+        return GetAvailableTypeNames(doc, tagCategory, maxCount);
+    }
+
     /// <summary>
     /// Gets the full type name for an element type (Family: Type format).
     /// </summary>

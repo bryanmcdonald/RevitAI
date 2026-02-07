@@ -209,6 +209,15 @@ public class App : IExternalApplication
         registry.Register(new PlaceBeamTool());
         registry.Register(new PlaceFloorTool());
 
+        // Advanced placement tools (P2-01)
+        registry.Register(new PlaceLevelTool());
+        registry.Register(new PlaceGridTool());
+        registry.Register(new PlaceDetailLineTool());
+        registry.Register(new PlaceTextNoteTool());
+        registry.Register(new CreateSheetTool());
+        registry.Register(new PlaceTagTool());
+        registry.Register(new PlaceDimensionTool());
+
         // View tools (P1.5)
         registry.Register(new CaptureScreenshotTool());
 
