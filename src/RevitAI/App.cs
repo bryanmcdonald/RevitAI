@@ -218,6 +218,15 @@ public class App : IExternalApplication
         registry.Register(new PlaceTagTool());
         registry.Register(new PlaceDimensionTool());
 
+        // Element manipulation tools (P2-02)
+        registry.Register(new CopyElementTool());
+        registry.Register(new MirrorElementTool());
+        registry.Register(new RotateElementTool());
+        registry.Register(new ArrayElementsTool());
+        registry.Register(new AlignElementsTool());
+        registry.Register(new CreateGroupTool());
+        registry.Register(new CreateAssemblyTool());
+
         // View tools (P1.5)
         registry.Register(new CaptureScreenshotTool());
 

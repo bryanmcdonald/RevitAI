@@ -213,9 +213,16 @@ RevitAI provides Claude with tools to query your Revit model:
 | `set_3d_section_box` | Create 3D section box around elements or bounds |
 | `clear_section_box` | Remove section box from 3D view |
 | `set_display_style` | Change view display style |
+| `copy_element` | Copy elements with translation offset |
+| `mirror_element` | Mirror elements about a vertical plane |
+| `rotate_element` | Rotate elements by angle around a point |
+| `array_elements` | Create linear or radial arrays |
+| `align_elements` | Align elements to a reference element |
+| `create_group` | Create Model Group from elements |
+| `create_assembly` | Create Assembly from elements |
 
 **Coming Soon (Phase 2):**
-- Element manipulation (copy, mirror, array, align)
+- Multi-step design operations
 - Drafting & documentation tools
 
 ## Development Status
@@ -246,7 +253,7 @@ View manipulation and visual context tools for enhanced AI understanding.
 Advanced features and improved workflows.
 
 - [x] **P2-01** Advanced Placement Tools (7 tools: grids, levels, detail lines, text notes, sheets, tags, dimensions)
-- [ ] **P2-02** Element Manipulation (copy, mirror, array, align)
+- [x] **P2-02** Element Manipulation (7 tools: copy, mirror, rotate, array, align, group, assembly)
 - [ ] **P2-03** Multi-Step Design Operations
 - [ ] **P2-04** Smart Context Awareness (grid snapping, type inference)
 - [ ] **P2-05** Visual Feedback (element highlighting, previews)
