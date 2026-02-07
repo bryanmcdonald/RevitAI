@@ -20,7 +20,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="RevitAI Settings"
         Width="450"
-        Height="700"
+        Height="800"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
@@ -68,7 +68,7 @@
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <!-- API Key Section -->
+                <!-- AI Provider Section -->
                 <Border Background="White"
                         BorderBrush="#E0E0E0"
                         BorderThickness="1"
@@ -76,7 +76,31 @@
                         Padding="16"
                         Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="API Key"
+                        <TextBlock Text="AI Provider"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <ComboBox x:Name="ProviderComboBox"
+                                  Padding="8,6"
+                                  Background="White"
+                                  SelectionChanged="ProviderComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Claude" Tag="Claude"/>
+                            <ComboBoxItem Content="Google Gemini" Tag="Gemini"/>
+                        </ComboBox>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            Select which AI provider to use for conversations.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Claude API Key Section -->
+                <Border x:Name="ClaudeApiKeySection"
+                        Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Claude API Key"
                                    Style="{StaticResource LabelStyle}"/>
                         <PasswordBox x:Name="ApiKeyBox"
                                      Padding="8,6"
@@ -86,7 +110,40 @@
                         <TextBlock Style="{StaticResource DescriptionStyle}">
                             Your Anthropic API key. Get one at console.anthropic.com
                         </TextBlock>
+                    </StackPanel>
+                </Border>
 
+                <!-- Gemini API Key Section -->
+                <Border x:Name="GeminiApiKeySection"
+                        Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="Gemini API Key"
+                                   Style="{StaticResource LabelStyle}"/>
+                        <PasswordBox x:Name="GeminiApiKeyBox"
+                                     Padding="8,6"
+                                     Background="White"
+                                     BorderBrush="#CCCCCC"
+                                     BorderThickness="1"/>
+                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                            Your Google Gemini API key. Get one at aistudio.google.com
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Test Connection -->
+                <Border Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="16"
+                        Margin="0,0,0,16">
+                    <StackPanel>
                         <Button x:Name="TestConnectionButton"
                                 Content="Test Connection"
                                 Padding="12,6"
@@ -118,7 +175,7 @@
                             <ComboBoxItem Content="claude-opus-4-5-20251101"/>
                             <ComboBoxItem Content="claude-haiku-4-5-20251001"/>
                         </ComboBox>
-                        <TextBlock Style="{StaticResource DescriptionStyle}">
+                        <TextBlock x:Name="ModelDescriptionText" Style="{StaticResource DescriptionStyle}">
                             The Claude model to use. Sonnet is recommended for most tasks.
                         </TextBlock>
 

@@ -53,7 +53,23 @@ public sealed class ConfigurationService
     }
 
     /// <summary>
-    /// Gets or sets the API key (stored encrypted).
+    /// Gets or sets the active AI provider ("Claude" or "Gemini").
+    /// </summary>
+    public string AiProvider
+    {
+        get => _config.AiProvider;
+        set
+        {
+            if (_config.AiProvider != value)
+            {
+                _config.AiProvider = value;
+                Save();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the Claude API key (stored encrypted).
     /// </summary>
     public string? ApiKey
     {
@@ -66,9 +82,36 @@ public sealed class ConfigurationService
     }
 
     /// <summary>
-    /// Gets a value indicating whether an API key is configured.
+    /// Gets a value indicating whether a Claude API key is configured.
     /// </summary>
     public bool HasApiKey => !string.IsNullOrEmpty(ApiKey);
+
+    /// <summary>
+    /// Gets or sets the Gemini API key (stored encrypted).
+    /// </summary>
+    public string? GeminiApiKey
+    {
+        get => SecureStorage.Decrypt(_config.EncryptedGeminiApiKey);
+        set
+        {
+            _config.EncryptedGeminiApiKey = SecureStorage.Encrypt(value);
+            Save();
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a Gemini API key is configured.
+    /// </summary>
+    public bool HasGeminiApiKey => !string.IsNullOrEmpty(GeminiApiKey);
+
+    /// <summary>
+    /// Gets a value indicating whether the active provider has an API key configured.
+    /// </summary>
+    public bool HasActiveApiKey => AiProvider switch
+    {
+        "Gemini" => HasGeminiApiKey,
+        _ => HasApiKey
+    };
 
     /// <summary>
     /// Gets or sets the Claude model to use.
@@ -81,6 +124,22 @@ public sealed class ConfigurationService
             if (_config.Model != value)
             {
                 _config.Model = value;
+                Save();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the Gemini model to use.
+    /// </summary>
+    public string GeminiModel
+    {
+        get => _config.GeminiModel;
+        set
+        {
+            if (_config.GeminiModel != value)
+            {
+                _config.GeminiModel = value;
                 Save();
             }
         }
@@ -220,10 +279,11 @@ public sealed class ConfigurationService
 
     /// <summary>
     /// Gets the default API settings based on current configuration.
+    /// Uses the model for the active provider.
     /// </summary>
     public ApiSettings DefaultApiSettings => new()
     {
-        Model = Model,
+        Model = AiProvider == "Gemini" ? GeminiModel : Model,
         Temperature = Temperature,
         MaxTokens = MaxTokens
     };
@@ -244,7 +304,12 @@ public sealed class ConfigurationService
     public void ResetToDefaults()
     {
         var apiKey = _config.EncryptedApiKey;
-        _config = new ConfigData { EncryptedApiKey = apiKey };
+        var geminiApiKey = _config.EncryptedGeminiApiKey;
+        _config = new ConfigData
+        {
+            EncryptedApiKey = apiKey,
+            EncryptedGeminiApiKey = geminiApiKey
+        };
         Save();
     }
 
@@ -285,11 +350,20 @@ public sealed class ConfigurationService
     /// </summary>
     private sealed class ConfigData
     {
+        [JsonPropertyName("aiProvider")]
+        public string AiProvider { get; set; } = "Claude";
+
         [JsonPropertyName("encryptedApiKey")]
         public string? EncryptedApiKey { get; set; }
 
+        [JsonPropertyName("encryptedGeminiApiKey")]
+        public string? EncryptedGeminiApiKey { get; set; }
+
         [JsonPropertyName("model")]
         public string Model { get; set; } = "claude-sonnet-4-5-20250929";
+
+        [JsonPropertyName("geminiModel")]
+        public string GeminiModel { get; set; } = "gemini-3-pro-preview";
 
         [JsonPropertyName("temperature")]
         public double Temperature { get; set; } = 0.7;

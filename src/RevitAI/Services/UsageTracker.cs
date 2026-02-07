@@ -28,9 +28,12 @@ public sealed class UsageTracker : INotifyPropertyChanged
     private static UsageTracker? _instance;
     private static readonly object _lock = new();
 
-    // Pricing per million tokens (Claude Sonnet rates as of 2025)
-    private const decimal InputTokenPricePerMillion = 3.00m;
-    private const decimal OutputTokenPricePerMillion = 15.00m;
+    // Pricing per million tokens (as of 2025)
+    // Claude Sonnet: $3/$15, Gemini Pro: $2/$12
+    private const decimal ClaudeInputPricePerMillion = 3.00m;
+    private const decimal ClaudeOutputPricePerMillion = 15.00m;
+    private const decimal GeminiInputPricePerMillion = 2.00m;
+    private const decimal GeminiOutputPricePerMillion = 12.00m;
 
     private long _inputTokens;
     private long _outputTokens;
@@ -75,8 +78,12 @@ public sealed class UsageTracker : INotifyPropertyChanged
     {
         get
         {
-            var inputCost = (InputTokens / 1_000_000m) * InputTokenPricePerMillion;
-            var outputCost = (OutputTokens / 1_000_000m) * OutputTokenPricePerMillion;
+            var isGemini = ConfigurationService.Instance.AiProvider == "Gemini";
+            var inputPrice = isGemini ? GeminiInputPricePerMillion : ClaudeInputPricePerMillion;
+            var outputPrice = isGemini ? GeminiOutputPricePerMillion : ClaudeOutputPricePerMillion;
+
+            var inputCost = (InputTokens / 1_000_000m) * inputPrice;
+            var outputCost = (OutputTokens / 1_000_000m) * outputPrice;
             return inputCost + outputCost;
         }
     }

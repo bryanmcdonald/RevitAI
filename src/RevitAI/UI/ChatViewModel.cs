@@ -35,11 +35,18 @@ public partial class ChatViewModel : ObservableObject
 {
     private readonly ConversationPersistenceService _persistenceService;
     private readonly ConfigurationService _configService;
-    private readonly ClaudeApiService _apiService;
+    private IAiProvider _aiProvider;
     private readonly ContextEngine _contextEngine;
     private readonly ToolDispatcher _toolDispatcher;
     private readonly Dispatcher _dispatcher;
     private CancellationTokenSource? _cancellationTokenSource;
+
+    /// <summary>
+    /// Stores the structured API-level conversation history across turns.
+    /// Unlike the display Messages collection, this preserves ToolUseBlock/ToolResultBlock
+    /// structure so the AI provider can reference prior tool results.
+    /// </summary>
+    private List<ClaudeMessage> _apiHistory = new();
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
@@ -104,19 +111,27 @@ I can help you with your Revit model. Try asking me to:
 Type a message below to get started.";
 
     /// <summary>
-    /// Message shown when no API key is configured.
+    /// Gets the message shown when no API key is configured, based on the active provider.
     /// </summary>
-    private const string NoApiKeyMessage = @"**API Key Required**
+    private string NoApiKeyMessage => _configService.AiProvider switch
+    {
+        "Gemini" => @"**API Key Required**
+
+Please click the gear icon (⚙) in the header to configure your Google Gemini API key.
+
+You can get an API key from [aistudio.google.com](https://aistudio.google.com).",
+        _ => @"**API Key Required**
 
 Please click the gear icon (⚙) in the header to configure your Anthropic API key.
 
-You can get an API key from [console.anthropic.com](https://console.anthropic.com).";
+You can get an API key from [console.anthropic.com](https://console.anthropic.com)."
+    };
 
     public ChatViewModel()
     {
         _persistenceService = new ConversationPersistenceService();
         _configService = ConfigurationService.Instance;
-        _apiService = new ClaudeApiService(_configService);
+        _aiProvider = AiProviderFactory.Create(_configService);
         _contextEngine = new ContextEngine();
         _toolDispatcher = new ToolDispatcher();
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -125,7 +140,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         Messages.Add(ChatMessage.CreateSystemMessage(WelcomeMessage));
 
         // Check if API key is configured
-        if (!_configService.HasApiKey)
+        if (!_configService.HasActiveApiKey)
         {
             Messages.Add(ChatMessage.CreateSystemMessage(NoApiKeyMessage));
         }
@@ -166,7 +181,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         if (string.IsNullOrWhiteSpace(InputText)) return;
 
         // Check for API key
-        if (!_configService.HasApiKey)
+        if (!_configService.HasActiveApiKey)
         {
             Messages.Add(ChatMessage.CreateSystemMessage(
                 "Please configure your API key in Settings (gear icon) before sending messages."));
@@ -305,35 +320,26 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
 
     /// <summary>
     /// Builds the conversation history in Claude message format.
+    /// Uses _apiHistory for prior turns (preserves tool call/result structure),
+    /// then appends only the latest user message.
     /// </summary>
     /// <param name="screenshot">Optional screenshot to include with the last user message.</param>
     private List<ClaudeMessage> BuildClaudeMessages(byte[]? screenshot = null)
     {
-        var claudeMessages = new List<ClaudeMessage>();
-        var userMessages = Messages
-            .Where(m => m.Role != MessageRole.System && !string.IsNullOrEmpty(m.Content) && !m.IsStreaming)
-            .ToList();
+        // Start with the structured API history from prior turns
+        var claudeMessages = new List<ClaudeMessage>(_apiHistory);
 
-        for (int i = 0; i < userMessages.Count; i++)
+        // Add only the latest user message (the one just sent, not yet in _apiHistory)
+        var latestUserMsg = Messages.LastOrDefault(m => m.Role == MessageRole.User);
+        if (latestUserMsg != null)
         {
-            var msg = userMessages[i];
-            var isLastUserMessage = i == userMessages.Count - 1 && msg.Role == MessageRole.User;
-
-            if (msg.Role == MessageRole.User)
+            if (screenshot != null && screenshot.Length > 0)
             {
-                // Include screenshot only with the most recent user message
-                if (isLastUserMessage && screenshot != null && screenshot.Length > 0)
-                {
-                    claudeMessages.Add(ClaudeMessage.UserWithImage(msg.Content, screenshot));
-                }
-                else
-                {
-                    claudeMessages.Add(ClaudeMessage.User(msg.Content));
-                }
+                claudeMessages.Add(ClaudeMessage.UserWithImage(latestUserMsg.Content, screenshot));
             }
             else
             {
-                claudeMessages.Add(ClaudeMessage.Assistant(msg.Content));
+                claudeMessages.Add(ClaudeMessage.User(latestUserMsg.Content));
             }
         }
 
@@ -358,7 +364,9 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         // Keep conversation messages for multi-turn tool use
         var conversationMessages = new List<ClaudeMessage>(messages);
 
-        // Tool execution loop - continues until Claude stops using tools
+        // Tool execution loop - continues until the AI stops using tools
+        const int MaxToolRounds = 10;
+        int toolRound = 0;
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -368,7 +376,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
             // Run streaming on background thread to keep UI responsive
             await Task.Run(async () =>
             {
-                await foreach (var streamEvent in _apiService.SendMessageStreamingAsync(
+                await foreach (var streamEvent in _aiProvider.SendMessageStreamingAsync(
                     systemPrompt: systemPrompt,
                     messages: conversationMessages,
                     tools: hasTools ? toolDefinitions : null,
@@ -397,6 +405,13 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
             // Check if we need to execute tools
             if (accumulator.StopReason != "tool_use" || accumulator.ToolUseBlocks.Count == 0)
             {
+                // Store the final assistant response in structured history
+                var finalBlocks = accumulator.GetContentBlocks();
+                if (finalBlocks.Count > 0)
+                {
+                    conversationMessages.Add(ClaudeMessage.Assistant(finalBlocks));
+                }
+
                 // No more tool calls - we're done
                 break;
             }
@@ -420,9 +435,24 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
             // Add tool results to conversation history
             conversationMessages.Add(ClaudeMessage.ToolResult(toolResults));
 
-            // Continue the loop to get Claude's response to the tool results
+            toolRound++;
+            if (toolRound >= MaxToolRounds)
+            {
+                // Add a synthetic assistant message so history has proper alternation
+                conversationMessages.Add(ClaudeMessage.Assistant(
+                    "Reached the maximum tool call limit for this turn. The user may need to refine their request."));
+
+                await _dispatcher.InvokeAsync(() =>
+                    assistantMessage.AppendContent("\n\n*Reached maximum tool call limit. Please refine your request if more information is needed.*"));
+                break;
+            }
+
+            // Continue the loop to get the AI's response to the tool results
             await _dispatcher.InvokeAsync(() => StatusText = "Processing tool results...");
         }
+
+        // Persist the structured conversation history for future turns
+        _apiHistory = conversationMessages;
     }
 
     /// <summary>
@@ -594,7 +624,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     private void Cancel()
     {
         _cancellationTokenSource?.Cancel();
-        _apiService.CancelCurrentRequest();
+        _aiProvider.CancelCurrentRequest();
         StatusText = "Cancelling...";
     }
 
@@ -605,9 +635,10 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     private void ClearConversation()
     {
         Messages.Clear();
+        _apiHistory.Clear();
         Messages.Add(ChatMessage.CreateSystemMessage(WelcomeMessage));
 
-        if (!_configService.HasApiKey)
+        if (!_configService.HasActiveApiKey)
         {
             Messages.Add(ChatMessage.CreateSystemMessage(NoApiKeyMessage));
         }
@@ -630,6 +661,8 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     {
         try
         {
+            var previousProvider = _configService.AiProvider;
+
             var dialog = new SettingsDialog
             {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
@@ -637,17 +670,33 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
 
             var result = dialog.ShowDialog();
 
-            // If settings were saved and we now have an API key, remove the warning message
-            if (result == true && _configService.HasApiKey)
+            if (result == true)
             {
-                // Remove any "API Key Required" messages
-                var warningMessages = Messages
-                    .Where(m => m.Role == MessageRole.System && m.Content.Contains("API Key Required"))
-                    .ToList();
+                // Refresh the AI provider (may have changed provider or API key)
+                RefreshAiProvider();
 
-                foreach (var msg in warningMessages)
+                // If provider changed, clear conversation since tool call IDs aren't cross-compatible
+                if (previousProvider != _configService.AiProvider)
                 {
-                    Messages.Remove(msg);
+                    Messages.Clear();
+                    _apiHistory.Clear();
+                    Messages.Add(ChatMessage.CreateSystemMessage(WelcomeMessage));
+                    Messages.Add(ChatMessage.CreateSystemMessage(
+                        $"Switched to **{_configService.AiProvider}** provider. Conversation was cleared."));
+                    _persistenceService.StartNewConversation();
+                }
+
+                // If we now have an API key, remove the warning message
+                if (_configService.HasActiveApiKey)
+                {
+                    var warningMessages = Messages
+                        .Where(m => m.Role == MessageRole.System && m.Content.Contains("API Key Required"))
+                        .ToList();
+
+                    foreach (var msg in warningMessages)
+                    {
+                        Messages.Remove(msg);
+                    }
                 }
             }
         }
@@ -655,6 +704,15 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         {
             Messages.Add(ChatMessage.CreateSystemMessage($"Failed to open settings: {ex.Message}"));
         }
+    }
+
+    /// <summary>
+    /// Disposes the current AI provider and creates a new one based on current configuration.
+    /// </summary>
+    private void RefreshAiProvider()
+    {
+        _aiProvider.Dispose();
+        _aiProvider = AiProviderFactory.Create(_configService);
     }
 
     /// <summary>

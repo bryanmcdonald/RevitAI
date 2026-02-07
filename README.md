@@ -1,6 +1,6 @@
 # RevitAI
 
-A Revit plugin that embeds a Claude-powered conversational AI assistant directly into the Revit interface. Query model information, place and modify elements, and automate tasks using natural language.
+A Revit plugin that embeds an AI-powered conversational assistant directly into the Revit interface. Supports **Claude** (Anthropic) and **Google Gemini** as AI providers. Query model information, place and modify elements, and automate tasks using natural language.
 
 ## Table of Contents
 
@@ -32,9 +32,9 @@ A Revit plugin that embeds a Claude-powered conversational AI assistant directly
 
 ## Overview
 
-RevitAI provides a dockable chat panel where you interact with Claude to:
+RevitAI provides a dockable chat panel where you interact with AI (Claude or Gemini) to:
 - **Query your model** - Get element counts, properties, levels, grids, warnings, and more
-- **Understand context** - Claude sees your current selection, active view, and level
+- **Understand context** - The AI sees your current selection, active view, and level
 - **Automate tasks** - Place elements, modify parameters, and perform multi-step operations (coming soon)
 
 Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, Architecture) working in Revit 2026.
@@ -55,7 +55,9 @@ See [Development Status](#development-status) for full details.
 
 - **Revit 2026** (required - uses .NET 8)
 - **Windows 10/11** (64-bit)
-- **Anthropic API Key** ([Get one here](https://console.anthropic.com/))
+- **AI Provider API Key** - one of:
+  - **Anthropic API Key** for Claude ([Get one here](https://console.anthropic.com/))
+  - **Google Gemini API Key** ([Get one here](https://aistudio.google.com/))
 
 ## Installation
 
@@ -73,7 +75,7 @@ See [Development Status](#development-status) for full details.
    - All supporting DLLs (CommunityToolkit.Mvvm.dll, Markdig.dll, etc.)
 
 4. **Start Revit 2026**
-5. **Configure API Key**: Click the gear icon in the RevitAI panel and enter your Anthropic API key
+5. **Configure API Key**: Click the gear icon in the RevitAI panel, select your AI provider (Claude or Gemini), and enter your API key
 
 ### Manual Build
 
@@ -110,9 +112,10 @@ If you want to build from source:
 ### Configuring Settings
 
 Click the **gear icon** in the chat panel to:
-- Enter your Anthropic API key (stored securely encrypted)
-- Select the Claude model (default: claude-sonnet-4-5-20250929)
-- Adjust context verbosity level
+- Choose your AI provider (Claude or Google Gemini)
+- Enter your API key (stored securely encrypted via DPAPI)
+- Select the model (Claude: sonnet/opus/haiku; Gemini: gemini-3-pro-preview)
+- Adjust temperature, max tokens, and context verbosity level
 
 ### Example Queries
 
@@ -331,8 +334,10 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 ### API Key errors
 
 1. Click the gear icon to open Settings
-2. Re-enter your Anthropic API key
-3. Ensure the key is valid at [console.anthropic.com](https://console.anthropic.com/)
+2. Verify the correct AI provider is selected (Claude or Gemini)
+3. Re-enter your API key for the selected provider
+4. For Claude: verify at [console.anthropic.com](https://console.anthropic.com/)
+5. For Gemini: verify at [aistudio.google.com](https://aistudio.google.com/)
 
 ### Chat not responding
 
