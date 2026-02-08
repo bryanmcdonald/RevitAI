@@ -1,137 +1,102 @@
 # P2-04: Smart Context Awareness
 
-**Goal**: Add intelligent interpretation of relative positions, grid references, and type inference.
+**Goal**: Add intelligent interpretation of relative positions, grid references, and type inference so users can interact naturally ("place a column at grid A-1" instead of providing raw coordinates).
 
 **Prerequisites**: P2-03 complete.
 
-**Key Files to Create/Modify**:
-- `src/RevitAI/Services/ContextEngine.cs` (enhanced)
-- `src/RevitAI/Services/GeometryResolver.cs`
-- `src/RevitAI/Services/TypeResolver.cs`
+**Status**: ✅ Complete
+
+**Key Files Created/Modified**:
+- `src/RevitAI/Services/GeometryResolver.cs` (new)
+- `src/RevitAI/Tools/ReadTools/ResolveGridIntersectionTool.cs` (new)
+- `src/RevitAI/Tools/ModifyTools/Helpers/ElementLookupHelper.cs` (modified)
+- `src/RevitAI/Models/RevitContext.cs` (modified)
+- `src/RevitAI/Services/ContextEngine.cs` (modified)
+- `src/RevitAI/Tools/ModifyTools/PlaceColumnTool.cs` (modified)
+- `src/RevitAI/Tools/ModifyTools/PlaceBeamTool.cs` (modified)
+- `src/RevitAI/Tools/ModifyTools/PlaceWallTool.cs` (modified)
+- `src/RevitAI/Tools/ModifyTools/PlaceFloorTool.cs` (modified)
+- `src/RevitAI/App.cs` (modified - register new tool)
 
 ---
 
 ## Implementation Details
 
-> *This is a preliminary outline. Detailed implementation will be added during the chunk planning session.*
+### 1. GeometryResolver (New Static Utility)
 
-### 1. Grid Intersection Resolver
+**File**: `src/RevitAI/Services/GeometryResolver.cs`
 
-```csharp
-public class GeometryResolver
-{
-    public XYZ? ResolveGridIntersection(Document doc, string grid1Name, string grid2Name)
-    {
-        var grid1 = FindGrid(doc, grid1Name);
-        var grid2 = FindGrid(doc, grid2Name);
+Three static methods:
 
-        if (grid1 == null || grid2 == null) return null;
+- **`ResolveGridIntersection(doc, grid1Name, grid2Name)`** - Finds two grids by name (case-insensitive), computes mathematical 2D line intersection using parametric form (not `Curve.Intersect` which has issues with bounded grid extents). Returns XYZ with Z=0.
 
-        var curve1 = grid1.Curve;
-        var curve2 = grid2.Curve;
+- **`ResolveRelativePosition(doc, referenceElementId, direction, distanceFeet)`** - Gets element location (LocationPoint -> point, LocationCurve -> midpoint), maps direction to offset vector (east=+X, west=-X, north=+Y, south=-Y, up=+Z, down=-Z).
 
-        // Find intersection point
-        var result = curve1.Intersect(curve2, out var resultArray);
-        if (result == SetComparisonResult.Overlap && resultArray.Size > 0)
-        {
-            return resultArray.get_Item(0).XYZPoint;
-        }
-        return null;
-    }
+- **`GetGridNamesByOrientation(doc)`** - Classifies all grids by line direction angle (< 45° from X-axis = horizontal/east-west, >= 45° = vertical/north-south).
 
-    public List<XYZ> GetAllGridIntersections(Document doc)
-    {
-        // Return all intersection points for batch operations
-    }
-}
-```
+### 2. Fuzzy Type Matching (ElementLookupHelper Enhancement)
 
-### 2. Relative Position Resolver
+**File**: `src/RevitAI/Tools/ModifyTools/Helpers/ElementLookupHelper.cs`
 
-```csharp
-public XYZ ResolveRelativePosition(Document doc, ElementId referenceId, string direction, double distance)
-{
-    var elem = doc.GetElement(referenceId);
-    var location = GetElementLocation(elem);
+Added private `LevenshteinDistance` helper and three new fuzzy lookup methods:
 
-    var offset = direction.ToLower() switch
-    {
-        "right" or "east" => new XYZ(distance, 0, 0),
-        "left" or "west" => new XYZ(-distance, 0, 0),
-        "up" or "north" => new XYZ(0, distance, 0),
-        "down" or "south" => new XYZ(0, -distance, 0),
-        "above" => new XYZ(0, 0, distance),
-        "below" => new XYZ(0, 0, -distance),
-        _ => throw new ArgumentException($"Unknown direction: {direction}")
-    };
+- **`FindFamilySymbolInCategoryFuzzy`** - Search order: exact match -> partial contains -> Levenshtein distance (threshold = max(2, input.Length / 3))
+- **`FindWallTypeByNameFuzzy`** - Same strategy for WallType
+- **`FindFloorTypeByNameFuzzy`** - Same strategy for FloorType
 
-    return location + offset;
-}
-```
+Each returns `(Type?, bool IsFuzzy, string? MatchedName)` tuple. Existing non-fuzzy methods remain unchanged for backward compatibility.
 
-### 3. Type Inference
+### 3. Grid Context in System Prompt
 
-```csharp
-public class TypeResolver
-{
-    public FamilySymbol? FindBestMatch(Document doc, BuiltInCategory category, string userInput)
-    {
-        var types = new FilteredElementCollector(doc)
-            .OfClass(typeof(FamilySymbol))
-            .OfCategory(category)
-            .Cast<FamilySymbol>()
-            .ToList();
+**File**: `src/RevitAI/Models/RevitContext.cs` — Added `GridSummary` class and `GridInfo` property.
 
-        // Exact match first
-        var exact = types.FirstOrDefault(t =>
-            t.Name.Equals(userInput, StringComparison.OrdinalIgnoreCase));
-        if (exact != null) return exact;
+**File**: `src/RevitAI/Services/ContextEngine.cs` — At verbosity >= 2, extracts grid names by orientation and includes a "Grid Layout" section in the system prompt showing horizontal and vertical grid names. Also added "Smart Placement" tool usage notes.
 
-        // Partial match (e.g., "W10x49" matches "W10x49 - Structural Column")
-        var partial = types.FirstOrDefault(t =>
-            t.Name.Contains(userInput, StringComparison.OrdinalIgnoreCase));
-        if (partial != null) return partial;
+### 4. Updated Placement Tools
 
-        // Fuzzy match
-        return types.OrderBy(t => LevenshteinDistance(t.Name, userInput)).FirstOrDefault();
-    }
-}
-```
+All four placement tools now support:
 
-### 4. Level Inference from Active View
+| Feature | `place_column` | `place_beam` | `place_wall` | `place_floor` |
+|---------|:-:|:-:|:-:|:-:|
+| Grid intersection params | `grid_intersection` | `start/end_grid_intersection` | `start/end_grid_intersection` | — (use resolve tool) |
+| Relative position | `relative_to` | — | — | — |
+| Optional level (infer from view) | ✅ | ✅ | ✅ | ✅ |
+| Fuzzy type matching | ✅ | ✅ | ✅ | ✅ |
 
-```csharp
-public Level? InferLevelFromContext(UIDocument uidoc)
-{
-    var view = uidoc.ActiveView;
-    if (view is ViewPlan plan)
-    {
-        return plan.GenLevel;
-    }
-    // Fall back to lowest level or ask user
-    return null;
-}
-```
+**Priority for location resolution**: `grid_intersection` > `relative_to` > raw coordinates.
 
-### 5. Update Tool Input Processing
+**Level inference**: If no level is specified, tools check if the active view is a ViewPlan and use its `GenLevel`. If not a plan view, returns an error asking for explicit level.
 
-```csharp
-// In tool execution, resolve references before acting
-if (input.TryGetProperty("grid_intersection", out var gridRef))
-{
-    var point = _geometryResolver.ResolveGridIntersection(
-        doc,
-        gridRef.GetProperty("grid1").GetString(),
-        gridRef.GetProperty("grid2").GetString());
-    // Use point for placement
-}
-```
+**Fuzzy match reporting**: When a fuzzy match is used, the tool result includes `fuzzy_matched` field and a note in the message (e.g., "Type fuzzy-matched to 'W-Wide Flange-Column: W10x49'").
+
+### 5. ResolveGridIntersectionTool (New Read Tool)
+
+**File**: `src/RevitAI/Tools/ReadTools/ResolveGridIntersectionTool.cs`
+
+Lightweight read-only tool (`resolve_grid_intersection`) for the AI to explicitly resolve grid intersections to coordinates. Returns `{x, y, grid1, grid2, message}`. Useful for:
+- `place_floor` boundaries (boundary arrays don't fit the grid_intersection pattern)
+- Multi-step planning where the AI needs to know coordinates before acting
+
+### Design Decisions
+
+1. **Mathematical 2D intersection vs Curve.Intersect**: Grid curves in Revit are bounded — `Curve.Intersect` only finds intersections within the drawn extent. Mathematical intersection of unbounded lines always works.
+
+2. **No separate TypeResolver class**: Fuzzy matching was added directly to `ElementLookupHelper` since it already handles all type lookups. Adding a separate class would fragment the lookup logic.
+
+3. **No grid_intersection on place_floor**: Floor boundaries are point arrays, not pairs of endpoints. The AI should use `resolve_grid_intersection` to get coordinates first, then pass them as boundary points.
+
+4. **Levenshtein threshold scaling**: `max(2, length/3)` balances between allowing reasonable typos (e.g., "W10x4" matching "W10x49") and preventing wild mismatches on short strings.
 
 ---
 
 ## Verification (Manual)
 
-1. Ask Claude "Place a column at grid A-1"
-2. Ask Claude "Add a beam 3 feet to the right of the selected column"
-3. Ask Claude "Use a W10x49 column" (should find the matching type)
-4. In a Level 2 floor plan, ask Claude to place an element (should default to Level 2)
+1. **Grid intersection**: "Place a column at grid A-1" → column appears at correct intersection
+2. **Relative position**: "Add a column 3 feet east of the selected column" → column offset correctly
+3. **Fuzzy type**: "Use a W10x49 column" → resolves to full "W-Wide Flange-Column: W10x49"
+4. **Level inference**: In Level 2 plan, place element without specifying level → defaults to Level 2
+5. **Grid context**: At verbosity 2, system prompt shows grid names
+6. **Resolve tool**: "What are the coordinates of grid A-1?" → uses resolve_grid_intersection
+7. **Beam grid endpoints**: "Place a beam from grid A/1 to grid A/3" → resolves both endpoints from grids
+8. **Wall grid endpoints**: "Place a wall from grid 1/A to grid 1/D" → resolves both endpoints
+9. **Error cases**: Non-existent grid names, parallel grids, elements without locations → clear error messages

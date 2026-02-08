@@ -194,6 +194,7 @@ public class App : IExternalApplication
         registry.Register(new GetElementPropertiesTool());
         registry.Register(new GetRoomInfoTool());
         registry.Register(new GetElementQuantityTakeoffTool());
+        registry.Register(new ResolveGridIntersectionTool());
 
         // Modification tools (P1-09) - Non-transaction
         registry.Register(new SelectElementsTool());

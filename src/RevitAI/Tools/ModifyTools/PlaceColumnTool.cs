@@ -19,12 +19,14 @@ using System.Text.Json.Serialization;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using RevitAI.Services;
 using RevitAI.Tools.ModifyTools.Helpers;
 
 namespace RevitAI.Tools.ModifyTools;
 
 /// <summary>
 /// Tool that places a structural column at a specified location.
+/// Supports grid intersections, relative positions, and raw coordinates.
 /// </summary>
 public sealed class PlaceColumnTool : IRevitTool
 {
@@ -42,15 +44,36 @@ public sealed class PlaceColumnTool : IRevitTool
                         "items": { "type": "number" },
                         "minItems": 2,
                         "maxItems": 2,
-                        "description": "Column location [x, y] in feet."
+                        "description": "Column location [x, y] in feet. Optional if grid_intersection or relative_to is provided."
+                    },
+                    "grid_intersection": {
+                        "type": "object",
+                        "properties": {
+                            "grid1": { "type": "string", "description": "Name of the first grid." },
+                            "grid2": { "type": "string", "description": "Name of the second grid." }
+                        },
+                        "required": ["grid1", "grid2"],
+                        "additionalProperties": false,
+                        "description": "Place column at the intersection of two grids."
+                    },
+                    "relative_to": {
+                        "type": "object",
+                        "properties": {
+                            "element_id": { "type": "integer", "description": "Element ID of the reference element." },
+                            "direction": { "type": "string", "description": "Horizontal direction: north, south, east, or west." },
+                            "distance": { "type": "number", "description": "Distance in feet from the reference element." }
+                        },
+                        "required": ["element_id", "direction", "distance"],
+                        "additionalProperties": false,
+                        "description": "Place column relative to an existing element."
                     },
                     "column_type": {
                         "type": "string",
-                        "description": "Column type name in 'Family: Type' format (e.g., 'W-Wide Flange-Column: W10x49')."
+                        "description": "Column type name (e.g., 'W10x49' or 'W-Wide Flange-Column: W10x49'). Supports fuzzy matching."
                     },
                     "base_level": {
                         "type": "string",
-                        "description": "Name of the base level (e.g., 'Level 1')."
+                        "description": "Name of the base level. Optional - defaults to the active view's level."
                     },
                     "top_level": {
                         "type": "string",
@@ -65,7 +88,7 @@ public sealed class PlaceColumnTool : IRevitTool
                         "description": "Offset from the top level in feet. Positive is up. Default is 0. Only used if top_level is specified."
                     }
                 },
-                "required": ["location", "column_type", "base_level"],
+                "required": ["column_type"],
                 "additionalProperties": false
             }
             """;
@@ -80,7 +103,7 @@ public sealed class PlaceColumnTool : IRevitTool
 
     public string Name => "place_column";
 
-    public string Description => "Places a structural column at a location. Use get_levels to see available levels and get_available_types with 'Structural Columns' to see column types.";
+    public string Description => "Places a structural column. Accepts grid intersections (e.g., grids A and 1), relative positions (e.g., 3' east of element), or raw [x,y] coordinates. Level defaults to active view. Type name supports fuzzy matching.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -91,15 +114,30 @@ public sealed class PlaceColumnTool : IRevitTool
     public string GetDryRunDescription(JsonElement input)
     {
         var columnType = input.TryGetProperty("column_type", out var typeElem) ? typeElem.GetString() ?? "unknown" : "unknown";
-        var baseLevel = input.TryGetProperty("base_level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
+        var baseLevel = input.TryGetProperty("base_level", out var levelElem) ? levelElem.GetString() ?? "active view level" : "active view level";
+
+        if (input.TryGetProperty("grid_intersection", out var gridElem))
+        {
+            var g1 = gridElem.TryGetProperty("grid1", out var g1E) ? g1E.GetString() : "?";
+            var g2 = gridElem.TryGetProperty("grid2", out var g2E) ? g2E.GetString() : "?";
+            return $"Would place a '{columnType}' column at grid {g1}/{g2} on {baseLevel}.";
+        }
+
+        if (input.TryGetProperty("relative_to", out var relElem))
+        {
+            var dir = relElem.TryGetProperty("direction", out var dirE) ? dirE.GetString() : "?";
+            var dist = relElem.TryGetProperty("distance", out var distE) ? distE.GetDouble() : 0;
+            var elemId = relElem.TryGetProperty("element_id", out var idE) ? idE.GetInt64() : 0;
+            return $"Would place a '{columnType}' column {dist:F1}' {dir} of element {elemId} on {baseLevel}.";
+        }
+
         if (input.TryGetProperty("location", out var locElem))
         {
             var coords = locElem.EnumerateArray().ToList();
             if (coords.Count == 2)
-            {
                 return $"Would place a '{columnType}' column at ({coords[0].GetDouble():F2}, {coords[1].GetDouble():F2}) on {baseLevel}.";
-            }
         }
+
         return $"Would place a '{columnType}' column on {baseLevel}.";
     }
 
@@ -112,44 +150,86 @@ public sealed class PlaceColumnTool : IRevitTool
         if (doc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
 
-        // Get required parameters
-        if (!input.TryGetProperty("location", out var locationElement))
-            return Task.FromResult(ToolResult.Error("Missing required parameter: location"));
-
         if (!input.TryGetProperty("column_type", out var columnTypeElement))
             return Task.FromResult(ToolResult.Error("Missing required parameter: column_type"));
 
-        if (!input.TryGetProperty("base_level", out var baseLevelElement))
-            return Task.FromResult(ToolResult.Error("Missing required parameter: base_level"));
-
         try
         {
-            // Parse location
-            var locationArray = locationElement.EnumerateArray().ToList();
-            if (locationArray.Count != 2)
-                return Task.FromResult(ToolResult.Error("location must be an array of exactly 2 numbers [x, y]."));
-            var x = locationArray[0].GetDouble();
-            var y = locationArray[1].GetDouble();
+            // ── Resolve location ──────────────────────────────────────
+            double x, y;
+            string? resolvedFrom = null;
 
-            // Find base level
-            var baseLevelName = baseLevelElement.GetString();
-            if (string.IsNullOrWhiteSpace(baseLevelName))
-                return Task.FromResult(ToolResult.Error("base_level cannot be empty."));
-
-            var baseLevel = ElementLookupHelper.FindLevelByName(doc, baseLevelName);
-            if (baseLevel == null)
+            if (input.TryGetProperty("grid_intersection", out var gridElem))
             {
-                var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
-                return Task.FromResult(ToolResult.Error(
-                    $"Level '{baseLevelName}' not found. Available levels: {availableLevels}"));
+                var g1 = gridElem.GetProperty("grid1").GetString()!;
+                var g2 = gridElem.GetProperty("grid2").GetString()!;
+                var (point, error) = GeometryResolver.ResolveGridIntersection(doc, g1, g2);
+                if (point == null)
+                    return Task.FromResult(ToolResult.Error(error!));
+                x = point.X;
+                y = point.Y;
+                resolvedFrom = $"grid {g1}/{g2}";
+            }
+            else if (input.TryGetProperty("relative_to", out var relElem))
+            {
+                var elemId = relElem.GetProperty("element_id").GetInt64();
+                var direction = relElem.GetProperty("direction").GetString()!;
+                var distance = relElem.GetProperty("distance").GetDouble();
+                var (point, error) = GeometryResolver.ResolveRelativePosition(doc, elemId, direction, distance);
+                if (point == null)
+                    return Task.FromResult(ToolResult.Error(error!));
+                x = point.X;
+                y = point.Y;
+                resolvedFrom = $"{distance:F1}' {direction} of element {elemId}";
+            }
+            else if (input.TryGetProperty("location", out var locationElement))
+            {
+                var locationArray = locationElement.EnumerateArray().ToList();
+                if (locationArray.Count != 2)
+                    return Task.FromResult(ToolResult.Error("location must be an array of exactly 2 numbers [x, y]."));
+                x = locationArray[0].GetDouble();
+                y = locationArray[1].GetDouble();
+            }
+            else
+            {
+                return Task.FromResult(ToolResult.Error("Must provide one of: location, grid_intersection, or relative_to."));
             }
 
-            // Find column type
+            // ── Resolve base level ───────────────────────────────────
+            Level? baseLevel = null;
+            if (input.TryGetProperty("base_level", out var baseLevelElement))
+            {
+                var baseLevelName = baseLevelElement.GetString();
+                if (!string.IsNullOrWhiteSpace(baseLevelName))
+                {
+                    baseLevel = ElementLookupHelper.FindLevelByName(doc, baseLevelName);
+                    if (baseLevel == null)
+                    {
+                        var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
+                        return Task.FromResult(ToolResult.Error(
+                            $"Level '{baseLevelName}' not found. Available levels: {availableLevels}"));
+                    }
+                }
+            }
+
+            // Default to active view's level
+            if (baseLevel == null)
+            {
+                baseLevel = ElementLookupHelper.InferLevelFromActiveView(app);
+                if (baseLevel == null)
+                {
+                    var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
+                    return Task.FromResult(ToolResult.Error(
+                        $"No base_level specified and cannot infer from active view. Available levels: {availableLevels}"));
+                }
+            }
+
+            // ── Find column type (fuzzy) ─────────────────────────────
             var columnTypeName = columnTypeElement.GetString();
             if (string.IsNullOrWhiteSpace(columnTypeName))
                 return Task.FromResult(ToolResult.Error("column_type cannot be empty."));
 
-            var columnSymbol = ElementLookupHelper.FindFamilySymbolInCategory(
+            var (columnSymbol, isFuzzy, matchedName) = ElementLookupHelper.FindFamilySymbolInCategoryFuzzy(
                 doc, BuiltInCategory.OST_StructuralColumns, columnTypeName);
 
             if (columnSymbol == null)
@@ -181,28 +261,22 @@ public sealed class PlaceColumnTool : IRevitTool
                             $"Top level '{topLevelName}' not found. Available levels: {availableLevels}"));
                     }
 
-                    // Validate top level is above base level
                     if (topLevel.Elevation <= baseLevel.Elevation)
                     {
                         return Task.FromResult(ToolResult.Error(
-                            $"Top level '{topLevelName}' must be above base level '{baseLevelName}'."));
+                            $"Top level '{topLevelName}' must be above base level '{baseLevel.Name}'."));
                     }
                 }
             }
 
-            // Get optional base offset
+            // Get optional offsets
             double baseOffset = 0.0;
             if (input.TryGetProperty("base_offset", out var baseOffsetElement))
-            {
                 baseOffset = baseOffsetElement.GetDouble();
-            }
 
-            // Get optional top offset
             double topOffset = 0.0;
             if (input.TryGetProperty("top_offset", out var topOffsetElement))
-            {
                 topOffset = topOffsetElement.GetDouble();
-            }
 
             // Create column location point at base level elevation
             var location = new XYZ(x, y, baseLevel.Elevation);
@@ -211,35 +285,23 @@ public sealed class PlaceColumnTool : IRevitTool
             FamilyInstance column;
             if (topLevel != null)
             {
-                // Create column spanning between two levels
                 column = doc.Create.NewFamilyInstance(
-                    location,
-                    columnSymbol,
-                    baseLevel,
-                    StructuralType.Column);
+                    location, columnSymbol, baseLevel, StructuralType.Column);
 
-                // Set the top level constraint
                 var topLevelParam = column.get_Parameter(BuiltInParameter.FAMILY_TOP_LEVEL_PARAM);
                 topLevelParam?.Set(topLevel.Id);
 
-                // Set base offset
                 var baseOffsetParam = column.get_Parameter(BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM);
                 baseOffsetParam?.Set(baseOffset);
 
-                // Set top offset
                 var topOffsetParam = column.get_Parameter(BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
                 topOffsetParam?.Set(topOffset);
             }
             else
             {
-                // Create unconnected column
                 column = doc.Create.NewFamilyInstance(
-                    location,
-                    columnSymbol,
-                    baseLevel,
-                    StructuralType.Column);
+                    location, columnSymbol, baseLevel, StructuralType.Column);
 
-                // Set base offset even for unconnected columns
                 if (baseOffset != 0)
                 {
                     var baseOffsetParam = column.get_Parameter(BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM);
@@ -247,18 +309,29 @@ public sealed class PlaceColumnTool : IRevitTool
                 }
             }
 
+            // Build result message
+            var fullTypeName = $"{columnSymbol.Family?.Name}: {columnSymbol.Name}";
+            var msg = topLevel != null
+                ? $"Created column from {baseLevel.Name} to {topLevel.Name} at ({x:F2}, {y:F2})."
+                : $"Created column on {baseLevel.Name} at ({x:F2}, {y:F2}).";
+
+            if (resolvedFrom != null)
+                msg += $" Resolved from {resolvedFrom}.";
+            if (isFuzzy)
+                msg += $" Type fuzzy-matched to '{matchedName}'.";
+
             var result = new PlaceColumnResult
             {
                 ColumnId = column.Id.Value,
-                ColumnType = $"{columnSymbol.Family?.Name}: {columnSymbol.Name}",
+                ColumnType = fullTypeName,
                 BaseLevel = baseLevel.Name,
                 TopLevel = topLevel?.Name,
                 BaseOffset = baseOffset,
                 TopOffset = topLevel != null ? topOffset : null,
                 Location = new[] { x, y },
-                Message = topLevel != null
-                    ? $"Created column from {baseLevel.Name} to {topLevel.Name} at ({x:F2}, {y:F2})."
-                    : $"Created column on {baseLevel.Name} at ({x:F2}, {y:F2})."
+                ResolvedFrom = resolvedFrom,
+                FuzzyMatched = isFuzzy ? matchedName : null,
+                Message = msg
             };
 
             return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
@@ -278,6 +351,8 @@ public sealed class PlaceColumnTool : IRevitTool
         public double BaseOffset { get; set; }
         public double? TopOffset { get; set; }
         public double[] Location { get; set; } = Array.Empty<double>();
+        public string? ResolvedFrom { get; set; }
+        public string? FuzzyMatched { get; set; }
         public string Message { get; set; } = string.Empty;
     }
 }

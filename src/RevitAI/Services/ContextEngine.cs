@@ -105,11 +105,12 @@ public sealed class ContextEngine
             // Always gather selected elements (IDs are needed for tool use at all verbosity levels)
             context.SelectedElements = ExtractSelectedElements(uiDoc, doc, verbosity);
 
-            // Verbose mode: add project info and available types
+            // Verbose mode: add project info, available types, and grid layout
             if (verbosity >= 2)
             {
                 context.Project = ExtractRevitProjectInfo(doc);
                 context.AvailableTypes = ExtractAvailableTypes(doc);
+                context.GridInfo = ExtractGridInfo(doc);
             }
         }
         catch (Exception ex)
@@ -186,6 +187,13 @@ public sealed class ContextEngine
         sb.AppendLine("- **Selection ambiguity:** 'Delete these walls' when walls span multiple levels - All segments, or just the visible portion?");
         sb.AppendLine("- **Intent ambiguity:** 'Clean up the framing' - Does this mean realign to grids, fix connections, remove duplicates, or something else?");
         sb.AppendLine("One good clarifying question upfront saves the user from having to undo incorrect work. However, do NOT over-ask when intent is clear and reasonable defaults exist - in those cases, proceed and state your assumptions.");
+        sb.AppendLine();
+        sb.AppendLine("**Smart Placement:**");
+        sb.AppendLine("- Placement tools (place_column, place_beam, place_wall) accept `grid_intersection` to place at grid crossings (e.g., {\"grid1\": \"A\", \"grid2\": \"1\"}).");
+        sb.AppendLine("- Use `relative_to` to place relative to existing elements (e.g., {\"element_id\": 12345, \"direction\": \"east\", \"distance\": 3.0}).");
+        sb.AppendLine("- Level parameters are optional - they default to the active plan view's level when omitted.");
+        sb.AppendLine("- Type names support fuzzy matching (e.g., 'W10x49' matches 'W-Wide Flange-Column: W10x49').");
+        sb.AppendLine("- Use `resolve_grid_intersection` to get coordinates for grid crossings (useful for floor boundaries).");
         sb.AppendLine();
         sb.AppendLine("**Multi-Step Operations:**");
         sb.AppendLine("- For complex operations requiring multiple tool rounds (query -> plan -> execute), query tools first to gather information (get_levels, get_available_types, get_grids), then execute modifications.");
@@ -354,6 +362,20 @@ public sealed class ContextEngine
                     sb.Append($" ... and {kvp.Value.Count - MaxTypesPerCategory} more");
                 }
             }
+
+            sb.AppendLine();
+        }
+
+        // Grid layout (verbosity 2)
+        if (verbosity >= 2 && context.GridInfo != null && context.GridInfo.TotalCount > 0)
+        {
+            sb.AppendLine("### Grid Layout");
+            sb.AppendLine();
+
+            if (context.GridInfo.HorizontalGrids.Count > 0)
+                sb.AppendLine($"- **Horizontal (E-W):** {string.Join(", ", context.GridInfo.HorizontalGrids)}");
+            if (context.GridInfo.VerticalGrids.Count > 0)
+                sb.AppendLine($"- **Vertical (N-S):** {string.Join(", ", context.GridInfo.VerticalGrids)}");
 
             sb.AppendLine();
         }
@@ -799,6 +821,29 @@ Be concise and helpful. When discussing Revit elements, use correct terminology.
             .ToList();
 
         return info;
+    }
+
+    private GridSummary? ExtractGridInfo(Document doc)
+    {
+        try
+        {
+            var (horizontal, vertical) = GeometryResolver.GetGridNamesByOrientation(doc);
+            var totalCount = horizontal.Count + vertical.Count;
+
+            if (totalCount == 0)
+                return null;
+
+            return new GridSummary
+            {
+                HorizontalGrids = horizontal,
+                VerticalGrids = vertical,
+                TotalCount = totalCount
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private Dictionary<string, List<TypeInfo>> ExtractAvailableTypes(Document doc)

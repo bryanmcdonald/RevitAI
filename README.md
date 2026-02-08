@@ -169,6 +169,7 @@ RevitAI provides Claude with tools to query your Revit model:
 | `get_warnings` | Model warnings and errors |
 | `get_room_info` | Room boundaries and areas |
 | `get_element_quantity_takeoff` | Element counts and summaries |
+| `resolve_grid_intersection` | Get [x,y] coordinates where two grids intersect |
 | `select_elements` | Select elements by ID |
 | `zoom_to_element` | Zoom view to elements |
 | `move_element` | Move element by translation vector |
@@ -255,7 +256,7 @@ Advanced features and improved workflows.
 - [x] **P2-01** Advanced Placement Tools (7 tools: grids, levels, detail lines, text notes, sheets, tags, dimensions)
 - [x] **P2-02** Element Manipulation (7 tools: copy, mirror, rotate, array, align, group, assembly)
 - [x] **P2-03** Multi-Step Design Operations (partial — within-round batching + system prompt guidance; cross-round single undo deferred)
-- [ ] **P2-04** Smart Context Awareness (grid snapping, type inference)
+- [x] **P2-04** Smart Context Awareness (grid intersections, relative positions, fuzzy type matching, level inference)
 - [ ] **P2-05** Visual Feedback (element highlighting, previews)
 - [ ] **P2-06** Parameter & Schedule Operations
 - [ ] **P2-07** Conversation Memory & Persistence
