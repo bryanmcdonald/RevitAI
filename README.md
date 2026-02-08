@@ -272,7 +272,14 @@ Advanced features and improved workflows.
 - [x] **P2-05** Visual Feedback (auto-select affected elements, markdown rendering in chat; preview graphics deferred)
 - [x] **P2-06** Parameter & Schedule Tools (3 tools: read schedule data, export element data, bulk modify parameters)
 - [x] **P2-07** Conversation Memory (project-keyed persistence, auto-load/save on document open/close, session change tracking, tool action summaries in system prompt)
-- [ ] **P2-08** Drafting & Documentation Tools — P2-08.1 discovery tools complete (6 tools + DraftingHelper); linework, regions, sheets, annotations, batch tools pending
+- **P2-08** Drafting & Documentation Tools (split into 7 sub-chunks):
+  - [x] **P2-08.1** DraftingHelper + Discovery Tools (6 tools: fill patterns, line styles, detail components, revisions, sheets, viewport info)
+  - [ ] **P2-08.2** Linework & Shape Tools (7 tools: arc, curve, polyline, circle, rectangle, ellipse, modify style)
+  - [ ] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
+  - [ ] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
+  - [ ] **P2-08.5** Annotation & Reference Tools (4 tools: callout, legend, legend component, revision cloud)
+  - [ ] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
+  - [ ] **P2-08.7** System Prompt + Documentation
 
 ### Phase 3: Advanced & Multi-Discipline
 Discipline-specific tool packs and advanced features.
