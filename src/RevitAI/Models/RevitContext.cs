@@ -55,6 +55,11 @@ public sealed class RevitContext
     /// Gets or sets the available family types by category (verbosity 2 only).
     /// </summary>
     public Dictionary<string, List<TypeInfo>> AvailableTypes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the grid layout summary (verbosity 2 only).
+    /// </summary>
+    public GridSummary? GridInfo { get; set; }
 }
 
 /// <summary>
@@ -251,4 +256,25 @@ public sealed class RevitProjectInfo
     /// Gets or sets all levels in the project.
     /// </summary>
     public List<LevelInfo> Levels { get; set; } = new();
+}
+
+/// <summary>
+/// Summary of grids in the project, classified by orientation.
+/// </summary>
+public sealed class GridSummary
+{
+    /// <summary>
+    /// Gets or sets the names of horizontal (east-west) grids.
+    /// </summary>
+    public List<string> HorizontalGrids { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the names of vertical (north-south) grids.
+    /// </summary>
+    public List<string> VerticalGrids { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the total number of grids in the project.
+    /// </summary>
+    public int TotalCount { get; set; }
 }

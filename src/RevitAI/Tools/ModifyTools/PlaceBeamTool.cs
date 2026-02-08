@@ -19,12 +19,14 @@ using System.Text.Json.Serialization;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using RevitAI.Services;
 using RevitAI.Tools.ModifyTools.Helpers;
 
 namespace RevitAI.Tools.ModifyTools;
 
 /// <summary>
 /// Tool that places a structural beam between two 3D points.
+/// Supports grid intersections, raw coordinates, or a mix of both.
 /// </summary>
 public sealed class PlaceBeamTool : IRevitTool
 {
@@ -42,25 +44,45 @@ public sealed class PlaceBeamTool : IRevitTool
                         "items": { "type": "number" },
                         "minItems": 3,
                         "maxItems": 3,
-                        "description": "Start point [x, y, z] in feet."
+                        "description": "Start point [x, y, z] in feet. Optional if start_grid_intersection is provided."
                     },
                     "end": {
                         "type": "array",
                         "items": { "type": "number" },
                         "minItems": 3,
                         "maxItems": 3,
-                        "description": "End point [x, y, z] in feet."
+                        "description": "End point [x, y, z] in feet. Optional if end_grid_intersection is provided."
+                    },
+                    "start_grid_intersection": {
+                        "type": "object",
+                        "properties": {
+                            "grid1": { "type": "string", "description": "Name of the first grid." },
+                            "grid2": { "type": "string", "description": "Name of the second grid." }
+                        },
+                        "required": ["grid1", "grid2"],
+                        "additionalProperties": false,
+                        "description": "Start point at the intersection of two grids. Z comes from the level elevation."
+                    },
+                    "end_grid_intersection": {
+                        "type": "object",
+                        "properties": {
+                            "grid1": { "type": "string", "description": "Name of the first grid." },
+                            "grid2": { "type": "string", "description": "Name of the second grid." }
+                        },
+                        "required": ["grid1", "grid2"],
+                        "additionalProperties": false,
+                        "description": "End point at the intersection of two grids. Z comes from the level elevation."
                     },
                     "beam_type": {
                         "type": "string",
-                        "description": "Beam type name in 'Family: Type' format (e.g., 'W-Wide Flange: W12x26')."
+                        "description": "Beam type name (e.g., 'W12x26' or 'W-Wide Flange: W12x26'). Supports fuzzy matching."
                     },
                     "level": {
                         "type": "string",
-                        "description": "Reference level name for the beam."
+                        "description": "Reference level name for the beam. Optional - defaults to the active view's level."
                     }
                 },
-                "required": ["start", "end", "beam_type", "level"],
+                "required": ["beam_type"],
                 "additionalProperties": false
             }
             """;
@@ -75,7 +97,7 @@ public sealed class PlaceBeamTool : IRevitTool
 
     public string Name => "place_beam";
 
-    public string Description => "Places a structural beam between two 3D points. Coordinates are in feet. Use get_levels to see available levels and get_available_types with 'Beams' or 'Structural Framing' to see beam types.";
+    public string Description => "Places a structural beam between two points. Accepts grid intersections or raw [x,y,z] coordinates for start/end. Level defaults to active view. Type name supports fuzzy matching.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -86,8 +108,31 @@ public sealed class PlaceBeamTool : IRevitTool
     public string GetDryRunDescription(JsonElement input)
     {
         var beamType = input.TryGetProperty("beam_type", out var typeElem) ? typeElem.GetString() ?? "unknown" : "unknown";
-        var level = input.TryGetProperty("level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
-        return $"Would place a '{beamType}' beam on {level}.";
+        var level = input.TryGetProperty("level", out var levelElem) ? levelElem.GetString() ?? "active view level" : "active view level";
+
+        var startDesc = DescribeEndpoint(input, "start", "start_grid_intersection");
+        var endDesc = DescribeEndpoint(input, "end", "end_grid_intersection");
+
+        return $"Would place a '{beamType}' beam from {startDesc} to {endDesc} on {level}.";
+    }
+
+    private static string DescribeEndpoint(JsonElement input, string coordProp, string gridProp)
+    {
+        if (input.TryGetProperty(gridProp, out var gridElem))
+        {
+            var g1 = gridElem.TryGetProperty("grid1", out var g1E) ? g1E.GetString() : "?";
+            var g2 = gridElem.TryGetProperty("grid2", out var g2E) ? g2E.GetString() : "?";
+            return $"grid {g1}/{g2}";
+        }
+
+        if (input.TryGetProperty(coordProp, out var coordElem))
+        {
+            var coords = coordElem.EnumerateArray().ToList();
+            if (coords.Count == 3)
+                return $"({coords[0].GetDouble():F1}, {coords[1].GetDouble():F1}, {coords[2].GetDouble():F1})";
+        }
+
+        return "unknown";
     }
 
     public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken cancellationToken)
@@ -99,65 +144,62 @@ public sealed class PlaceBeamTool : IRevitTool
         if (doc == null)
             return Task.FromResult(ToolResult.Error("No active document. Please open a Revit project first."));
 
-        // Get required parameters
-        if (!input.TryGetProperty("start", out var startElement))
-            return Task.FromResult(ToolResult.Error("Missing required parameter: start"));
-
-        if (!input.TryGetProperty("end", out var endElement))
-            return Task.FromResult(ToolResult.Error("Missing required parameter: end"));
-
         if (!input.TryGetProperty("beam_type", out var beamTypeElement))
             return Task.FromResult(ToolResult.Error("Missing required parameter: beam_type"));
 
-        if (!input.TryGetProperty("level", out var levelElement))
-            return Task.FromResult(ToolResult.Error("Missing required parameter: level"));
-
         try
         {
-            // Parse start point
-            var startArray = startElement.EnumerateArray().ToList();
-            if (startArray.Count != 3)
-                return Task.FromResult(ToolResult.Error("start must be an array of exactly 3 numbers [x, y, z]."));
-            var startX = startArray[0].GetDouble();
-            var startY = startArray[1].GetDouble();
-            var startZ = startArray[2].GetDouble();
+            // ── Resolve level ────────────────────────────────────────
+            Level? level = null;
+            if (input.TryGetProperty("level", out var levelElement))
+            {
+                var levelName = levelElement.GetString();
+                if (!string.IsNullOrWhiteSpace(levelName))
+                {
+                    level = ElementLookupHelper.FindLevelByName(doc, levelName);
+                    if (level == null)
+                    {
+                        var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
+                        return Task.FromResult(ToolResult.Error(
+                            $"Level '{levelName}' not found. Available levels: {availableLevels}"));
+                    }
+                }
+            }
 
-            // Parse end point
-            var endArray = endElement.EnumerateArray().ToList();
-            if (endArray.Count != 3)
-                return Task.FromResult(ToolResult.Error("end must be an array of exactly 3 numbers [x, y, z]."));
-            var endX = endArray[0].GetDouble();
-            var endY = endArray[1].GetDouble();
-            var endZ = endArray[2].GetDouble();
+            if (level == null)
+            {
+                level = ElementLookupHelper.InferLevelFromActiveView(app);
+                if (level == null)
+                {
+                    var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
+                    return Task.FromResult(ToolResult.Error(
+                        $"No level specified and cannot infer from active view. Available levels: {availableLevels}"));
+                }
+            }
+
+            // ── Resolve start point ──────────────────────────────────
+            var (startPoint, startResolvedFrom, startError) = ResolveEndpoint(
+                doc, input, "start", "start_grid_intersection", level.Elevation);
+            if (startPoint == null)
+                return Task.FromResult(ToolResult.Error(startError!));
+
+            // ── Resolve end point ────────────────────────────────────
+            var (endPoint, endResolvedFrom, endError) = ResolveEndpoint(
+                doc, input, "end", "end_grid_intersection", level.Elevation);
+            if (endPoint == null)
+                return Task.FromResult(ToolResult.Error(endError!));
 
             // Validate points are different
-            var distance = Math.Sqrt(
-                Math.Pow(endX - startX, 2) +
-                Math.Pow(endY - startY, 2) +
-                Math.Pow(endZ - startZ, 2));
-
+            var distance = startPoint.DistanceTo(endPoint);
             if (distance < 0.01)
                 return Task.FromResult(ToolResult.Error("start and end points must be at least 0.01 feet apart."));
 
-            // Find level
-            var levelName = levelElement.GetString();
-            if (string.IsNullOrWhiteSpace(levelName))
-                return Task.FromResult(ToolResult.Error("level cannot be empty."));
-
-            var level = ElementLookupHelper.FindLevelByName(doc, levelName);
-            if (level == null)
-            {
-                var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
-                return Task.FromResult(ToolResult.Error(
-                    $"Level '{levelName}' not found. Available levels: {availableLevels}"));
-            }
-
-            // Find beam type
+            // ── Find beam type (fuzzy) ───────────────────────────────
             var beamTypeName = beamTypeElement.GetString();
             if (string.IsNullOrWhiteSpace(beamTypeName))
                 return Task.FromResult(ToolResult.Error("beam_type cannot be empty."));
 
-            var beamSymbol = ElementLookupHelper.FindFamilySymbolInCategory(
+            var (beamSymbol, isFuzzy, matchedName) = ElementLookupHelper.FindFamilySymbolInCategoryFuzzy(
                 doc, BuiltInCategory.OST_StructuralFraming, beamTypeName);
 
             if (beamSymbol == null)
@@ -174,17 +216,18 @@ public sealed class PlaceBeamTool : IRevitTool
                 doc.Regenerate();
             }
 
-            // Create beam curve
-            var startPoint = new XYZ(startX, startY, startZ);
-            var endPoint = new XYZ(endX, endY, endZ);
+            // Create beam
             var beamLine = Line.CreateBound(startPoint, endPoint);
-
-            // Create the beam
             var beam = doc.Create.NewFamilyInstance(
-                beamLine,
-                beamSymbol,
-                level,
-                StructuralType.Beam);
+                beamLine, beamSymbol, level, StructuralType.Beam);
+
+            // Build result
+            var resolvedFrom = BuildResolvedFromNote(startResolvedFrom, endResolvedFrom);
+            var msg = $"Created {distance:F2}' beam on {level.Name}.";
+            if (resolvedFrom != null)
+                msg += $" {resolvedFrom}";
+            if (isFuzzy)
+                msg += $" Type fuzzy-matched to '{matchedName}'.";
 
             var result = new PlaceBeamResult
             {
@@ -192,9 +235,11 @@ public sealed class PlaceBeamTool : IRevitTool
                 BeamType = $"{beamSymbol.Family?.Name}: {beamSymbol.Name}",
                 Level = level.Name,
                 Length = Math.Round(distance, 4),
-                Start = new[] { startX, startY, startZ },
-                End = new[] { endX, endY, endZ },
-                Message = $"Created {distance:F2}' beam on {level.Name}."
+                Start = new[] { startPoint.X, startPoint.Y, startPoint.Z },
+                End = new[] { endPoint.X, endPoint.Y, endPoint.Z },
+                ResolvedFrom = resolvedFrom,
+                FuzzyMatched = isFuzzy ? matchedName : null,
+                Message = msg
             };
 
             return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
@@ -205,6 +250,44 @@ public sealed class PlaceBeamTool : IRevitTool
         }
     }
 
+    private static (XYZ? Point, string? ResolvedFrom, string? Error) ResolveEndpoint(
+        Document doc, JsonElement input, string coordProp, string gridProp, double levelElevation)
+    {
+        if (input.TryGetProperty(gridProp, out var gridElem))
+        {
+            var g1 = gridElem.GetProperty("grid1").GetString()!;
+            var g2 = gridElem.GetProperty("grid2").GetString()!;
+            var (point, error) = GeometryResolver.ResolveGridIntersection(doc, g1, g2);
+            if (point == null)
+                return (null, null, error);
+            // Use level elevation for Z
+            var point3d = new XYZ(point.X, point.Y, levelElevation);
+            return (point3d, $"grid {g1}/{g2}", null);
+        }
+
+        if (input.TryGetProperty(coordProp, out var coordElem))
+        {
+            var coords = coordElem.EnumerateArray().ToList();
+            if (coords.Count != 3)
+                return (null, null, $"{coordProp} must be an array of exactly 3 numbers [x, y, z].");
+            var point = new XYZ(coords[0].GetDouble(), coords[1].GetDouble(), coords[2].GetDouble());
+            return (point, null, null);
+        }
+
+        return (null, null, $"Must provide either {coordProp} or {gridProp}.");
+    }
+
+    private static string? BuildResolvedFromNote(string? startResolved, string? endResolved)
+    {
+        if (startResolved != null && endResolved != null)
+            return $"Start resolved from {startResolved}, end from {endResolved}.";
+        if (startResolved != null)
+            return $"Start resolved from {startResolved}.";
+        if (endResolved != null)
+            return $"End resolved from {endResolved}.";
+        return null;
+    }
+
     private sealed class PlaceBeamResult
     {
         public long BeamId { get; set; }
@@ -213,6 +296,8 @@ public sealed class PlaceBeamTool : IRevitTool
         public double Length { get; set; }
         public double[] Start { get; set; } = Array.Empty<double>();
         public double[] End { get; set; } = Array.Empty<double>();
+        public string? ResolvedFrom { get; set; }
+        public string? FuzzyMatched { get; set; }
         public string Message { get; set; } = string.Empty;
     }
 }

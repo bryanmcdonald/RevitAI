@@ -275,7 +275,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-04 (Smart Context Awareness)
+**Next chunk to implement**: P2-05 (Visual Feedback System)
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
@@ -417,3 +417,4 @@ The plugin will be considered successful when it meets these criteria:
 | 2.1 | Multi-Provider | Added Google Gemini as AI provider. New `IAiProvider` abstraction, `AiProviderFactory`, `GeminiApiService`, provider-aware settings UI, per-provider API keys and model selection. |
 | 2.2 | P2-02 | Added 7 element manipulation tools: copy, mirror, rotate, array (linear/radial), align, create group, create assembly. Replaced `place_scope_box` with `rotate_element`. |
 | 2.3 | P2-03 | Multi-step design operations: within-round batching cleanup, `AnyToolRequiresTransaction` helper, `externalGroup` param, system prompt guidance to batch modifications. Cross-round grouping not possible (Revit auto-closes TransactionGroups between ExternalEvent calls). Added code review step to Post-Change Requirements. |
+| 2.4 | P2-04 | Smart Context Awareness: `GeometryResolver` for grid intersections (2D line math) and relative positions, fuzzy type matching (Levenshtein) in `ElementLookupHelper`, `GridSummary` in system prompt, optional level inference from active ViewPlan, `resolve_grid_intersection` read tool, `grid_intersection`/`relative_to` params on placement tools. |

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 
 namespace RevitAI.Tools.ModifyTools.Helpers;
 
@@ -58,6 +59,20 @@ public static class ElementLookupHelper
         return levels.Count > 0
             ? string.Join(", ", levels)
             : "No levels found in the document.";
+    }
+
+    /// <summary>
+    /// Infers the active level from the current view.
+    /// Returns the GenLevel of a ViewPlan, or null if not a plan view.
+    /// </summary>
+    /// <param name="app">The Revit UIApplication.</param>
+    /// <returns>The inferred Level, or null.</returns>
+    public static Level? InferLevelFromActiveView(UIApplication app)
+    {
+        var view = app.ActiveUIDocument?.ActiveView;
+        if (view is ViewPlan viewPlan && viewPlan.GenLevel != null)
+            return viewPlan.GenLevel;
+        return null;
     }
 
     /// <summary>
@@ -512,6 +527,232 @@ public static class ElementLookupHelper
 
         return GetAvailableTypeNames(doc, tagCategory, maxCount);
     }
+
+    // ────────────────────────────────────────────────────────────────
+    // Fuzzy matching (P2-04)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Finds a family symbol in a specific category using fuzzy matching.
+    /// Search order: exact "Family: Type" -> exact full name -> exact type name
+    /// -> partial contains -> Levenshtein distance.
+    /// </summary>
+    /// <param name="doc">The Revit document.</param>
+    /// <param name="category">The built-in category to search in.</param>
+    /// <param name="fullName">The name to search for.</param>
+    /// <returns>The matched FamilySymbol, whether the match was fuzzy, and the matched name.</returns>
+    public static (FamilySymbol? Symbol, bool IsFuzzy, string? MatchedName) FindFamilySymbolInCategoryFuzzy(
+        Document doc, BuiltInCategory category, string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return (null, false, null);
+
+        // Try exact match first
+        var exact = FindFamilySymbolInCategory(doc, category, fullName);
+        if (exact != null)
+            return (exact, false, GetFullSymbolName(exact));
+
+        var trimmedName = fullName.Trim();
+        var symbols = new FilteredElementCollector(doc)
+            .OfCategory(category)
+            .OfClass(typeof(FamilySymbol))
+            .Cast<FamilySymbol>()
+            .ToList();
+
+        // Partial contains match (case-insensitive)
+        var containsMatch = symbols.FirstOrDefault(fs =>
+            GetFullSymbolName(fs).Contains(trimmedName, StringComparison.OrdinalIgnoreCase) ||
+            fs.Name.Contains(trimmedName, StringComparison.OrdinalIgnoreCase));
+
+        if (containsMatch != null)
+            return (containsMatch, true, GetFullSymbolName(containsMatch));
+
+        // Levenshtein distance match - compare against type name only for short inputs
+        var maxDistance = Math.Max(2, trimmedName.Length / 3);
+        FamilySymbol? bestMatch = null;
+        var bestDistance = int.MaxValue;
+        string? bestName = null;
+
+        foreach (var fs in symbols)
+        {
+            var typeNameDist = LevenshteinDistance(trimmedName, fs.Name);
+            if (typeNameDist < bestDistance)
+            {
+                bestDistance = typeNameDist;
+                bestMatch = fs;
+                bestName = GetFullSymbolName(fs);
+            }
+
+            var fullNameStr = GetFullSymbolName(fs);
+            var fullDist = LevenshteinDistance(trimmedName, fullNameStr);
+            if (fullDist < bestDistance)
+            {
+                bestDistance = fullDist;
+                bestMatch = fs;
+                bestName = fullNameStr;
+            }
+        }
+
+        if (bestMatch != null && bestDistance <= maxDistance)
+            return (bestMatch, true, bestName);
+
+        return (null, false, null);
+    }
+
+    /// <summary>
+    /// Finds a wall type by name using fuzzy matching.
+    /// </summary>
+    public static (WallType? Type, bool IsFuzzy, string? MatchedName) FindWallTypeByNameFuzzy(
+        Document doc, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return (null, false, null);
+
+        // Try exact match first
+        var exact = FindWallTypeByName(doc, name);
+        if (exact != null)
+            return (exact, false, GetFullTypeName(exact));
+
+        var trimmedName = name.Trim();
+        var types = new FilteredElementCollector(doc)
+            .OfClass(typeof(WallType))
+            .Cast<WallType>()
+            .ToList();
+
+        // Partial contains
+        var containsMatch = types.FirstOrDefault(wt =>
+            GetFullTypeName(wt).Contains(trimmedName, StringComparison.OrdinalIgnoreCase) ||
+            wt.Name.Contains(trimmedName, StringComparison.OrdinalIgnoreCase));
+
+        if (containsMatch != null)
+            return (containsMatch, true, GetFullTypeName(containsMatch));
+
+        // Levenshtein
+        var maxDistance = Math.Max(2, trimmedName.Length / 3);
+        WallType? bestMatch = null;
+        var bestDistance = int.MaxValue;
+        string? bestName = null;
+
+        foreach (var wt in types)
+        {
+            var dist = LevenshteinDistance(trimmedName, wt.Name);
+            if (dist < bestDistance)
+            {
+                bestDistance = dist;
+                bestMatch = wt;
+                bestName = GetFullTypeName(wt);
+            }
+
+            var fullDist = LevenshteinDistance(trimmedName, GetFullTypeName(wt));
+            if (fullDist < bestDistance)
+            {
+                bestDistance = fullDist;
+                bestMatch = wt;
+                bestName = GetFullTypeName(wt);
+            }
+        }
+
+        if (bestMatch != null && bestDistance <= maxDistance)
+            return (bestMatch, true, bestName);
+
+        return (null, false, null);
+    }
+
+    /// <summary>
+    /// Finds a floor type by name using fuzzy matching.
+    /// </summary>
+    public static (FloorType? Type, bool IsFuzzy, string? MatchedName) FindFloorTypeByNameFuzzy(
+        Document doc, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return (null, false, null);
+
+        // Try exact match first
+        var exact = FindFloorTypeByName(doc, name);
+        if (exact != null)
+            return (exact, false, GetFullTypeName(exact));
+
+        var trimmedName = name.Trim();
+        var types = new FilteredElementCollector(doc)
+            .OfClass(typeof(FloorType))
+            .Cast<FloorType>()
+            .ToList();
+
+        // Partial contains
+        var containsMatch = types.FirstOrDefault(ft =>
+            GetFullTypeName(ft).Contains(trimmedName, StringComparison.OrdinalIgnoreCase) ||
+            ft.Name.Contains(trimmedName, StringComparison.OrdinalIgnoreCase));
+
+        if (containsMatch != null)
+            return (containsMatch, true, GetFullTypeName(containsMatch));
+
+        // Levenshtein
+        var maxDistance = Math.Max(2, trimmedName.Length / 3);
+        FloorType? bestMatch = null;
+        var bestDistance = int.MaxValue;
+        string? bestName = null;
+
+        foreach (var ft in types)
+        {
+            var dist = LevenshteinDistance(trimmedName, ft.Name);
+            if (dist < bestDistance)
+            {
+                bestDistance = dist;
+                bestMatch = ft;
+                bestName = GetFullTypeName(ft);
+            }
+
+            var fullDist = LevenshteinDistance(trimmedName, GetFullTypeName(ft));
+            if (fullDist < bestDistance)
+            {
+                bestDistance = fullDist;
+                bestMatch = ft;
+                bestName = GetFullTypeName(ft);
+            }
+        }
+
+        if (bestMatch != null && bestDistance <= maxDistance)
+            return (bestMatch, true, bestName);
+
+        return (null, false, null);
+    }
+
+    /// <summary>
+    /// Computes the Levenshtein edit distance between two strings (case-insensitive).
+    /// </summary>
+    private static int LevenshteinDistance(string s, string t)
+    {
+        s = s.ToLowerInvariant();
+        t = t.ToLowerInvariant();
+
+        var n = s.Length;
+        var m = t.Length;
+
+        if (n == 0) return m;
+        if (m == 0) return n;
+
+        var d = new int[n + 1, m + 1];
+
+        for (var i = 0; i <= n; i++) d[i, 0] = i;
+        for (var j = 0; j <= m; j++) d[0, j] = j;
+
+        for (var i = 1; i <= n; i++)
+        {
+            for (var j = 1; j <= m; j++)
+            {
+                var cost = s[i - 1] == t[j - 1] ? 0 : 1;
+                d[i, j] = Math.Min(
+                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                    d[i - 1, j - 1] + cost);
+            }
+        }
+
+        return d[n, m];
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Gets the full type name for an element type (Family: Type format).

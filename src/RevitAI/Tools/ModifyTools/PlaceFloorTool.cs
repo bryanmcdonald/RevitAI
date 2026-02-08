@@ -49,11 +49,11 @@ public sealed class PlaceFloorTool : IRevitTool
                     },
                     "level": {
                         "type": "string",
-                        "description": "Name of the level for the floor."
+                        "description": "Name of the level for the floor. Optional - defaults to the active view's level."
                     },
                     "floor_type": {
                         "type": "string",
-                        "description": "Floor type name (e.g., 'Generic 12\"'). Optional - uses default if not specified."
+                        "description": "Floor type name (e.g., 'Generic 12\"'). Supports fuzzy matching. Optional - uses default if not specified."
                     },
                     "elevation_offset": {
                         "type": "number",
@@ -64,7 +64,7 @@ public sealed class PlaceFloorTool : IRevitTool
                         "description": "Whether the floor is structural. Default is false."
                     }
                 },
-                "required": ["boundary", "level"],
+                "required": ["boundary"],
                 "additionalProperties": false
             }
             """;
@@ -79,7 +79,7 @@ public sealed class PlaceFloorTool : IRevitTool
 
     public string Name => "place_floor";
 
-    public string Description => "Places a floor from a boundary of points. The boundary is automatically closed. Coordinates are in feet. Use get_levels to see available levels and get_available_types with 'Floors' to see floor types.";
+    public string Description => "Places a floor from a boundary of points. The boundary is automatically closed. Coordinates are in feet. Level defaults to active view. Type name supports fuzzy matching. Use resolve_grid_intersection to get coordinates for grid-aligned boundaries.";
 
     public JsonElement InputSchema => _inputSchema;
 
@@ -89,7 +89,7 @@ public sealed class PlaceFloorTool : IRevitTool
 
     public string GetDryRunDescription(JsonElement input)
     {
-        var level = input.TryGetProperty("level", out var levelElem) ? levelElem.GetString() ?? "unknown" : "unknown";
+        var level = input.TryGetProperty("level", out var levelElem) ? levelElem.GetString() ?? "active view level" : "active view level";
         var pointCount = input.TryGetProperty("boundary", out var boundaryElem) ? boundaryElem.GetArrayLength() : 0;
         var floorType = input.TryGetProperty("floor_type", out var typeElem) ? typeElem.GetString() : null;
 
@@ -113,9 +113,6 @@ public sealed class PlaceFloorTool : IRevitTool
         if (!input.TryGetProperty("boundary", out var boundaryElement))
             return Task.FromResult(ToolResult.Error("Missing required parameter: boundary"));
 
-        if (!input.TryGetProperty("level", out var levelElement))
-            return Task.FromResult(ToolResult.Error("Missing required parameter: level"));
-
         try
         {
             // Parse boundary points
@@ -134,33 +131,54 @@ public sealed class PlaceFloorTool : IRevitTool
             if (points.Count < 3)
                 return Task.FromResult(ToolResult.Error("boundary must have at least 3 points."));
 
-            // Find level
-            var levelName = levelElement.GetString();
-            if (string.IsNullOrWhiteSpace(levelName))
-                return Task.FromResult(ToolResult.Error("level cannot be empty."));
-
-            var level = ElementLookupHelper.FindLevelByName(doc, levelName);
-            if (level == null)
+            // ── Resolve level ────────────────────────────────────────
+            Level? level = null;
+            if (input.TryGetProperty("level", out var levelElement))
             {
-                var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
-                return Task.FromResult(ToolResult.Error(
-                    $"Level '{levelName}' not found. Available levels: {availableLevels}"));
+                var levelName = levelElement.GetString();
+                if (!string.IsNullOrWhiteSpace(levelName))
+                {
+                    level = ElementLookupHelper.FindLevelByName(doc, levelName);
+                    if (level == null)
+                    {
+                        var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
+                        return Task.FromResult(ToolResult.Error(
+                            $"Level '{levelName}' not found. Available levels: {availableLevels}"));
+                    }
+                }
             }
 
-            // Get optional floor type
+            if (level == null)
+            {
+                level = ElementLookupHelper.InferLevelFromActiveView(app);
+                if (level == null)
+                {
+                    var availableLevels = ElementLookupHelper.GetAvailableLevelNames(doc);
+                    return Task.FromResult(ToolResult.Error(
+                        $"No level specified and cannot infer from active view. Available levels: {availableLevels}"));
+                }
+            }
+
+            // ── Get floor type (fuzzy) ───────────────────────────────
             FloorType? floorType = null;
+            bool isFuzzy = false;
+            string? matchedName = null;
+
             if (input.TryGetProperty("floor_type", out var floorTypeElement))
             {
                 var floorTypeName = floorTypeElement.GetString();
                 if (!string.IsNullOrWhiteSpace(floorTypeName))
                 {
-                    floorType = ElementLookupHelper.FindFloorTypeByName(doc, floorTypeName);
-                    if (floorType == null)
+                    var (ft, fuzzy, name) = ElementLookupHelper.FindFloorTypeByNameFuzzy(doc, floorTypeName);
+                    if (ft == null)
                     {
                         var availableTypes = ElementLookupHelper.GetAvailableFloorTypeNames(doc);
                         return Task.FromResult(ToolResult.Error(
                             $"Floor type '{floorTypeName}' not found. Available types: {availableTypes}"));
                     }
+                    floorType = ft;
+                    isFuzzy = fuzzy;
+                    matchedName = name;
                 }
             }
 
@@ -212,6 +230,13 @@ public sealed class PlaceFloorTool : IRevitTool
             // Calculate approximate area (simple polygon area formula)
             var area = CalculatePolygonArea(points);
 
+            var msg = elevationOffset != 0
+                ? $"Created floor on {level.Name} with {elevationOffset:F2}' offset, approximately {area:F0} sq ft area."
+                : $"Created floor on {level.Name} with approximately {area:F0} sq ft area.";
+
+            if (isFuzzy)
+                msg += $" Type fuzzy-matched to '{matchedName}'.";
+
             var result = new PlaceFloorResult
             {
                 FloorId = floor.Id.Value,
@@ -221,9 +246,8 @@ public sealed class PlaceFloorTool : IRevitTool
                 PointCount = points.Count,
                 ApproximateArea = Math.Round(area, 2),
                 Structural = structural,
-                Message = elevationOffset != 0
-                    ? $"Created floor on {level.Name} with {elevationOffset:F2}' offset, approximately {area:F0} sq ft area."
-                    : $"Created floor on {level.Name} with approximately {area:F0} sq ft area."
+                FuzzyMatched = isFuzzy ? matchedName : null,
+                Message = msg
             };
 
             return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
@@ -281,6 +305,7 @@ public sealed class PlaceFloorTool : IRevitTool
         public int PointCount { get; set; }
         public double ApproximateArea { get; set; }
         public bool Structural { get; set; }
+        public string? FuzzyMatched { get; set; }
         public string Message { get; set; } = string.Empty;
     }
 }
