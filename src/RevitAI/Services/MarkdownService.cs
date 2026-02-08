@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Text.RegularExpressions;
 using System.Windows.Documents;
 using Markdig;
 using Neo.Markdig.Xaml;
@@ -71,6 +72,11 @@ public class MarkdownService
 
         try
         {
+            // Escape angle brackets that aren't valid HTML/autolinks so they render as text.
+            // This prevents Revit names like <Thin Lines> or <Hidden> from being swallowed
+            // as HTML tags by the markdown parser.
+            markdown = EscapeBareAngleBrackets(markdown);
+
             // Use Neo.Markdig.Xaml to convert markdown to FlowDocument
             var xaml = MarkdownXaml.ToXaml(markdown, _pipeline);
 
@@ -86,6 +92,33 @@ public class MarkdownService
             // Fallback to plain text if markdown parsing fails
             return CreatePlainTextDocument(markdown);
         }
+    }
+
+    // Matches <...> where the content is NOT a valid autolink (http://, https://, mailto:).
+    // AI chat responses don't contain legitimate HTML, so we escape all angle brackets
+    // except autolinks. This prevents Revit names like <Thin Lines>, <Hidden>, <Beyond>
+    // from being swallowed as HTML tags by the markdown parser.
+    private static readonly Regex BareAngleBracketRegex = new(
+        @"<(?!https?://|mailto:)([^>]+)>",
+        RegexOptions.Compiled);
+
+    /// <summary>
+    /// Escapes angle brackets that would be interpreted as HTML tags by the markdown parser.
+    /// Preserves valid autolinks and HTML tags.
+    /// </summary>
+    private static string EscapeBareAngleBrackets(string text)
+    {
+        // Don't process inside code blocks — split on code fences and only process non-code parts
+        var parts = Regex.Split(text, @"(```[\s\S]*?```|`[^`]+`)");
+        for (int i = 0; i < parts.Length; i++)
+        {
+            // Odd indices are code spans/blocks (matched groups), skip them
+            if (i % 2 == 0)
+            {
+                parts[i] = BareAngleBracketRegex.Replace(parts[i], @"\<$1\>");
+            }
+        }
+        return string.Join("", parts);
     }
 
     /// <summary>
