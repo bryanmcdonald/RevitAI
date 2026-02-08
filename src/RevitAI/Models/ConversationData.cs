@@ -52,4 +52,10 @@ public class ConversationData
 
     [JsonPropertyName("title")]
     public string? Title { get; set; }
+
+    [JsonPropertyName("projectKey")]
+    public string? ProjectKey { get; set; }
+
+    [JsonPropertyName("toolActionSummary")]
+    public string? ToolActionSummary { get; set; }
 }

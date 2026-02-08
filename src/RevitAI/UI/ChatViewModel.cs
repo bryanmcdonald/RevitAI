@@ -48,6 +48,16 @@ public partial class ChatViewModel : ObservableObject
     /// </summary>
     private List<ClaudeMessage> _apiHistory = new();
 
+    /// <summary>
+    /// Project key for the currently open Revit document (null if untitled/unsaved).
+    /// </summary>
+    private string? _currentProjectKey;
+
+    /// <summary>
+    /// Tool action summary loaded from a previous session, injected once into the system prompt.
+    /// </summary>
+    private string? _loadedToolActionSummary;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private string _inputText = string.Empty;
@@ -232,7 +242,11 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
             assistantMessage.CompleteStreaming();
 
             // Save conversation after successful response
-            await _persistenceService.SaveConversationAsync(Messages);
+            var toolSummary = ChangeTracker.Instance.GenerateToolActionSummary();
+            await _persistenceService.SaveConversationAsync(
+                Messages,
+                _currentProjectKey,
+                string.IsNullOrWhiteSpace(toolSummary) ? null : toolSummary);
         }
         catch (OperationCanceledException)
         {
@@ -274,7 +288,7 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     }
 
     /// <summary>
-    /// Builds a system prompt with current Revit context.
+    /// Builds a system prompt with current Revit context, session changes, and previous session actions.
     /// </summary>
     private async Task<string> BuildContextualSystemPromptAsync(CancellationToken cancellationToken)
     {
@@ -286,7 +300,23 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
                 app => _contextEngine.GatherContext(app, verbosity),
                 cancellationToken);
 
-            return _contextEngine.BuildSystemPrompt(context, verbosity);
+            var prompt = _contextEngine.BuildSystemPrompt(context, verbosity);
+
+            // Append session change tracking
+            var sessionSummary = ChangeTracker.Instance.GetSessionSummary();
+            if (!string.IsNullOrWhiteSpace(sessionSummary))
+            {
+                prompt += "\n\n## AI Session Changes\n\n" + sessionSummary;
+            }
+
+            // Append previous session actions (one-shot: cleared after first use)
+            if (!string.IsNullOrWhiteSpace(_loadedToolActionSummary))
+            {
+                prompt += "\n\n## Previous Session Actions\n\n" + _loadedToolActionSummary;
+                _loadedToolActionSummary = null;
+            }
+
+            return prompt;
         }
         catch (InvalidOperationException)
         {
@@ -587,6 +617,105 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     }
 
     /// <summary>
+    /// Loads a previously saved conversation for the given project key.
+    /// Called from App.cs on DocumentOpened.
+    /// </summary>
+    /// <returns>True if a previous conversation was restored, false otherwise.</returns>
+    public async Task<bool> LoadProjectConversationAsync(string projectKey)
+    {
+        _currentProjectKey = projectKey;
+        _persistenceService.SetProjectKey(projectKey);
+
+        if (!_persistenceService.HasConversation(projectKey))
+            return false;
+
+        var (messages, toolActionSummary) = await _persistenceService.LoadConversationWithSummaryAsync(projectKey);
+
+        if (messages.Count == 0)
+            return false;
+
+        await _dispatcher.InvokeAsync(() =>
+        {
+            _loadedToolActionSummary = toolActionSummary;
+            Messages.Clear();
+            Messages.Add(ChatMessage.CreateSystemMessage(WelcomeMessage));
+
+            foreach (var msg in messages)
+            {
+                Messages.Add(msg);
+            }
+
+            // Rebuild API history as simple text pairs (tool blocks are not preserved across sessions)
+            _apiHistory = RebuildApiHistoryFromDisplayMessages(messages);
+
+            Messages.Add(ChatMessage.CreateSystemMessage("Previous conversation restored from this project."));
+        });
+
+        return true;
+    }
+
+    /// <summary>
+    /// Converts persisted display messages into simple ClaudeMessage text pairs.
+    /// Tool call structure is not preserved; the tool action summary provides that context.
+    /// Merges consecutive same-role messages to maintain strict user/assistant alternation.
+    /// </summary>
+    private static List<ClaudeMessage> RebuildApiHistoryFromDisplayMessages(List<ChatMessage> messages)
+    {
+        var history = new List<ClaudeMessage>();
+        string? lastRole = null;
+
+        foreach (var msg in messages)
+        {
+            if (msg.Role == MessageRole.User)
+            {
+                if (lastRole == "user" && history.Count > 0 && history[^1].Content is string prevUserText)
+                {
+                    // Merge with previous user message
+                    history[^1] = ClaudeMessage.User(prevUserText + "\n" + msg.Content);
+                }
+                else
+                {
+                    history.Add(ClaudeMessage.User(msg.Content));
+                }
+                lastRole = "user";
+            }
+            else if (msg.Role == MessageRole.Assistant && !string.IsNullOrWhiteSpace(msg.Content))
+            {
+                if (lastRole == "assistant" && history.Count > 0 && history[^1].Content is string prevAssistantText)
+                {
+                    // Merge with previous assistant message
+                    history[^1] = ClaudeMessage.Assistant(prevAssistantText + "\n" + msg.Content);
+                }
+                else
+                {
+                    history.Add(ClaudeMessage.Assistant(msg.Content));
+                }
+                lastRole = "assistant";
+            }
+        }
+
+        return history;
+    }
+
+    /// <summary>
+    /// Saves the current conversation synchronously with the tool action summary.
+    /// Called from App.cs on DocumentClosing (synchronous event).
+    /// </summary>
+    public void SaveCurrentConversation(string? projectKey)
+    {
+        var key = projectKey ?? _currentProjectKey;
+        if (key == null)
+            return;
+
+        var toolActionSummary = ChangeTracker.Instance.GenerateToolActionSummary();
+        var summary = string.IsNullOrWhiteSpace(toolActionSummary) ? null : toolActionSummary;
+
+        // Snapshot messages on WPF thread to avoid cross-thread ObservableCollection access
+        var snapshot = _dispatcher.Invoke(() => Messages.ToList());
+        _persistenceService.SaveConversation(snapshot, key, summary);
+    }
+
+    /// <summary>
     /// Handles API errors with appropriate user messaging.
     /// </summary>
     private void HandleApiError(ClaudeApiException ex)
@@ -647,6 +776,8 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
         }
 
         _persistenceService.StartNewConversation();
+        ChangeTracker.Instance.Clear();
+        _loadedToolActionSummary = null;
         StatusText = "Conversation cleared";
 
         // Clear status after a moment

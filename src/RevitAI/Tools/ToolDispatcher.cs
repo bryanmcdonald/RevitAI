@@ -200,6 +200,7 @@ public sealed class ToolDispatcher
             {
                 scope.Commit();
                 SelectAffectedElements(app, result);
+                RecordToolChange(tool, result);
             }
             // If there's an error, the transaction will auto-rollback on dispose
 
@@ -405,6 +406,7 @@ public sealed class ToolDispatcher
                                 if (!result.IsError)
                                 {
                                     scope.Commit();
+                                    RecordToolChange(tool, result);
                                 }
                             }
                             catch (Exception ex)
@@ -452,6 +454,7 @@ public sealed class ToolDispatcher
                     if (!externalGroup)
                     {
                         _transactionManager.CommitGroup();
+                        ChangeTracker.Instance.RecordTransactionGroup("Tool Batch");
                     }
 
                     // Select all affected elements from the batch
@@ -570,6 +573,24 @@ public sealed class ToolDispatcher
         {
             // Selection is best-effort — don't fail the tool
         }
+    }
+
+    /// <summary>
+    /// Records a tool change in the ChangeTracker for session memory.
+    /// </summary>
+    private static void RecordToolChange(IRevitTool tool, ToolResult result)
+    {
+        var changeType = tool.Name switch
+        {
+            var n when n.StartsWith("place_") || n.StartsWith("create_") ||
+                       n.StartsWith("copy_") || n.StartsWith("array_") => ChangeType.Created,
+            var n when n.StartsWith("delete_") => ChangeType.Deleted,
+            _ => ChangeType.Modified
+        };
+        ChangeTracker.Instance.RecordChange(
+            changeType, tool.Name,
+            result.AffectedElementIds.ToArray(),
+            result.Content);
     }
 
     /// <summary>

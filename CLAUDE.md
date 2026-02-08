@@ -275,7 +275,7 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-07 (Conversation Memory)
+**Next chunk to implement**: P2-08 (Drafting & Documentation Tools)
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
@@ -422,3 +422,4 @@ The plugin will be considered successful when it meets these criteria:
 | 2.4 | P2-04 | Smart Context Awareness: `GeometryResolver` for grid intersections (2D line math) and relative positions, fuzzy type matching (Levenshtein) in `ElementLookupHelper`, `GridSummary` in system prompt, optional level inference from active ViewPlan, `resolve_grid_intersection` read tool, `grid_intersection`/`relative_to` params on placement tools. |
 | 2.5 | P2-05 | Visual Feedback System: `AffectedElementIds` on `ToolResult` + `OkWithElements()` factory, auto-selection of created/modified elements in viewport via `ToolDispatcher`, `MarkdownBehavior` attached property for RichTextBox with lazy visibility-aware conversion, dual TextBox/RichTextBox streaming pattern. Preview graphics deferred. |
 | 2.6 | P2-06 | Parameter & Schedule Tools: 3 new tools — `read_schedule_data` (schedule reading with hidden-field-aware column mapping), `export_element_data` (CSV/JSON export with special parameter handling), `bulk_modify_parameters` (bulk modification with `{index}`/`{index:N}` placeholders, confirmation, auto-selection). |
+| 2.7 | P2-07 | Conversation Memory: project-keyed persistence (`GetProjectKey` for cloud/local models), auto-load on `DocumentOpened`, auto-save on `DocumentClosing`, `ChangeTracker` singleton for session change tracking, tool action summaries injected into system prompt, API history rebuild with role-alternation merging. |

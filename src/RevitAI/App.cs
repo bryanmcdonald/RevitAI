@@ -17,6 +17,7 @@
 using System.Reflection;
 using System.Windows.Media.Imaging;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using RevitAI.Services;
 using RevitAI.Threading;
@@ -83,6 +84,10 @@ public class App : IExternalApplication
             // Create the ribbon UI
             CreateRibbonUI(application);
 
+            // Subscribe to document events for conversation memory
+            application.ControlledApplication.DocumentOpened += OnDocumentOpened;
+            application.ControlledApplication.DocumentClosing += OnDocumentClosing;
+
             return Result.Succeeded;
         }
         catch (Exception ex)
@@ -94,6 +99,10 @@ public class App : IExternalApplication
 
     public Result OnShutdown(UIControlledApplication application)
     {
+        // Unsubscribe from document events
+        application.ControlledApplication.DocumentOpened -= OnDocumentOpened;
+        application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+
         // Cancel any pending commands and dispose the ExternalEvent
         CommandQueue?.CancelAll();
         RevitEvent?.Dispose();
@@ -170,6 +179,60 @@ public class App : IExternalApplication
         }
 
         await command.Task;
+    }
+
+    /// <summary>
+    /// Handles document opened event: loads project-keyed conversation if available.
+    /// </summary>
+    private void OnDocumentOpened(object? sender, DocumentOpenedEventArgs e)
+    {
+        var projectKey = ConversationPersistenceService.GetProjectKey(e.Document);
+        if (projectKey == null)
+            return;
+
+        var viewModel = _chatPane?.ViewModel;
+        if (viewModel == null)
+            return;
+
+        // Clear change tracker for fresh session
+        ChangeTracker.Instance.Clear();
+
+        // Fire-and-forget: load conversation on background thread to avoid blocking Revit
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var restored = await viewModel.LoadProjectConversationAsync(projectKey);
+
+                // Show the chat pane if a conversation was restored
+                if (restored)
+                {
+                    await ExecuteOnRevitThreadAsync(app =>
+                    {
+                        var pane = app.GetDockablePane(ChatPaneId);
+                        if (pane != null && !pane.IsShown())
+                            pane.Show();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"RevitAI: Failed to load conversation for {projectKey}: {ex.Message}");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Handles document closing event: saves current conversation with project key.
+    /// </summary>
+    private void OnDocumentClosing(object? sender, DocumentClosingEventArgs e)
+    {
+        var projectKey = ConversationPersistenceService.GetProjectKey(e.Document);
+        if (projectKey == null)
+            return;
+
+        _chatPane?.ViewModel?.SaveCurrentConversation(projectKey);
     }
 
     /// <summary>

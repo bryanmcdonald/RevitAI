@@ -4,219 +4,123 @@
 
 **Prerequisites**: P2-06 complete.
 
-**Key Files to Create**:
-- `src/RevitAI/Services/ConversationMemoryService.cs`
-- `src/RevitAI/Services/ChangeTracker.cs`
-- `src/RevitAI/Models/PersistedConversation.cs`
+**Status**: Complete
 
 ---
 
 ## Implementation Details
 
-> *This is a preliminary outline. Detailed implementation will be added during the chunk planning session.*
+### Design Decisions
 
-### 1. ConversationMemoryService
+- **Evolve existing `ConversationPersistenceService`** rather than creating a parallel service
+- **Auto-load** previous conversation when a project opens via `DocumentOpened` event
+- **Auto-save** on `DocumentClosing` (synchronous event — uses sync file write)
+- **Skip undo tool/button** — Revit has no programmatic undo API; users use Ctrl+Z
+- **Summary approach** for API history: persist display messages + text summary of tool actions (tool call/result structure not preserved across sessions)
+- **One-shot previous session injection**: tool action summary from last session injected once into the system prompt, then cleared to avoid repetition
 
-```csharp
-public class ConversationMemoryService
-{
-    private readonly string _storageDir;
+### Key Files
 
-    public async Task SaveConversationAsync(string projectGuid, List<Message> messages)
-    {
-        var path = Path.Combine(_storageDir, $"{projectGuid}.json");
-        var data = new PersistedConversation
-        {
-            ProjectGuid = projectGuid,
-            Messages = messages,
-            LastUpdated = DateTime.UtcNow
-        };
-        await File.WriteAllTextAsync(path, JsonSerializer.Serialize(data));
-    }
+| Action | File | Purpose |
+|--------|------|---------|
+| **Created** | `src/RevitAI/Services/ChangeTracker.cs` | Session-scoped change tracking singleton |
+| **Modified** | `src/RevitAI/Models/ConversationData.cs` | Added `ProjectKey`, `ToolActionSummary` fields |
+| **Modified** | `src/RevitAI/Services/ConversationPersistenceService.cs` | Project-key keying, tool summary persistence |
+| **Modified** | `src/RevitAI/Tools/ToolDispatcher.cs` | Record changes after tool execution |
+| **Modified** | `src/RevitAI/UI/ChatViewModel.cs` | Load/save project conversations, system prompt enrichment |
+| **Modified** | `src/RevitAI/App.cs` | DocumentOpened/DocumentClosing event wiring |
 
-    public async Task<List<Message>> LoadConversationAsync(string projectGuid)
-    {
-        var path = Path.Combine(_storageDir, $"{projectGuid}.json");
-        if (!File.Exists(path)) return new List<Message>();
+### 1. ChangeTracker Service
 
-        var json = await File.ReadAllTextAsync(path);
-        var data = JsonSerializer.Deserialize<PersistedConversation>(json);
-        return data?.Messages ?? new List<Message>();
-    }
-}
+Thread-safe singleton (`lock(_dataLock)` on all list operations) tracking AI-initiated changes:
+
+```
+Public API:
+- RecordChange(ChangeType type, string toolName, long[] elementIds, string description)
+- RecordTransactionGroup(string groupName)
+- GetSessionSummary() -> string    // For system prompt (capped at 20 entries)
+- GenerateToolActionSummary() -> string  // For persistence (detailed)
+- GetRecentChanges(int count) -> List<ModelChange>
+- Clear()
+
+Types:
+- enum ChangeType { Created, Modified, Deleted }
+- class ModelChange { Type, ToolName, ElementIds, Description, Timestamp }
 ```
 
-### 2. ChangeTracker
+Change type is inferred from tool name prefix: `place_`/`create_`/`copy_`/`array_` = Created, `delete_` = Deleted, everything else = Modified.
 
-Track model modifications made by AI with undo support.
+### 2. ConversationData Extensions
 
-```csharp
-public class ChangeTracker
-{
-    private readonly List<ModelChange> _changes = new();
-    private readonly List<string> _transactionGroupNames = new();
+Two new JSON properties:
+- `projectKey`: Set only for project-keyed conversations (null for random-GUID conversations)
+- `toolActionSummary`: Text summary of tool actions from the session
 
-    public void RecordChange(ChangeType type, ElementId elementId, string description)
-    {
-        _changes.Add(new ModelChange
-        {
-            Type = type,
-            ElementId = elementId.Value,
-            Description = description,
-            Timestamp = DateTime.UtcNow
-        });
-    }
+### 3. ConversationPersistenceService Enhancements
 
-    public void RecordTransactionGroup(string groupName)
-    {
-        _transactionGroupNames.Add(groupName);
-    }
+- **`GetProjectKey(Document doc)`** static method: derives stable key
+  - Cloud models: `"cloud_{projectGUID}"`
+  - Local files: `"local_{SHA256(pathName)[0..16]}"`
+  - Untitled/unsaved: returns `null`
+- **`SetProjectKey(string)`**: sets current conversation ID to project key
+- **`HasConversation(string id)`**: quick `File.Exists` check
+- **`SaveConversation(...)` (sync)**: for `DocumentClosing` where async is not viable
+- **`LoadConversationWithSummaryAsync(...)`**: returns `(messages, toolActionSummary)` tuple
+- Shared `BuildConversationData()` and `LoadConversationDataAsync()` helpers to avoid duplication
 
-    public string GetSessionSummary()
-    {
-        var summary = new StringBuilder();
-        summary.AppendLine("Changes made this session:");
-        foreach (var group in _changes.GroupBy(c => c.Type))
-        {
-            summary.AppendLine($"- {group.Key}: {group.Count()} elements");
-        }
-        return summary.ToString();
-    }
+### 4. ToolDispatcher Integration
 
-    public int GetUndoCount() => _transactionGroupNames.Count;
+After successful tool execution (`scope.Commit()`), `RecordToolChange()` records the change:
+- In single-tool dispatch (`ExecuteToolAsync`)
+- In batch dispatch (`ExecuteAllToolsInGroupAsync`) — after each individual commit, plus a `RecordTransactionGroup("Tool Batch")` after group commit
 
-    public void Clear()
-    {
-        _changes.Clear();
-        _transactionGroupNames.Clear();
-    }
-}
+### 5. ChatViewModel Integration
 
-public class ModelChange
-{
-    public ChangeType Type { get; set; }
-    public long ElementId { get; set; }
-    public string Description { get; set; }
-    public DateTime Timestamp { get; set; }
-}
+- **`LoadProjectConversationAsync(string projectKey)`**: loads messages + tool action summary, populates UI via WPF dispatcher, rebuilds API history as simple text pairs
+- **`RebuildApiHistoryFromDisplayMessages(...)`**: converts display messages to `List<ClaudeMessage>`, merging consecutive same-role messages to maintain strict user/assistant alternation
+- **`SaveCurrentConversation(string? projectKey)`**: snapshots messages on WPF thread (thread safety), saves synchronously with tool action summary
+- **`BuildContextualSystemPromptAsync`**: appends "AI Session Changes" section (from `ChangeTracker.GetSessionSummary()`) and "Previous Session Actions" section (from loaded summary, cleared after first use)
+- **`ClearConversation`**: also clears `ChangeTracker.Instance` and `_loadedToolActionSummary`
+- **`SendAsync`**: passes project key and tool summary to `SaveConversationAsync`
 
-public enum ChangeType { Created, Modified, Deleted }
-```
+### 6. App.cs Document Event Wiring
 
-### 3. Undo All AI Changes Tool
+- `DocumentOpened`: gets project key, clears ChangeTracker, loads conversation on background thread via `Task.Run` with try/catch
+- `DocumentClosing`: gets project key, calls `SaveCurrentConversation` synchronously
 
-```csharp
-// Tool: undo_all_ai_changes
-// Allows user to undo all changes made by AI in current session
-public class UndoAllAiChangesTool : IRevitTool
-{
-    public string Name => "undo_all_ai_changes";
-    public string Description => "Undoes all changes made by the AI assistant in this session";
-    public bool RequiresTransaction => false;
+---
 
-    private readonly ChangeTracker _changeTracker;
+## Thread Safety Notes
 
-    public Task<ToolResult> ExecuteAsync(JsonElement input, UIApplication app, CancellationToken ct)
-    {
-        var undoCount = _changeTracker.GetUndoCount();
-        if (undoCount == 0)
-        {
-            return Task.FromResult(ToolResult.Ok("No AI changes to undo in this session."));
-        }
+- `ChangeTracker` uses `lock(_dataLock)` for all list operations (tool execution on Revit thread, reads from background API threads)
+- `SaveCurrentConversation` snapshots `Messages` on WPF thread via `_dispatcher.Invoke()` before writing to disk from Revit thread
+- `_loadedToolActionSummary` is set/cleared inside `_dispatcher.InvokeAsync` blocks to avoid cross-thread races
 
-        // Revit undo is performed via multiple Ctrl+Z commands
-        // Each TransactionGroup we created becomes one undo step
-        var doc = app.ActiveUIDocument.Document;
+## Edge Cases
 
-        for (int i = 0; i < undoCount; i++)
-        {
-            // Note: Revit API doesn't expose direct undo, but we can inform user
-        }
+- **Untitled/unsaved documents**: `GetProjectKey()` returns null, all auto-load/save skipped. Random-GUID persistence still works as fallback.
+- **Local file moved/renamed**: Hash-based key breaks the link. Acceptable trade-off, documented.
+- **Corrupted save files**: Existing `try/catch` returns empty list/null. No additional handling needed.
+- **Multiple documents open**: Conversation tracks the last-opened document. No auto-switch on active document change.
+- **Empty conversation on load**: Skip loading if no messages in saved file.
+- **API history alternation**: Consecutive same-role messages are merged when rebuilding history from display messages.
 
-        return Task.FromResult(ToolResult.Ok(
-            $"To undo all {undoCount} AI operations, press Ctrl+Z {undoCount} times, " +
-            $"or use Edit > Undo (AI Operation) repeatedly."));
-    }
-}
-```
+## Deferred Items
 
-### 4. UI: Undo All AI Changes Button
-
-```xaml
-<!-- Add to ChatPane.xaml toolbar -->
-<Button Content="Undo All AI Changes"
-        Command="{Binding UndoAllCommand}"
-        ToolTip="{Binding UndoButtonTooltip}"
-        Visibility="{Binding HasAiChanges, Converter={StaticResource BoolToVisibility}}"/>
-```
-
-```csharp
-// ChatViewModel
-public bool HasAiChanges => _changeTracker.GetUndoCount() > 0;
-public string UndoButtonTooltip => $"Undo {_changeTracker.GetUndoCount()} AI operations";
-
-public ICommand UndoAllCommand => new RelayCommand(() =>
-{
-    var count = _changeTracker.GetUndoCount();
-    var result = MessageBox.Show(
-        $"This will undo {count} AI operations. Continue?",
-        "Undo All AI Changes",
-        MessageBoxButton.YesNo,
-        MessageBoxImage.Warning);
-
-    if (result == MessageBoxResult.Yes)
-    {
-        // Inform user to use Ctrl+Z
-        Messages.Add(new ChatMessage
-        {
-            Role = "system",
-            Content = $"To undo all AI changes, press Ctrl+Z {count} times."
-        });
-    }
-});
-```
-
-### 5. Integration with Tool Execution
-
-```csharp
-// After successful tool execution
-if (tool.RequiresTransaction && result.Success)
-{
-    _changeTracker.RecordChange(
-        ChangeType.Created, // or Modified, Deleted
-        newElementId,
-        $"{tool.Name}: {result.Content}");
-}
-
-// After TransactionGroup commit
-_changeTracker.RecordTransactionGroup(groupName);
-```
-
-### 6. Context Enhancement
-
-```csharp
-// Include recent changes in system prompt
-var recentChanges = _changeTracker.GetRecentChanges(5);
-systemPrompt += $"\n\n## Recent AI Actions:\n{FormatChanges(recentChanges)}";
-```
-
-### 7. Auto-save on Document Close
-
-```csharp
-app.ControlledApplication.DocumentClosing += (sender, args) =>
-{
-    var projectGuid = args.Document.GetCloudModelPath()?.GetProjectGUID().ToString()
-        ?? args.Document.Title;
-    _memoryService.SaveConversationAsync(projectGuid, _messages).Wait();
-};
-```
+- **Programmatic undo tool**: Revit has no API for undo. Users use Ctrl+Z. Undo tracking (`_transactionGroupNames`) is maintained but not exposed as a user action.
+- **Multi-document conversation switching**: Only single-document tracking implemented.
+- **Preview graphics**: Not related to this chunk (deferred in P2-05).
 
 ---
 
 ## Verification (Manual)
 
-1. Open a project, have a conversation with Claude, make some changes
+1. Open a project, have a conversation, make AI changes (e.g., place elements)
 2. Close and reopen the project
-3. Verify conversation history is restored
-4. Ask Claude "What changes have you made in this session?"
-5. Verify Claude can summarize recent modifications
+3. Verify conversation history is restored with "Previous conversation restored" message
+4. Send a new message — verify AI references previous session actions in its response
+5. Ask "What changes have you made?" — verify AI can summarize both current and previous session actions
+6. Clear conversation, verify ChangeTracker is also cleared
+7. Test with local file and cloud model (if available) — both should auto-persist
+8. Test with untitled document — verify no errors, graceful fallback
+9. Build succeeds with no warnings
