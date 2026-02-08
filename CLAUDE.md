@@ -204,7 +204,7 @@ RevitAI/
 |-------|-------------|--------|---------------|
 | **Phase 1** | Foundation (MVP) | P1-01 to P1-10 | [docs/phase1/README.md](docs/phase1/README.md) |
 | **Phase 1.5** | View & Navigation Foundation | P1.5-01 to P1.5-04 | [docs/phase1.5/README.md](docs/phase1.5/README.md) |
-| **Phase 2** | Enhanced Capabilities | P2-01 to P2-08 | [docs/phase2/README.md](docs/phase2/README.md) |
+| **Phase 2** | Enhanced Capabilities | P2-01 to P2-08 (P2-08 split into 7 sub-chunks) | [docs/phase2/README.md](docs/phase2/README.md) |
 | **Phase 3** | Advanced & Multi-Discipline | P3-01 to P3-07 | [docs/phase3/README.md](docs/phase3/README.md) |
 | **Phase 4** | Agentic Mode | P4-01 to P4-06 | [docs/phase4/README.md](docs/phase4/README.md) |
 | **Appendix** | API Patterns & Reference | A.1 to A.8 | [docs/appendix.md](docs/appendix.md) |
@@ -244,7 +244,14 @@ RevitAI/
 | P2-05 | Visual Feedback System | [P2-05-visual-feedback.md](docs/phase2/P2-05-visual-feedback.md) |
 | P2-06 | Parameter & Schedule Tools | [P2-06-parameter-schedule.md](docs/phase2/P2-06-parameter-schedule.md) |
 | P2-07 | Conversation Memory | [P2-07-conversation-memory.md](docs/phase2/P2-07-conversation-memory.md) |
-| P2-08 | Drafting & Documentation Tools | [P2-08-drafting-tools.md](docs/phase2/P2-08-drafting-tools.md) |
+| P2-08 | Drafting & Documentation Tools (overview) | [P2-08-drafting-tools.md](docs/phase2/P2-08-drafting-tools.md) |
+| P2-08.1 | DraftingHelper + Discovery Tools | [P2-08.1-discovery-tools.md](docs/phase2/P2-08.1-discovery-tools.md) |
+| P2-08.2 | Linework & Shape Tools | [P2-08.2-linework-tools.md](docs/phase2/P2-08.2-linework-tools.md) |
+| P2-08.3 | Region + Component Tools | [P2-08.3-region-component-tools.md](docs/phase2/P2-08.3-region-component-tools.md) |
+| P2-08.4 | Sheet & Viewport Tools | [P2-08.4-sheet-viewport-tools.md](docs/phase2/P2-08.4-sheet-viewport-tools.md) |
+| P2-08.5 | Annotation & Reference Tools | [P2-08.5-annotation-tools.md](docs/phase2/P2-08.5-annotation-tools.md) |
+| P2-08.6 | Batch Tools | [P2-08.6-batch-tools.md](docs/phase2/P2-08.6-batch-tools.md) |
+| P2-08.7 | System Prompt + Documentation | [P2-08.7-prompt-docs.md](docs/phase2/P2-08.7-prompt-docs.md) |
 
 ### Phase 3 Quick Links
 
@@ -275,7 +282,9 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-08 (Drafting & Documentation Tools)
+**Next chunk to implement**: P2-08.2 (Linework & Shape Tools)
+
+> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1 (DraftingHelper + 6 discovery tools) is complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
@@ -423,3 +432,4 @@ The plugin will be considered successful when it meets these criteria:
 | 2.5 | P2-05 | Visual Feedback System: `AffectedElementIds` on `ToolResult` + `OkWithElements()` factory, auto-selection of created/modified elements in viewport via `ToolDispatcher`, `MarkdownBehavior` attached property for RichTextBox with lazy visibility-aware conversion, dual TextBox/RichTextBox streaming pattern. Preview graphics deferred. |
 | 2.6 | P2-06 | Parameter & Schedule Tools: 3 new tools — `read_schedule_data` (schedule reading with hidden-field-aware column mapping), `export_element_data` (CSV/JSON export with special parameter handling), `bulk_modify_parameters` (bulk modification with `{index}`/`{index:N}` placeholders, confirmation, auto-selection). |
 | 2.7 | P2-07 | Conversation Memory: project-keyed persistence (`GetProjectKey` for cloud/local models), auto-load on `DocumentOpened`, auto-save on `DocumentClosing`, `ChangeTracker` singleton for session change tracking, tool action summaries injected into system prompt, API history rebuild with role-alternation merging. |
+| 2.8 | P2-08.1 | Drafting Discovery Tools: `DraftingHelper` shared utility class (view resolution, point parsing, curve loop building, line style application), 6 read-only discovery tools (`get_fill_patterns`, `get_line_styles`, `get_detail_components`, `get_revision_list`, `get_sheet_list`, `get_viewport_info`). P2-08 split into 7 sub-chunks with individual docs. |

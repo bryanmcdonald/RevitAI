@@ -25,6 +25,7 @@ using RevitAI.Tools;
 using RevitAI.Tools.ModifyTools;
 using RevitAI.Tools.ReadTools;
 using RevitAI.Tools.ViewTools;
+using RevitAI.Tools.DraftingTools;
 using RevitAI.UI;
 
 namespace RevitAI;
@@ -330,6 +331,14 @@ public class App : IExternalApplication
         registry.Register(new Set3DSectionBoxTool());
         registry.Register(new ClearSectionBoxTool());
         registry.Register(new SetDisplayStyleTool());
+
+        // Drafting & documentation tools (P2-08.1) - Discovery
+        registry.Register(new GetFillPatternsTool());
+        registry.Register(new GetLineStylesTool());
+        registry.Register(new GetDetailComponentsTool());
+        registry.Register(new GetRevisionListTool());
+        registry.Register(new GetSheetListTool());
+        registry.Register(new GetViewportInfoTool());
     }
 
     /// <summary>

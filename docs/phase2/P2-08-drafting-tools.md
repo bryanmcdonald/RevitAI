@@ -897,13 +897,42 @@ Revision clouds require an active revision. If the document has no revisions, th
 
 ---
 
+## Sub-Chunks
+
+P2-08 is split into 7 sub-chunks for manageability:
+
+| Sub-Chunk | Description | Status |
+|-----------|-------------|--------|
+| [P2-08.1](P2-08.1-discovery-tools.md) | DraftingHelper + 6 discovery tools | **Complete** |
+| [P2-08.2](P2-08.2-linework-tools.md) | Linework & shape tools (7 tools) | Not started |
+| [P2-08.3](P2-08.3-region-component-tools.md) | Region + component tools (5 tools) | Not started |
+| [P2-08.4](P2-08.4-sheet-viewport-tools.md) | Sheet & viewport tools (2 tools) | Not started |
+| [P2-08.5](P2-08.5-annotation-tools.md) | Annotation & reference tools (4 tools) | Not started |
+| [P2-08.6](P2-08.6-batch-tools.md) | Batch tools (2 tools) | Not started |
+| [P2-08.7](P2-08.7-prompt-docs.md) | System prompt + documentation | Not started |
+
+---
+
+## Implementation Notes
+
+### P2-08.1: DraftingHelper + Discovery Tools
+
+**Implemented**: 6 read-only discovery tools + shared `DraftingHelper` utility class.
+
+- `DraftingHelper` uses `(T?, ToolResult?)` tuple pattern for validation - callers return early on error.
+- `ResolveDetailView` validates view is suitable for 2D drafting (rejects 3D, schedule, sheet views).
+- `GetFillPatternsTool` filters by target (drafting/model) before projection for efficiency; null-guards `GetFillPattern()`.
+- `GetDetailComponentsTool` groups by family, caps at 50 families with truncation flag.
+- `GetSheetListTool` excludes placeholder sheets.
+- `GetViewportInfoTool` returns center + outline bounds for layout planning.
+- All tools follow existing patterns from `GetAvailableTypesTool` (static schema/options, cancellation token check, null document check, try/catch).
+
+---
+
 ## Future Enhancements
 
 Consider adding these tools in future phases:
 
-- `get_fill_patterns` - List available fill patterns
-- `get_line_styles` - List available line styles
-- `get_detail_components` - List loaded detail families
 - `create_revision` - Create a new revision for tracking changes
 - `move_viewport` - Reposition viewport on sheet
 - `set_viewport_title` - Configure viewport title display
