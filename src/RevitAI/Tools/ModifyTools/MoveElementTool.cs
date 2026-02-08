@@ -142,7 +142,7 @@ public sealed class MoveElementTool : IRevitTool
                 Message = $"Moved element {elementId.Value} by ({x:F2}, {y:F2}, {z:F2}) feet."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { elementId.Value }));
         }
         catch (Exception ex)
         {

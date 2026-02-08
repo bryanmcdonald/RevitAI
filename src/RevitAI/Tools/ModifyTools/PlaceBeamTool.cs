@@ -242,7 +242,7 @@ public sealed class PlaceBeamTool : IRevitTool
                 Message = msg
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { beam.Id.Value }));
         }
         catch (Exception ex)
         {

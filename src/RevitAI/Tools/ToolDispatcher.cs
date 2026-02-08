@@ -199,6 +199,7 @@ public sealed class ToolDispatcher
             if (!result.IsError)
             {
                 scope.Commit();
+                SelectAffectedElements(app, result);
             }
             // If there's an error, the transaction will auto-rollback on dispose
 
@@ -342,6 +343,7 @@ public sealed class ToolDispatcher
             return await App.ExecuteOnRevitThreadAsync(app =>
             {
                 var results = new List<ToolResultBlock>();
+                var toolResults = new List<ToolResult>();
                 var doc = app.ActiveUIDocument?.Document;
 
                 if (doc == null)
@@ -422,6 +424,8 @@ public sealed class ToolDispatcher
                             }
                         }
 
+                        toolResults.Add(result);
+
                         // Handle image results in batch
                         if (result.HasImage)
                         {
@@ -449,6 +453,9 @@ public sealed class ToolDispatcher
                     {
                         _transactionManager.CommitGroup();
                     }
+
+                    // Select all affected elements from the batch
+                    SelectAffectedElements(app, toolResults);
                 }
                 catch (OperationCanceledException)
                 {
@@ -507,6 +514,61 @@ public sealed class ToolDispatcher
                 Content = "Skipped due to earlier tool failure in batch.",
                 IsError = true
             });
+        }
+    }
+
+    /// <summary>
+    /// Selects affected elements in the Revit viewport for visual feedback.
+    /// No transaction required — selection is a UI operation.
+    /// </summary>
+    private static void SelectAffectedElements(Autodesk.Revit.UI.UIApplication app, ToolResult result)
+    {
+        if (result.AffectedElementIds.Count == 0)
+            return;
+
+        try
+        {
+            var uidoc = app.ActiveUIDocument;
+            if (uidoc == null)
+                return;
+
+            var elementIds = result.AffectedElementIds
+                .Select(id => new Autodesk.Revit.DB.ElementId(id))
+                .ToList();
+            uidoc.Selection.SetElementIds(elementIds);
+        }
+        catch
+        {
+            // Selection is best-effort — don't fail the tool
+        }
+    }
+
+    /// <summary>
+    /// Selects affected elements from multiple tool results in the Revit viewport.
+    /// </summary>
+    private static void SelectAffectedElements(Autodesk.Revit.UI.UIApplication app, IEnumerable<ToolResult> results)
+    {
+        var allIds = results
+            .Where(r => r != null && !r.IsError)
+            .SelectMany(r => r.AffectedElementIds)
+            .Distinct()
+            .Select(id => new Autodesk.Revit.DB.ElementId(id))
+            .ToList();
+
+        if (allIds.Count == 0)
+            return;
+
+        try
+        {
+            var uidoc = app.ActiveUIDocument;
+            if (uidoc == null)
+                return;
+
+            uidoc.Selection.SetElementIds(allIds);
+        }
+        catch
+        {
+            // Selection is best-effort — don't fail the tool
         }
     }
 

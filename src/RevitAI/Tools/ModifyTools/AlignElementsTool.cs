@@ -128,6 +128,7 @@ public sealed class AlignElementsTool : IRevitTool
 
             // Validate and align each element
             var alignedCount = 0;
+            var alignedIds = new List<long>();
             var invalidIds = new List<long>();
             var skippedPinnedIds = new List<long>();
             var skippedNoBBoxIds = new List<long>();
@@ -169,6 +170,7 @@ public sealed class AlignElementsTool : IRevitTool
                 {
                     ElementTransformUtils.MoveElement(doc, elementId, delta);
                     alignedCount++;
+                    alignedIds.Add(id);
                 }
             }
 
@@ -183,7 +185,7 @@ public sealed class AlignElementsTool : IRevitTool
                 Message = $"Aligned {alignedCount} element(s) to the {alignment} of element {referenceId.Value}."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), alignedIds));
         }
         catch (Exception ex)
         {

@@ -187,7 +187,7 @@ public sealed class RotateElementTool : IRevitTool
                 Message = $"Rotated {validIds.Count} element(s) by {angleDegrees:F1} degrees around ({centerX:F2}, {centerY:F2})."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), validIds.Select(id => id.Value)));
         }
         catch (Exception ex)
         {

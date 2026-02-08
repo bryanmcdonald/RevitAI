@@ -199,7 +199,7 @@ public sealed class CreateAssemblyTool : IRevitTool
                 Message = $"Created assembly '{assemblyTypeName}' (ID: {assembly.Id.Value}) with {validIds.Count} member(s), naming category: {namingCategoryName}."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { assembly.Id.Value }));
         }
         catch (Exception ex)
         {

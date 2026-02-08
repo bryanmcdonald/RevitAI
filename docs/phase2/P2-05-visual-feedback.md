@@ -1,156 +1,98 @@
 # P2-05: Visual Feedback System
 
-**Goal**: Add temporary highlighting, preview graphics, status bar integration, and markdown rendering in chat.
+**Goal**: Provide visual feedback when AI creates/modifies elements (auto-selection highlighting) and render markdown in chat messages.
 
 **Prerequisites**: P2-04 complete.
 
-**Key Files to Create**:
-- `src/RevitAI/UI/HighlightService.cs`
-- `src/RevitAI/UI/PreviewGraphics.cs`
-- `src/RevitAI/UI/StatusBarService.cs`
-- `src/RevitAI/UI/Behaviors/MarkdownBehavior.cs` (deferred from P1-04)
+**Status**: Implemented (partial scope — see Deferred Items below).
 
 ---
 
-## Implementation Details
+## What Was Implemented
 
-> *This is a preliminary outline. Detailed implementation will be added during the chunk planning session.*
+### 1. Auto-Select Affected Elements
 
-### 1. Temporary Element Highlighting
+After any tool that creates or modifies Revit elements, the affected elements are automatically selected in the viewport using Revit's native selection highlight. This gives immediate visual feedback about what changed.
 
-```csharp
-public class HighlightService
-{
-    private readonly Dictionary<ElementId, OverrideGraphicSettings> _originalSettings = new();
+**Approach**:
+- `ToolResult` gained an `AffectedElementIds` property (`IReadOnlyList<long>`) and an `OkWithElements()` factory method
+- 21 tool files in `ModifyTools/` updated to report element IDs via `OkWithElements()`
+- `ToolDispatcher` calls `UIDocument.Selection.SetElementIds()` after successful tool execution
+- Works in both single-tool and batch-tool paths
+- No transaction required (selection is a UI operation)
+- Best-effort — failures in selection don't fail the tool
 
-    public void HighlightElements(Document doc, IEnumerable<ElementId> elementIds, Color color)
-    {
-        var view = doc.ActiveView;
-        var settings = new OverrideGraphicSettings();
-        settings.SetProjectionLineColor(color);
-        settings.SetProjectionLineWeight(5);
+**Tools that report affected elements**:
 
-        foreach (var id in elementIds)
-        {
-            _originalSettings[id] = view.GetElementOverrides(id);
-            view.SetElementOverrides(id, settings);
-        }
-    }
+| Category | Tools |
+|----------|-------|
+| **Creation** | PlaceWall, PlaceColumn, PlaceBeam, PlaceFloor, PlaceGrid, PlaceLevel, PlaceDetailLine, PlaceTextNote, CreateSheet, PlaceTag, PlaceDimension, CopyElement, MirrorElement, ArrayElements, CreateGroup, CreateAssembly |
+| **Modification** | MoveElement, RotateElement, AlignElements, ModifyElementParameter, ChangeElementType |
 
-    public void ClearHighlights(Document doc)
-    {
-        var view = doc.ActiveView;
-        foreach (var (id, original) in _originalSettings)
-        {
-            view.SetElementOverrides(id, original);
-        }
-        _originalSettings.Clear();
-    }
-}
-```
+**Excluded** (intentionally not highlighted):
+- `DeleteElementsTool` — elements no longer exist after deletion
+- `SelectElementsTool` — already performs its own selection
+- `ZoomToElementTool` — non-modifying UI tool
+- All read-only tools — no model changes to highlight
 
-### 2. Preview Graphics
+### 2. Markdown Rendering in Chat
 
-Using DirectContext3D or temporary lines.
+AI responses now render with proper markdown formatting (bold, italic, lists, code blocks, tables) instead of plain text.
 
-```csharp
-public class PreviewGraphics : IDirectContext3DServer
-{
-    private List<XYZ> _previewPoints = new();
-    private List<Line> _previewLines = new();
+**Approach**:
+- New `MarkdownBehavior` attached property converts markdown string → `FlowDocument` via existing `MarkdownService`
+- Dual TextBox/RichTextBox in `ChatPane.xaml`:
+  - `TextBox` visible during streaming (fast plain text updates)
+  - `RichTextBox` visible after streaming completes (rich markdown rendering)
+- Visibility-aware lazy conversion: skips Markdig pipeline while collapsed (streaming), applies when element becomes visible
+- Theme colors inherited from RichTextBox (`Foreground`, `FontFamily`, `FontSize`)
+- Cleans up event handlers on unload to prevent leaks in virtualized ListView
 
-    public void ShowWallPreview(XYZ start, XYZ end, double height)
-    {
-        _previewLines.Clear();
-        // Create 3D box outline for wall preview
-        _previewLines.Add(Line.CreateBound(start, end));
-        // ... add other edges
-        Refresh();
-    }
+### 3. Status Bar (Pre-existing)
 
-    public void RenderScene(View view, DisplayStyle displayStyle)
-    {
-        // Draw preview lines using DirectContext3D
-    }
-}
-```
+Status bar with `ShowStatus`/`StatusText` was already implemented in `ChatViewModel` + `ChatPane.xaml`. No additional work needed.
 
-### 3. Status Bar Integration
+---
 
-```csharp
-public class StatusBarService
-{
-    public void SetStatus(string message)
-    {
-        // Revit doesn't have direct status bar API
-        // Option 1: Update a status label in the chat pane
-        // Option 2: Use TaskDialog for important status (not recommended for frequent updates)
-    }
-}
-```
+## Key Files
 
-### 4. Integration with Tool Execution
+**New**:
+- `src/RevitAI/UI/Behaviors/MarkdownBehavior.cs` — Attached property for markdown→FlowDocument conversion
 
-```csharp
-// Before execution: show preview
-_previewGraphics.ShowWallPreview(start, end, height);
+**Modified**:
+- `src/RevitAI/Tools/ToolResult.cs` — Added `AffectedElementIds` + `OkWithElements()`
+- `src/RevitAI/Tools/ToolDispatcher.cs` — Added `SelectAffectedElements()` methods for single and batch paths
+- `src/RevitAI/UI/ChatPane.xaml` — Dual TextBox/RichTextBox with streaming-aware visibility
+- 21 tool files in `Tools/ModifyTools/` — `Ok()` → `OkWithElements()` with element IDs
 
-// After confirmation: execute and clear preview
-_previewGraphics.Clear();
-await ExecuteToolAsync(...);
+---
 
-// After execution: highlight created elements
-_highlightService.HighlightElements(doc, new[] { newElementId }, Colors.Green);
-await Task.Delay(2000);
-_highlightService.ClearHighlights(doc);
-```
+## Deferred Items
 
-### 5. Markdown Rendering in Chat (Deferred from P1-04)
+- **Preview Graphics (DirectContext3D)**: Deferred per user decision. Would show ghost outlines before element creation.
+- **Temporary Color Highlighting**: Deferred. Auto-selection provides sufficient visual feedback. Could add timed override graphics later if needed.
+- **ViewTools auto-selection**: ViewTools like `CreateDraftingViewTool`, `DuplicateViewTool`, etc. were not updated. Could be added later if users want newly created views highlighted.
 
-The chat pane currently displays raw markdown text. Implement proper rendering using an attached behavior for RichTextBox.
+---
 
-**Why deferred**: `RichTextBox.Document` is not a dependency property and doesn't support direct binding. A custom attached behavior is needed.
+## Design Decisions
 
-```csharp
-public static class MarkdownBehavior
-{
-    public static readonly DependencyProperty MarkdownProperty =
-        DependencyProperty.RegisterAttached(
-            "Markdown",
-            typeof(string),
-            typeof(MarkdownBehavior),
-            new PropertyMetadata(null, OnMarkdownChanged));
+1. **Selection vs. Override Graphics**: Chose native selection (`SetElementIds`) over override graphics because it requires no transaction, no cleanup timer, and no undo pollution. Selection is automatically cleared when the user clicks elsewhere.
 
-    public static string GetMarkdown(DependencyObject obj) =>
-        (string)obj.GetValue(MarkdownProperty);
+2. **Long IDs in ToolResult**: Used `long` (not `ElementId`) to keep `ToolResult` Revit-API-independent for testability.
 
-    public static void SetMarkdown(DependencyObject obj, string value) =>
-        obj.SetValue(MarkdownProperty, value);
+3. **Lazy Markdown Conversion**: Streaming can fire dozens of content updates per second. Running Markdig on each would be wasteful. The dual-control approach with visibility-based lazy conversion avoids this cost entirely.
 
-    private static void OnMarkdownChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is RichTextBox rtb && e.NewValue is string markdown)
-        {
-            rtb.Document = MarkdownService.Instance.ConvertToFlowDocument(markdown);
-        }
-    }
-}
-```
-
-**XAML Usage**:
-```xml
-<RichTextBox behaviors:MarkdownBehavior.Markdown="{Binding Content}"
-             IsReadOnly="True"
-             Background="Transparent"
-             BorderThickness="0"/>
-```
+4. **ChangeElementType No-Op**: When the element is already the requested type, the tool returns plain `ToolResult.Ok()` (no selection) because nothing was modified.
 
 ---
 
 ## Verification (Manual)
 
-1. Ask Claude to describe where it would place a wall
-2. Verify preview graphics appear
-3. After element creation, verify temporary green highlight
-4. Verify highlights clear after a few seconds
-5. **Markdown**: Verify `**bold**` renders as bold, lists render with bullets, etc.
+1. **Markdown**: Send a message to the AI. Verify `**bold**` renders bold, `*italic*` renders italic, bullet lists render with bullets, code blocks render with monospace
+2. **Streaming**: Verify streaming shows plain text, then switches to formatted markdown on completion
+3. **Element selection**: Ask the AI to "place a wall from (0,0) to (10,0)". After creation, verify the wall appears selected (blue highlight) in the Revit viewport
+4. **Batch selection**: Ask the AI to create multiple elements in one turn. Verify all created elements are selected after execution
+5. **No undo pollution**: After a tool creates an element, verify Ctrl+Z undoes the element creation directly (no intermediate selection transactions)
+6. **Theme check**: If dark theme is available, verify markdown text is readable
+7. **Build**: `dotnet build src/RevitAI/RevitAI.csproj` — verify no errors

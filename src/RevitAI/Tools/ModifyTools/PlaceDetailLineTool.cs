@@ -208,7 +208,7 @@ public sealed class PlaceDetailLineTool : IRevitTool
                     : $"Created {lineLength:F2}' detail line in '{view.Name}'."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { detailCurve.Id.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

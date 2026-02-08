@@ -168,7 +168,7 @@ public sealed class PlaceGridTool : IRevitTool
                 Message = $"Created grid '{grid.Name}' ({gridLength:F2}' long)."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { grid.Id.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

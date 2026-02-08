@@ -198,7 +198,8 @@ public sealed class MirrorElementTool : IRevitTool
                     : $"Mirrored {validIds.Count} element(s) in place about axis from ({startX:F2}, {startY:F2}) to ({endX:F2}, {endY:F2})."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            var affectedIds = newElementIds ?? validIds.Select(id => id.Value).ToList();
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), affectedIds));
         }
         catch (Exception ex)
         {
