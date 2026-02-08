@@ -221,7 +221,7 @@ public sealed class ChangeElementTypeTool : IRevitTool
                     oldWidth, newWidth, locationLineSetting)
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { elementId.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

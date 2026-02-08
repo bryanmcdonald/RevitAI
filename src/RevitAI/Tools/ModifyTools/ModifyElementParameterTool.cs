@@ -148,7 +148,7 @@ public sealed class ModifyElementParameterTool : IRevitTool
                 Message = $"Changed '{parameterName}' from '{oldValue}' to '{newValue}'."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { elementId.Value }));
         }
         catch (Exception ex)
         {

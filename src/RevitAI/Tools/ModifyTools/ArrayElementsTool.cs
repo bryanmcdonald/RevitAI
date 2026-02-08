@@ -225,7 +225,7 @@ public sealed class ArrayElementsTool : IRevitTool
             Message = $"Created {count} linear copies of {validIds.Count} element(s) with spacing ({sx:F2}, {sy:F2}, {sz:F2}) feet. {allNewIds.Count} total new elements."
         };
 
-        return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+        return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), allNewIds));
     }
 
     private Task<ToolResult> ExecuteRadialArray(Document doc, JsonElement input, List<ElementId> validIds, List<long> invalidIds, int count, List<long> allNewIds, CancellationToken cancellationToken)
@@ -282,7 +282,7 @@ public sealed class ArrayElementsTool : IRevitTool
             Message = $"Created {count} radial copies of {validIds.Count} element(s) around ({centerX:F2}, {centerY:F2}) with {angleBetweenDegrees:F1} degrees between each. {allNewIds.Count} total new elements."
         };
 
-        return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+        return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), allNewIds));
     }
 
     private sealed class ArrayElementsResult

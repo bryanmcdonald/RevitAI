@@ -223,7 +223,7 @@ public sealed class PlaceDimensionTool : IRevitTool
                     : $"Created dimension between {refArray.Size} references in '{view.Name}'."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { dimension.Id.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

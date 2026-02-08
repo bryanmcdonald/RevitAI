@@ -88,7 +88,7 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- Message content (TextBox for selection/copy support) -->
+                        <!-- Plain text during streaming (fast updates) -->
                         <TextBox Grid.Row="1"
                                  Text="{Binding Content, Mode=OneWay}"
                                  IsReadOnly="True"
@@ -100,7 +100,22 @@
                                  Padding="0"
                                  IsTabStop="False"
                                  Cursor="IBeam"
-                                 Focusable="True"/>
+                                 Focusable="True"
+                                 Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVisibility}}"/>
+
+                        <!-- Markdown rendered content (shown when streaming complete) -->
+                        <RichTextBox Grid.Row="1"
+                                     behaviors:MarkdownBehavior.Markdown="{Binding Content, Mode=OneWay}"
+                                     IsReadOnly="True"
+                                     Foreground="{DynamicResource PrimaryTextBrush}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     FontSize="14"
+                                     Padding="0"
+                                     IsTabStop="False"
+                                     Cursor="IBeam"
+                                     Focusable="True"
+                                     Visibility="{Binding IsStreaming, Converter={StaticResource InverseBoolToVisibility}}"/>
 
                         <!-- Streaming indicator -->
                         <StackPanel Grid.Row="2"

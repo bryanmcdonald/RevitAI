@@ -52,6 +52,13 @@ public sealed class ToolResult
     /// </summary>
     public bool HasImage => !string.IsNullOrEmpty(ImageBase64);
 
+    /// <summary>
+    /// Gets the IDs of elements created or modified by this tool.
+    /// Used for automatic selection highlighting in the viewport.
+    /// Uses long (not ElementId) to keep ToolResult Revit-API-independent.
+    /// </summary>
+    public IReadOnlyList<long> AffectedElementIds { get; private init; } = [];
+
     private ToolResult(bool success, string content)
     {
         Success = success;
@@ -63,6 +70,14 @@ public sealed class ToolResult
     /// </summary>
     /// <param name="content">The result content.</param>
     public static ToolResult Ok(string content) => new(true, content);
+
+    /// <summary>
+    /// Creates a successful result with affected element IDs for viewport selection.
+    /// </summary>
+    /// <param name="content">The result content.</param>
+    /// <param name="elementIds">IDs of elements created or modified.</param>
+    public static ToolResult OkWithElements(string content, IEnumerable<long> elementIds) =>
+        new(true, content) { AffectedElementIds = elementIds.ToList() };
 
     /// <summary>
     /// Creates a successful result with an image.

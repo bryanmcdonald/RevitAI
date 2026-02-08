@@ -242,7 +242,7 @@ public sealed class CreateSheetTool : IRevitTool
                     : $"Created sheet {sheet.SheetNumber} '{sheet.Name}'."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { sheet.Id.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

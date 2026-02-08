@@ -142,7 +142,7 @@ public sealed class CreateGroupTool : IRevitTool
                 Message = $"Created group '{group.GroupType.Name}' (ID: {group.Id.Value}) with {validIds.Count} member(s)."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { group.Id.Value }));
         }
         catch (Exception ex)
         {

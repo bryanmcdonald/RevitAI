@@ -230,7 +230,7 @@ public sealed class PlaceTextNoteTool : IRevitTool
                 Message = $"Created text note in '{view.Name}' using type '{textNoteType.Name}'."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { textNote.Id.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

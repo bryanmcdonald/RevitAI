@@ -286,7 +286,7 @@ public sealed class PlaceWallTool : IRevitTool
                 Message = msg
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { wall.Id.Value }));
         }
         catch (Exception ex)
         {

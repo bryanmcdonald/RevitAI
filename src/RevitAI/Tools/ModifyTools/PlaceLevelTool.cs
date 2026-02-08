@@ -128,7 +128,7 @@ public sealed class PlaceLevelTool : IRevitTool
                 Message = $"Created level '{level.Name}' at elevation {elevation:F2}'."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), new[] { level.Id.Value }));
         }
         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
         {

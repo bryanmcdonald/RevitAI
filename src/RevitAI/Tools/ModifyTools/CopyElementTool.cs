@@ -150,7 +150,7 @@ public sealed class CopyElementTool : IRevitTool
                     : $"Copied {copiedIds.Count} of {requestedIds.Count} element(s). {invalidIds.Count} ID(s) were invalid."
             };
 
-            return Task.FromResult(ToolResult.Ok(JsonSerializer.Serialize(result, _jsonOptions)));
+            return Task.FromResult(ToolResult.OkWithElements(JsonSerializer.Serialize(result, _jsonOptions), copiedIds.Select(id => id.Value)));
         }
         catch (Exception ex)
         {

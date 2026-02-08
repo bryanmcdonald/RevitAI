@@ -257,7 +257,7 @@ Advanced features and improved workflows.
 - [x] **P2-02** Element Manipulation (7 tools: copy, mirror, rotate, array, align, group, assembly)
 - [x] **P2-03** Multi-Step Design Operations (partial — within-round batching + system prompt guidance; cross-round single undo deferred)
 - [x] **P2-04** Smart Context Awareness (grid intersections, relative positions, fuzzy type matching, level inference)
-- [ ] **P2-05** Visual Feedback (element highlighting, previews)
+- [x] **P2-05** Visual Feedback (auto-select affected elements, markdown rendering in chat; preview graphics deferred)
 - [ ] **P2-06** Parameter & Schedule Operations
 - [ ] **P2-07** Conversation Memory & Persistence
 - [ ] **P2-08** Drafting & Documentation Tools (arcs, curves, filled regions, viewports, callouts, legends, revision clouds)
@@ -366,7 +366,6 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 
 | Limitation | Description | Planned Resolution |
 |------------|-------------|-------------------|
-| **Markdown rendering** | Chat displays raw markdown (`**bold**` instead of **bold**) | Phase 2 (P2-05) |
 | **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
 | **Single document** | Only works with active document | Future consideration |
 
