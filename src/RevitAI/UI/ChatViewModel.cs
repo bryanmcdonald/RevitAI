@@ -620,18 +620,19 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
     /// Loads a previously saved conversation for the given project key.
     /// Called from App.cs on DocumentOpened.
     /// </summary>
-    public async Task LoadProjectConversationAsync(string projectKey)
+    /// <returns>True if a previous conversation was restored, false otherwise.</returns>
+    public async Task<bool> LoadProjectConversationAsync(string projectKey)
     {
         _currentProjectKey = projectKey;
         _persistenceService.SetProjectKey(projectKey);
 
         if (!_persistenceService.HasConversation(projectKey))
-            return;
+            return false;
 
         var (messages, toolActionSummary) = await _persistenceService.LoadConversationWithSummaryAsync(projectKey);
 
         if (messages.Count == 0)
-            return;
+            return false;
 
         await _dispatcher.InvokeAsync(() =>
         {
@@ -649,6 +650,8 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
 
             Messages.Add(ChatMessage.CreateSystemMessage("Previous conversation restored from this project."));
         });
+
+        return true;
     }
 
     /// <summary>

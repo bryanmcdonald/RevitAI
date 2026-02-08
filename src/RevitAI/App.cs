@@ -202,7 +202,18 @@ public class App : IExternalApplication
         {
             try
             {
-                await viewModel.LoadProjectConversationAsync(projectKey);
+                var restored = await viewModel.LoadProjectConversationAsync(projectKey);
+
+                // Show the chat pane if a conversation was restored
+                if (restored)
+                {
+                    await ExecuteOnRevitThreadAsync(app =>
+                    {
+                        var pane = app.GetDockablePane(ChatPaneId);
+                        if (pane != null && !pane.IsShown())
+                            pane.Show();
+                    });
+                }
             }
             catch (Exception ex)
             {
