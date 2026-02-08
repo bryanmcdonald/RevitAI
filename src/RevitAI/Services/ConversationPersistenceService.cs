@@ -15,7 +15,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using Autodesk.Revit.DB;
 using RevitAI.Models;
 using RevitAI.UI;
 
@@ -45,6 +48,60 @@ public class ConversationPersistenceService
     public string? CurrentConversationId => _currentConversationId;
 
     /// <summary>
+    /// Derives a stable project key from a Revit document.
+    /// Cloud models use project GUID; local files use a hash of the path.
+    /// Returns null for untitled/unsaved documents.
+    /// </summary>
+    public static string? GetProjectKey(Document doc)
+    {
+        if (doc == null)
+            return null;
+
+        try
+        {
+            // Try cloud model first
+            var cloudPath = doc.GetCloudModelPath();
+            if (cloudPath != null)
+            {
+                var projectGuid = cloudPath.GetProjectGUID();
+                if (projectGuid != Guid.Empty)
+                {
+                    return $"cloud_{projectGuid}";
+                }
+            }
+        }
+        catch
+        {
+            // Not a cloud model, fall through
+        }
+
+        // Local file - hash the path for a stable key
+        var pathName = doc.PathName;
+        if (string.IsNullOrEmpty(pathName))
+            return null; // Untitled/unsaved
+
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(pathName));
+        var hashHex = Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
+        return $"local_{hashHex}";
+    }
+
+    /// <summary>
+    /// Sets the current conversation ID to a project key for project-keyed persistence.
+    /// </summary>
+    public void SetProjectKey(string projectKey)
+    {
+        _currentConversationId = projectKey;
+    }
+
+    /// <summary>
+    /// Checks whether a conversation file exists for the given ID.
+    /// </summary>
+    public bool HasConversation(string id)
+    {
+        return File.Exists(GetConversationFilePath(id));
+    }
+
+    /// <summary>
     /// Ensures the conversations folder exists.
     /// </summary>
     public void EnsureStorageExists()
@@ -58,16 +115,48 @@ public class ConversationPersistenceService
     /// <summary>
     /// Saves the current conversation to disk.
     /// </summary>
-    public async Task SaveConversationAsync(IEnumerable<ChatMessage> messages, string? conversationId = null)
+    /// <param name="messages">The chat messages to save.</param>
+    /// <param name="conversationId">Optional conversation ID override.</param>
+    /// <param name="toolActionSummary">Optional summary of tool actions for session memory.</param>
+    public async Task SaveConversationAsync(IEnumerable<ChatMessage> messages, string? conversationId = null, string? toolActionSummary = null)
     {
         EnsureStorageExists();
 
+        var isProjectKeyed = conversationId != null;
         _currentConversationId = conversationId ?? _currentConversationId ?? Guid.NewGuid().ToString();
 
+        var data = BuildConversationData(messages, isProjectKeyed ? _currentConversationId : null, toolActionSummary);
+
+        var filePath = GetConversationFilePath(_currentConversationId);
+        var json = JsonSerializer.Serialize(data, JsonOptions);
+        await File.WriteAllTextAsync(filePath, json);
+    }
+
+    /// <summary>
+    /// Saves the conversation synchronously. Used during DocumentClosing where async is not viable.
+    /// </summary>
+    public void SaveConversation(IEnumerable<ChatMessage> messages, string? conversationId = null, string? toolActionSummary = null)
+    {
+        EnsureStorageExists();
+
+        var isProjectKeyed = conversationId != null;
+        _currentConversationId = conversationId ?? _currentConversationId ?? Guid.NewGuid().ToString();
+
+        var data = BuildConversationData(messages, isProjectKeyed ? _currentConversationId : null, toolActionSummary);
+
+        var filePath = GetConversationFilePath(_currentConversationId);
+        var json = JsonSerializer.Serialize(data, JsonOptions);
+        File.WriteAllText(filePath, json);
+    }
+
+    private ConversationData BuildConversationData(IEnumerable<ChatMessage> messages, string? projectKey, string? toolActionSummary)
+    {
         var data = new ConversationData
         {
-            Id = _currentConversationId,
+            Id = _currentConversationId!,
             LastModified = DateTime.Now,
+            ProjectKey = projectKey,
+            ToolActionSummary = toolActionSummary,
             Messages = messages
                 .Where(m => m.Role != MessageRole.System) // Don't persist system messages
                 .Select(m => new MessageData
@@ -79,16 +168,13 @@ public class ConversationPersistenceService
                 .ToList()
         };
 
-        // Set title from first user message if not set
         var firstUserMessage = data.Messages.FirstOrDefault(m => m.Role == "user");
         if (firstUserMessage != null)
         {
             data.Title = Truncate(firstUserMessage.Content, 50);
         }
 
-        var filePath = GetConversationFilePath(_currentConversationId);
-        var json = JsonSerializer.Serialize(data, JsonOptions);
-        await File.WriteAllTextAsync(filePath, json);
+        return data;
     }
 
     /// <summary>
@@ -96,37 +182,59 @@ public class ConversationPersistenceService
     /// </summary>
     public async Task<List<ChatMessage>> LoadConversationAsync(string conversationId)
     {
+        var data = await LoadConversationDataAsync(conversationId);
+        if (data == null)
+            return new List<ChatMessage>();
+
+        return ConvertToMessages(data.Messages);
+    }
+
+    /// <summary>
+    /// Loads a conversation along with its tool action summary.
+    /// </summary>
+    /// <returns>A tuple of (messages, toolActionSummary).</returns>
+    public async Task<(List<ChatMessage> Messages, string? ToolActionSummary)> LoadConversationWithSummaryAsync(string conversationId)
+    {
+        var data = await LoadConversationDataAsync(conversationId);
+        if (data == null)
+            return (new List<ChatMessage>(), null);
+
+        return (ConvertToMessages(data.Messages), data.ToolActionSummary);
+    }
+
+    private async Task<ConversationData?> LoadConversationDataAsync(string conversationId)
+    {
         var filePath = GetConversationFilePath(conversationId);
 
         if (!File.Exists(filePath))
-        {
-            return new List<ChatMessage>();
-        }
+            return null;
 
         try
         {
             var json = await File.ReadAllTextAsync(filePath);
             var data = JsonSerializer.Deserialize<ConversationData>(json);
 
-            if (data?.Messages == null)
-            {
-                return new List<ChatMessage>();
-            }
+            if (data?.Messages == null || data.Messages.Count == 0)
+                return null;
 
             _currentConversationId = conversationId;
-
-            return data.Messages.Select(m => new ChatMessage
-            {
-                Role = Enum.Parse<MessageRole>(m.Role, ignoreCase: true),
-                Content = m.Content,
-                Timestamp = m.Timestamp,
-                Status = MessageStatus.Complete
-            }).ToList();
+            return data;
         }
         catch
         {
-            return new List<ChatMessage>();
+            return null;
         }
+    }
+
+    private static List<ChatMessage> ConvertToMessages(List<MessageData> messageData)
+    {
+        return messageData.Select(m => new ChatMessage
+        {
+            Role = Enum.Parse<MessageRole>(m.Role, ignoreCase: true),
+            Content = m.Content,
+            Timestamp = m.Timestamp,
+            Status = MessageStatus.Complete
+        }).ToList();
     }
 
     /// <summary>

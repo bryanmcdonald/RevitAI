@@ -262,7 +262,7 @@ Advanced features and improved workflows.
 - [x] **P2-04** Smart Context Awareness (grid intersections, relative positions, fuzzy type matching, level inference)
 - [x] **P2-05** Visual Feedback (auto-select affected elements, markdown rendering in chat; preview graphics deferred)
 - [x] **P2-06** Parameter & Schedule Tools (3 tools: read schedule data, export element data, bulk modify parameters)
-- [ ] **P2-07** Conversation Memory & Persistence
+- [x] **P2-07** Conversation Memory (project-keyed persistence, auto-load/save on document open/close, session change tracking, tool action summaries in system prompt)
 - [ ] **P2-08** Drafting & Documentation Tools (arcs, curves, filled regions, viewports, callouts, legends, revision clouds)
 
 ### Phase 3: Advanced & Multi-Discipline
@@ -369,7 +369,7 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 
 | Limitation | Description | Planned Resolution |
 |------------|-------------|-------------------|
-| **No conversation persistence** | Chat history lost when Revit closes | Phase 2 (P2-07) |
+| **Local file key breaks on move/rename** | Hash-based project key changes if .rvt file is moved | Acceptable trade-off |
 | **Single document** | Only works with active document | Future consideration |
 
 ### Not Yet Supported
