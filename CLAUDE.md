@@ -275,7 +275,9 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-08 (Drafting & Documentation Tools)
+**Next chunk to implement**: P2-08.2 (Linework & Shape Tools)
+
+> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1 (DraftingHelper + 6 discovery tools) is complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
@@ -423,3 +425,4 @@ The plugin will be considered successful when it meets these criteria:
 | 2.5 | P2-05 | Visual Feedback System: `AffectedElementIds` on `ToolResult` + `OkWithElements()` factory, auto-selection of created/modified elements in viewport via `ToolDispatcher`, `MarkdownBehavior` attached property for RichTextBox with lazy visibility-aware conversion, dual TextBox/RichTextBox streaming pattern. Preview graphics deferred. |
 | 2.6 | P2-06 | Parameter & Schedule Tools: 3 new tools — `read_schedule_data` (schedule reading with hidden-field-aware column mapping), `export_element_data` (CSV/JSON export with special parameter handling), `bulk_modify_parameters` (bulk modification with `{index}`/`{index:N}` placeholders, confirmation, auto-selection). |
 | 2.7 | P2-07 | Conversation Memory: project-keyed persistence (`GetProjectKey` for cloud/local models), auto-load on `DocumentOpened`, auto-save on `DocumentClosing`, `ChangeTracker` singleton for session change tracking, tool action summaries injected into system prompt, API history rebuild with role-alternation merging. |
+| 2.8 | P2-08.1 | Drafting Discovery Tools: `DraftingHelper` shared utility class (view resolution, point parsing, curve loop building, line style application), 6 read-only discovery tools (`get_fill_patterns`, `get_line_styles`, `get_detail_components`, `get_revision_list`, `get_sheet_list`, `get_viewport_info`). P2-08 split into 7 sub-chunks with individual docs. |

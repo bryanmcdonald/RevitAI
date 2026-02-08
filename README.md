@@ -224,10 +224,19 @@ RevitAI provides Claude with tools to query your Revit model:
 | `read_schedule_data` | Read data from a Revit schedule view |
 | `export_element_data` | Export element data by category to CSV or JSON |
 | `bulk_modify_parameters` | Bulk modify parameter values across elements in a category |
+| `get_fill_patterns` | List available fill patterns (drafting and model) |
+| `get_line_styles` | List available line styles with IDs |
+| `get_detail_components` | List loaded detail component families and types |
+| `get_revision_list` | List revisions with sequence, date, description |
+| `get_sheet_list` | List sheets with numbers, names, viewport counts |
+| `get_viewport_info` | Get viewport details on a specific sheet |
 
-**Coming Soon (Phase 2):**
-- Conversation memory & persistence
-- Drafting & documentation tools
+**Coming Soon (Phase 2-08):**
+- Linework tools (arcs, curves, circles, rectangles, ellipses, polylines)
+- Region tools (filled regions, masking regions)
+- Sheet & viewport tools (place viewport, auto-arrange)
+- Annotation tools (callouts, legends, revision clouds)
+- Batch tools (batch detail lines, batch detail components)
 
 ## Development Status
 
@@ -263,7 +272,7 @@ Advanced features and improved workflows.
 - [x] **P2-05** Visual Feedback (auto-select affected elements, markdown rendering in chat; preview graphics deferred)
 - [x] **P2-06** Parameter & Schedule Tools (3 tools: read schedule data, export element data, bulk modify parameters)
 - [x] **P2-07** Conversation Memory (project-keyed persistence, auto-load/save on document open/close, session change tracking, tool action summaries in system prompt)
-- [ ] **P2-08** Drafting & Documentation Tools (arcs, curves, filled regions, viewports, callouts, legends, revision clouds)
+- [ ] **P2-08** Drafting & Documentation Tools — P2-08.1 discovery tools complete (6 tools + DraftingHelper); linework, regions, sheets, annotations, batch tools pending
 
 ### Phase 3: Advanced & Multi-Discipline
 Discipline-specific tool packs and advanced features.

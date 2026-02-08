@@ -22,7 +22,7 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 | [P2-05](P2-05-visual-feedback.md) | Visual Feedback System | Element highlighting, preview graphics, status display, **markdown rendering** | P2-04 |
 | [P2-06](P2-06-parameter-schedule.md) | Parameter & Schedule Tools | Bulk modify, schedule read/create, data export | P2-05 |
 | [P2-07](P2-07-conversation-memory.md) | Conversation Memory | Persist history, change tracking, undo all | P2-06 |
-| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds | P2-01 |
+| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds — split into [7 sub-chunks](P2-08.1-discovery-tools.md); **P2-08.1 complete** | P2-01 |
 
 ---
 
@@ -49,16 +49,24 @@ src/RevitAI/
 │   │   ├── BulkModifyParametersTool.cs   # P2-06
 │   │   └── ExportElementDataTool.cs      # P2-06
 │   ├── DraftingTools/
-│   │   ├── PlaceDetailArcTool.cs         # P2-08
-│   │   ├── PlaceDetailCurveTool.cs       # P2-08
-│   │   ├── PlaceFilledRegionTool.cs      # P2-08
-│   │   ├── PlaceMaskingRegionTool.cs     # P2-08
-│   │   ├── PlaceDetailComponentTool.cs   # P2-08
-│   │   ├── PlaceViewportTool.cs          # P2-08
-│   │   ├── PlaceCalloutTool.cs           # P2-08
-│   │   ├── CreateLegendTool.cs           # P2-08
-│   │   ├── PlaceLegendComponentTool.cs   # P2-08
-│   │   └── PlaceRevisionCloudTool.cs     # P2-08
+│   │   ├── Helpers/
+│   │   │   └── DraftingHelper.cs             # P2-08.1: Shared utilities
+│   │   ├── GetFillPatternsTool.cs            # P2-08.1: Discovery
+│   │   ├── GetLineStylesTool.cs              # P2-08.1: Discovery
+│   │   ├── GetDetailComponentsTool.cs        # P2-08.1: Discovery
+│   │   ├── GetRevisionListTool.cs            # P2-08.1: Discovery
+│   │   ├── GetSheetListTool.cs               # P2-08.1: Discovery
+│   │   ├── GetViewportInfoTool.cs            # P2-08.1: Discovery
+│   │   ├── PlaceDetailArcTool.cs             # P2-08.2 (planned)
+│   │   ├── PlaceDetailCurveTool.cs           # P2-08.2 (planned)
+│   │   ├── PlaceFilledRegionTool.cs          # P2-08.3 (planned)
+│   │   ├── PlaceMaskingRegionTool.cs         # P2-08.3 (planned)
+│   │   ├── PlaceDetailComponentTool.cs       # P2-08.3 (planned)
+│   │   ├── PlaceViewportTool.cs              # P2-08.4 (planned)
+│   │   ├── PlaceCalloutTool.cs               # P2-08.5 (planned)
+│   │   ├── CreateLegendTool.cs               # P2-08.5 (planned)
+│   │   ├── PlaceLegendComponentTool.cs       # P2-08.5 (planned)
+│   │   └── PlaceRevisionCloudTool.cs         # P2-08.5 (planned)
 │   └── ReadTools/
 │       └── ReadScheduleDataTool.cs       # P2-06
 ├── Services/
