@@ -221,9 +221,12 @@ RevitAI provides Claude with tools to query your Revit model:
 | `align_elements` | Align elements to a reference element |
 | `create_group` | Create Model Group from elements |
 | `create_assembly` | Create Assembly from elements |
+| `read_schedule_data` | Read data from a Revit schedule view |
+| `export_element_data` | Export element data by category to CSV or JSON |
+| `bulk_modify_parameters` | Bulk modify parameter values across elements in a category |
 
 **Coming Soon (Phase 2):**
-- Multi-step design operations
+- Conversation memory & persistence
 - Drafting & documentation tools
 
 ## Development Status
@@ -258,7 +261,7 @@ Advanced features and improved workflows.
 - [x] **P2-03** Multi-Step Design Operations (partial — within-round batching + system prompt guidance; cross-round single undo deferred)
 - [x] **P2-04** Smart Context Awareness (grid intersections, relative positions, fuzzy type matching, level inference)
 - [x] **P2-05** Visual Feedback (auto-select affected elements, markdown rendering in chat; preview graphics deferred)
-- [ ] **P2-06** Parameter & Schedule Operations
+- [x] **P2-06** Parameter & Schedule Tools (3 tools: read schedule data, export element data, bulk modify parameters)
 - [ ] **P2-07** Conversation Memory & Persistence
 - [ ] **P2-08** Drafting & Documentation Tools (arcs, curves, filled regions, viewports, callouts, legends, revision clouds)
 

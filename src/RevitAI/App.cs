@@ -228,6 +228,11 @@ public class App : IExternalApplication
         registry.Register(new CreateGroupTool());
         registry.Register(new CreateAssemblyTool());
 
+        // Parameter & schedule tools (P2-06)
+        registry.Register(new ReadScheduleDataTool());
+        registry.Register(new ExportElementDataTool());
+        registry.Register(new BulkModifyParametersTool());
+
         // View tools (P1.5)
         registry.Register(new CaptureScreenshotTool());
 
