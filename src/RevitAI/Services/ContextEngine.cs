@@ -200,6 +200,11 @@ public sealed class ContextEngine
         sb.AppendLine("- Within each tool round, multiple modification tools are batched into a single undo operation. If any tool in a batch fails, the entire batch is rolled back.");
         sb.AppendLine("- Prefer issuing all related modifications in the SAME tool round when possible, so they group into one Ctrl+Z. For example, place all columns in one round rather than one per round.");
         sb.AppendLine();
+        sb.AppendLine("**Data Export & Schedule Tools:**");
+        sb.AppendLine("- export_element_data: Returns data inline in the tool result (NOT saved to a file). When the user asks to 'export' data, you MUST display the raw CSV or JSON content in your response so the user can copy it. Do NOT just summarize or say 'export complete' — show the actual data.");
+        sb.AppendLine("- read_schedule_data: Returns schedule rows inline. Always present the data in a readable table format to the user.");
+        sb.AppendLine("- bulk_modify_parameters: Use {index} for sequential numbering (1,2,3) or {index:3} for zero-padded (001,002,003). Supports category, level, and parameter value filtering.");
+        sb.AppendLine();
 
         // Screenshot QC guidance (only when screenshots are enabled)
         var configService = ConfigurationService.Instance;
