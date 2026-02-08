@@ -46,6 +46,19 @@ public sealed class ToolDispatcher
     }
 
     /// <summary>
+    /// Checks if any tool in the batch requires a transaction.
+    /// Thread-safe (only performs registry lookups).
+    /// </summary>
+    public bool AnyToolRequiresTransaction(IEnumerable<ToolUseBlock> toolUses)
+    {
+        return toolUses.Any(t =>
+        {
+            var tool = _registry.Get(t.Name);
+            return tool?.RequiresTransaction == true;
+        });
+    }
+
+    /// <summary>
     /// Dispatches a single tool call and returns the result.
     /// If the tool requires a transaction and a group is already active, the transaction
     /// is executed within that group. Otherwise, a standalone transaction is used.
@@ -278,24 +291,27 @@ public sealed class ToolDispatcher
         }
 
         // Check if any tools require transactions
-        var anyRequiresTransaction = toolList.Any(t =>
-        {
-            var tool = _registry.Get(t.Name);
-            return tool?.RequiresTransaction == true;
-        });
+        var anyRequiresTransaction = AnyToolRequiresTransaction(toolList);
 
         // If we need transactions and have multiple tools, use a group for batching
         // Execute ALL tools in a SINGLE Revit thread call to keep transactions in the same context
         var useGroup = anyRequiresTransaction && toolList.Count > 1;
 
-        if (useGroup)
+        if (useGroup && !_transactionManager.IsGroupActive)
         {
-            return await ExecuteAllToolsInGroupAsync(toolList, cancellationToken);
+            // No external group — create our own group (existing behavior)
+            return await ExecuteAllToolsInGroupAsync(toolList, cancellationToken, externalGroup: false);
+        }
+        else if (useGroup && _transactionManager.IsGroupActive)
+        {
+            // External group active (cross-round) — delegate group lifecycle to caller
+            return await ExecuteAllToolsInGroupAsync(toolList, cancellationToken, externalGroup: true);
         }
         else
         {
             // Single tool or no transactions - use simple sequential dispatch
             // Note: Single tool confirmation is handled in DispatchAsync
+            // Single-tool transactions nest within any active group automatically
             var results = new List<ToolResultBlock>();
             foreach (var toolUse in toolList)
             {
@@ -311,9 +327,15 @@ public sealed class ToolDispatcher
     /// Executes all tools within a single Revit thread call using a transaction group.
     /// This ensures all transactions are within the same API context.
     /// </summary>
+    /// <param name="toolList">The tool use blocks to execute.</param>
+    /// <param name="cancellationToken">Token for cancellation.</param>
+    /// <param name="externalGroup">When true, the caller manages the transaction group lifecycle
+    /// (start/commit/rollback). This method skips group management but still marks remaining
+    /// tools as skipped on failure.</param>
     private async Task<List<ToolResultBlock>> ExecuteAllToolsInGroupAsync(
         List<ToolUseBlock> toolList,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool externalGroup = false)
     {
         try
         {
@@ -337,8 +359,11 @@ public sealed class ToolDispatcher
                     return results;
                 }
 
-                // Start transaction group
-                _transactionManager.StartGroup(doc, "Tool Batch");
+                // Start transaction group (unless caller manages it)
+                if (!externalGroup)
+                {
+                    _transactionManager.StartGroup(doc, "Tool Batch");
+                }
 
                 try
                 {
@@ -357,8 +382,11 @@ public sealed class ToolDispatcher
                                 IsError = true
                             });
 
-                            // Rollback and skip remaining
-                            _transactionManager.RollbackGroup();
+                            // Rollback and skip remaining (only if we own the group)
+                            if (!externalGroup)
+                            {
+                                _transactionManager.RollbackGroup();
+                            }
                             MarkRemainingAsSkipped(toolList, toolUse, results);
                             return results;
                         }
@@ -404,26 +432,38 @@ public sealed class ToolDispatcher
                             results.Add(ToolResultBlock.FromText(toolUse.Id, result.Content, result.IsError));
                         }
 
-                        // If tool failed, rollback and skip remaining
+                        // If tool failed, rollback and skip remaining (only if we own the group)
                         if (result.IsError)
                         {
-                            _transactionManager.RollbackGroup();
+                            if (!externalGroup)
+                            {
+                                _transactionManager.RollbackGroup();
+                            }
                             MarkRemainingAsSkipped(toolList, toolUse, results);
                             return results;
                         }
                     }
 
-                    // All tools succeeded - commit the group
-                    _transactionManager.CommitGroup();
+                    // All tools succeeded - commit the group (only if we own it)
+                    if (!externalGroup)
+                    {
+                        _transactionManager.CommitGroup();
+                    }
                 }
                 catch (OperationCanceledException)
                 {
-                    _transactionManager.EnsureGroupClosed();
+                    if (!externalGroup)
+                    {
+                        _transactionManager.EnsureGroupClosed();
+                    }
                     throw;
                 }
                 catch
                 {
-                    _transactionManager.EnsureGroupClosed();
+                    if (!externalGroup)
+                    {
+                        _transactionManager.EnsureGroupClosed();
+                    }
                     throw;
                 }
 

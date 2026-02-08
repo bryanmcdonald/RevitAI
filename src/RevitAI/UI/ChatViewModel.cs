@@ -348,6 +348,9 @@ You can get an API key from [console.anthropic.com](https://console.anthropic.co
 
     /// <summary>
     /// Streams a response from Claude API with tool execution loop.
+    /// Within each tool round, multiple modification tools are batched into a single undo
+    /// operation by ToolDispatcher. Cross-round grouping is not possible because Revit
+    /// auto-closes TransactionGroups when each ExternalEvent handler returns.
     /// </summary>
     private async Task StreamClaudeResponseAsync(
         string systemPrompt,
