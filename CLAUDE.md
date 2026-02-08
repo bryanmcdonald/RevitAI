@@ -275,7 +275,9 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-03 (Multi-Step Design Operations)
+**Next chunk to implement**: P2-04 (Smart Context Awareness)
+
+> **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
 ---
 
@@ -329,30 +331,34 @@ This project is licensed under GPL-3.0. **All new source files must include the 
 
 > **Note**: Auto-generated files in `obj/` directories do not need license headers.
 
-### 1. Update CLAUDE.md
+### 1. Run Code Review
+
+After completing code changes and verifying the build succeeds, run the **code-reviewer** agent to review all modified files before updating documentation. Address any issues found by the reviewer before proceeding. This ensures code quality is validated while context is fresh, before shifting focus to docs.
+
+### 2. Update CLAUDE.md
 - Reflect any architectural changes, new patterns, or workflow modifications
 - Update the "Current Status" section to track progress
 - Add new entries to "Known Limitations / Deferred Items" as discovered
 - Update "Project Folder Structure" if new directories or key files are added
 
-### 2. Update README.md (Project Root)
+### 3. Update README.md (Project Root)
 - Reflect user-facing changes: new features, modified setup steps, changed requirements
 - Update "Available Tools" table when tools are added or modified
 - Update "Development Status" checkboxes as chunks are completed
 - Keep installation and usage instructions current
 
-### 3. Update Phase Documentation (`docs/`)
+### 4. Update Phase Documentation (`docs/`)
 - **Phase README.md files**: Update status, add cross-references to related chunks
 - **Chunk .md files**: Add implementation notes, lessons learned, or gotchas discovered during development
 - **Cross-phase references**: When work in one phase affects another, add notes to both
 - **New phases/chunks**: Create new documentation files following existing naming conventions (`P#-##-description.md`)
 
-### 4. Keep Everything in Sync
+### 5. Keep Everything in Sync
 - Documentation should reflect the actual state of the codebase
 - When adding a feature, update all relevant docs in the same commit when practical
 - Future Claude Code sessions rely on accurate documentation for context
 
-### 5. Tool Safety Classification
+### 6. Tool Safety Classification
 When creating new tools:
 - Set `RequiresConfirmation = true` for tools that modify the Revit model
 - Implement `GetDryRunDescription()` to describe what the tool would do
@@ -410,3 +416,4 @@ The plugin will be considered successful when it meets these criteria:
 | 2.0 | Phase 4 | **Major version**: Added Phase 4 (Agentic Mode) with 6 chunks: extended thinking, planning tools, session state, auto-verification, agentic UI, error recovery. This is a major feature addition enabling autonomous operation. |
 | 2.1 | Multi-Provider | Added Google Gemini as AI provider. New `IAiProvider` abstraction, `AiProviderFactory`, `GeminiApiService`, provider-aware settings UI, per-provider API keys and model selection. |
 | 2.2 | P2-02 | Added 7 element manipulation tools: copy, mirror, rotate, array (linear/radial), align, create group, create assembly. Replaced `place_scope_box` with `rotate_element`. |
+| 2.3 | P2-03 | Multi-step design operations: within-round batching cleanup, `AnyToolRequiresTransaction` helper, `externalGroup` param, system prompt guidance to batch modifications. Cross-round grouping not possible (Revit auto-closes TransactionGroups between ExternalEvent calls). Added code review step to Post-Change Requirements. |

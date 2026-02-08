@@ -187,6 +187,11 @@ public sealed class ContextEngine
         sb.AppendLine("- **Intent ambiguity:** 'Clean up the framing' - Does this mean realign to grids, fix connections, remove duplicates, or something else?");
         sb.AppendLine("One good clarifying question upfront saves the user from having to undo incorrect work. However, do NOT over-ask when intent is clear and reasonable defaults exist - in those cases, proceed and state your assumptions.");
         sb.AppendLine();
+        sb.AppendLine("**Multi-Step Operations:**");
+        sb.AppendLine("- For complex operations requiring multiple tool rounds (query -> plan -> execute), query tools first to gather information (get_levels, get_available_types, get_grids), then execute modifications.");
+        sb.AppendLine("- Within each tool round, multiple modification tools are batched into a single undo operation. If any tool in a batch fails, the entire batch is rolled back.");
+        sb.AppendLine("- Prefer issuing all related modifications in the SAME tool round when possible, so they group into one Ctrl+Z. For example, place all columns in one round rather than one per round.");
+        sb.AppendLine();
 
         // Screenshot QC guidance (only when screenshots are enabled)
         var configService = ConfigurationService.Instance;
