@@ -230,9 +230,15 @@ RevitAI provides Claude with tools to query your Revit model:
 | `get_revision_list` | List revisions with sequence, date, description |
 | `get_sheet_list` | List sheets with numbers, names, viewport counts |
 | `get_viewport_info` | Get viewport details on a specific sheet |
+| `place_detail_arc` | Draw arc (center+radius+angles or three-point) |
+| `place_detail_curve` | Draw spline or hermite curve through points |
+| `place_detail_polyline` | Draw connected line segments with optional closing |
+| `place_detail_circle` | Draw circle (two semicircular arcs) |
+| `place_detail_rectangle` | Draw axis-aligned rectangle from two corners |
+| `place_detail_ellipse` | Draw ellipse with optional rotation |
+| `modify_detail_curve_style` | Change line style of existing detail curves |
 
 **Coming Soon (Phase 2-08):**
-- Linework tools (arcs, curves, circles, rectangles, ellipses, polylines)
 - Region tools (filled regions, masking regions)
 - Sheet & viewport tools (place viewport, auto-arrange)
 - Annotation tools (callouts, legends, revision clouds)
@@ -274,7 +280,7 @@ Advanced features and improved workflows.
 - [x] **P2-07** Conversation Memory (project-keyed persistence, auto-load/save on document open/close, session change tracking, tool action summaries in system prompt)
 - **P2-08** Drafting & Documentation Tools (split into 7 sub-chunks):
   - [x] **P2-08.1** DraftingHelper + Discovery Tools (6 tools: fill patterns, line styles, detail components, revisions, sheets, viewport info)
-  - [ ] **P2-08.2** Linework & Shape Tools (7 tools: arc, curve, polyline, circle, rectangle, ellipse, modify style)
+  - [x] **P2-08.2** Linework & Shape Tools (7 tools: arc, curve, polyline, circle, rectangle, ellipse, modify style)
   - [ ] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
   - [ ] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
   - [ ] **P2-08.5** Annotation & Reference Tools (4 tools: callout, legend, legend component, revision cloud)
