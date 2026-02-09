@@ -179,6 +179,63 @@ public static class DraftingHelper
     }
 
     /// <summary>
+    /// Creates multiple detail curves from a list of Revit curves.
+    /// Returns the created DetailCurves, or an error if creation fails.
+    /// </summary>
+    public static (IList<DetailCurve>? Curves, ToolResult? Error) CreateDetailCurves(
+        Document doc, View view, IList<Curve> curves)
+    {
+        if (curves == null || curves.Count == 0)
+            return (null, ToolResult.Error("No curves provided to create detail curves."));
+
+        var detailCurves = new List<DetailCurve>();
+        for (int i = 0; i < curves.Count; i++)
+        {
+            try
+            {
+                var detailCurve = doc.Create.NewDetailCurve(view, curves[i]);
+                detailCurves.Add(detailCurve);
+            }
+            catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+            {
+                return (null, ToolResult.Error($"Failed to create detail curve at index {i}: {ex.Message}"));
+            }
+        }
+
+        return (detailCurves, null);
+    }
+
+    /// <summary>
+    /// Applies an optional line style to multiple detail curves.
+    /// Reads the "line_style" parameter from input if present.
+    /// Resolves the GraphicsStyle once and applies to all curves.
+    /// </summary>
+    public static (string? AppliedStyle, ToolResult? Error) ApplyLineStyleToAll(
+        Document doc, IList<DetailCurve> curves, JsonElement input)
+    {
+        if (!input.TryGetProperty("line_style", out var lineStyleElement))
+            return (null, null);
+
+        var lineStyleName = lineStyleElement.GetString();
+        if (string.IsNullOrWhiteSpace(lineStyleName))
+            return (null, null);
+
+        var graphicsStyle = ElementLookupHelper.FindLineStyle(doc, lineStyleName);
+        if (graphicsStyle == null)
+        {
+            var available = ElementLookupHelper.GetAvailableLineStyleNames(doc);
+            return (null, ToolResult.Error($"Line style '{lineStyleName}' not found. Available styles: {available}"));
+        }
+
+        foreach (var curve in curves)
+        {
+            curve.LineStyle = graphicsStyle;
+        }
+
+        return (lineStyleName, null);
+    }
+
+    /// <summary>
     /// Converts degrees to radians.
     /// </summary>
     public static double DegreesToRadians(double degrees) => degrees * Math.PI / 180.0;

@@ -339,6 +339,15 @@ public class App : IExternalApplication
         registry.Register(new GetRevisionListTool());
         registry.Register(new GetSheetListTool());
         registry.Register(new GetViewportInfoTool());
+
+        // Drafting & documentation tools (P2-08.2) - Linework & Shapes
+        registry.Register(new PlaceDetailArcTool());
+        registry.Register(new PlaceDetailCurveTool());
+        registry.Register(new PlaceDetailPolylineTool());
+        registry.Register(new PlaceDetailCircleTool());
+        registry.Register(new PlaceDetailRectangleTool());
+        registry.Register(new PlaceDetailEllipseTool());
+        registry.Register(new ModifyDetailCurveStyleTool());
     }
 
     /// <summary>
