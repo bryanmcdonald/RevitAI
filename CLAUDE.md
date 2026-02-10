@@ -344,7 +344,7 @@ This project is licensed under GPL-3.0. **All new source files must include the 
 
 ### 1. Run Code Review
 
-After completing code changes and verifying the build succeeds, run the **code-reviewer** agent to review all modified files before updating documentation. Address any issues found by the reviewer before proceeding. This ensures code quality is validated while context is fresh, before shifting focus to docs.
+After completing code changes and verifying the build succeeds, run the **code-reviewer** agent to review all modified files. Address any issues found by the reviewer and rebuild to confirm fixes. **Documentation updates (steps 2-5) must happen after the code review is complete and all issues are resolved** — this ensures docs reflect the final, reviewed code rather than a pre-review draft.
 
 ### 2. Update CLAUDE.md
 - Reflect any architectural changes, new patterns, or workflow modifications

@@ -22,7 +22,7 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 | [P2-05](P2-05-visual-feedback.md) | Visual Feedback System | Element highlighting, preview graphics, status display, **markdown rendering** | P2-04 |
 | [P2-06](P2-06-parameter-schedule.md) | Parameter & Schedule Tools | Bulk modify, schedule read/create, data export | P2-05 |
 | [P2-07](P2-07-conversation-memory.md) | Conversation Memory | Persist history, change tracking, undo all | P2-06 |
-| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds — split into [7 sub-chunks](P2-08.1-discovery-tools.md); **P2-08.1 complete** | P2-01 |
+| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds — split into [7 sub-chunks](P2-08.1-discovery-tools.md); **P2-08.1, P2-08.2, P2-08.3 complete** | P2-01 |
 
 ---
 
@@ -57,11 +57,18 @@ src/RevitAI/
 │   │   ├── GetRevisionListTool.cs            # P2-08.1: Discovery
 │   │   ├── GetSheetListTool.cs               # P2-08.1: Discovery
 │   │   ├── GetViewportInfoTool.cs            # P2-08.1: Discovery
-│   │   ├── PlaceDetailArcTool.cs             # P2-08.2 (planned)
-│   │   ├── PlaceDetailCurveTool.cs           # P2-08.2 (planned)
-│   │   ├── PlaceFilledRegionTool.cs          # P2-08.3 (planned)
-│   │   ├── PlaceMaskingRegionTool.cs         # P2-08.3 (planned)
-│   │   ├── PlaceDetailComponentTool.cs       # P2-08.3 (planned)
+│   │   ├── PlaceDetailArcTool.cs             # P2-08.2: Linework
+│   │   ├── PlaceDetailCurveTool.cs           # P2-08.2: Linework
+│   │   ├── PlaceDetailPolylineTool.cs        # P2-08.2: Linework
+│   │   ├── PlaceDetailCircleTool.cs          # P2-08.2: Shapes
+│   │   ├── PlaceDetailRectangleTool.cs       # P2-08.2: Shapes
+│   │   ├── PlaceDetailEllipseTool.cs         # P2-08.2: Shapes
+│   │   ├── ModifyDetailCurveStyleTool.cs     # P2-08.2: Style
+│   │   ├── PlaceFilledRegionTool.cs          # P2-08.3: Regions
+│   │   ├── PlaceMaskingRegionTool.cs         # P2-08.3: Regions
+│   │   ├── CreateFilledRegionTypeTool.cs     # P2-08.3: Region types
+│   │   ├── PlaceDetailComponentTool.cs       # P2-08.3: Components
+│   │   ├── PlaceDetailGroupTool.cs           # P2-08.3: Components
 │   │   ├── PlaceViewportTool.cs              # P2-08.4 (planned)
 │   │   ├── PlaceCalloutTool.cs               # P2-08.5 (planned)
 │   │   ├── CreateLegendTool.cs               # P2-08.5 (planned)
