@@ -529,6 +529,64 @@ public static class ElementLookupHelper
     }
 
     // ────────────────────────────────────────────────────────────────
+    // FilledRegionType lookups (P2-08.3)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Gets available non-masking FilledRegionType names in the document.
+    /// </summary>
+    public static string GetAvailableFilledRegionTypeNames(Document doc, int maxCount = 20)
+    {
+        var types = new FilteredElementCollector(doc)
+            .OfClass(typeof(FilledRegionType))
+            .Cast<FilledRegionType>()
+            .Where(frt => !frt.IsMasking)
+            .OrderBy(frt => frt.Name)
+            .Take(maxCount)
+            .Select(frt => frt.Name)
+            .ToList();
+
+        if (types.Count == 0)
+            return "No filled region types found in the document.";
+
+        var result = string.Join(", ", types);
+        if (types.Count == maxCount)
+            result += ", ...";
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets available detail group (GroupType) names in the document.
+    /// </summary>
+    public static string GetAvailableDetailGroupNames(Document doc, int maxCount = 20)
+    {
+        var names = new FilteredElementCollector(doc)
+            .OfClass(typeof(GroupType))
+            .Cast<GroupType>()
+            .Where(gt =>
+            {
+                // Filter to detail groups only
+                var cat = gt.Category;
+                if (cat == null) return false;
+                return cat.BuiltInCategory == BuiltInCategory.OST_IOSDetailGroups;
+            })
+            .OrderBy(gt => gt.Name)
+            .Take(maxCount)
+            .Select(gt => gt.Name)
+            .ToList();
+
+        if (names.Count == 0)
+            return "No detail groups found in the document.";
+
+        var result = string.Join(", ", names);
+        if (names.Count == maxCount)
+            result += ", ...";
+
+        return result;
+    }
+
+    // ────────────────────────────────────────────────────────────────
     // Fuzzy matching (P2-04)
     // ────────────────────────────────────────────────────────────────
 

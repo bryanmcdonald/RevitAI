@@ -348,6 +348,13 @@ public class App : IExternalApplication
         registry.Register(new PlaceDetailRectangleTool());
         registry.Register(new PlaceDetailEllipseTool());
         registry.Register(new ModifyDetailCurveStyleTool());
+
+        // Drafting & documentation tools (P2-08.3) - Regions & Components
+        registry.Register(new PlaceFilledRegionTool());
+        registry.Register(new PlaceMaskingRegionTool());
+        registry.Register(new CreateFilledRegionTypeTool());
+        registry.Register(new PlaceDetailComponentTool());
+        registry.Register(new PlaceDetailGroupTool());
     }
 
     /// <summary>

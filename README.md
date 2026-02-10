@@ -237,9 +237,13 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_detail_rectangle` | Draw axis-aligned rectangle from two corners |
 | `place_detail_ellipse` | Draw ellipse with optional rotation |
 | `modify_detail_curve_style` | Change line style of existing detail curves |
+| `place_filled_region` | Create hatched/filled region with boundary |
+| `place_masking_region` | Create white-out masking region |
+| `create_filled_region_type` | Create new region type (pattern + color) |
+| `place_detail_component` | Place detail component family instance |
+| `place_detail_group` | Place detail group instance |
 
 **Coming Soon (Phase 2-08):**
-- Region tools (filled regions, masking regions)
 - Sheet & viewport tools (place viewport, auto-arrange)
 - Annotation tools (callouts, legends, revision clouds)
 - Batch tools (batch detail lines, batch detail components)
@@ -281,7 +285,7 @@ Advanced features and improved workflows.
 - **P2-08** Drafting & Documentation Tools (split into 7 sub-chunks):
   - [x] **P2-08.1** DraftingHelper + Discovery Tools (6 tools: fill patterns, line styles, detail components, revisions, sheets, viewport info)
   - [x] **P2-08.2** Linework & Shape Tools (7 tools: arc, curve, polyline, circle, rectangle, ellipse, modify style)
-  - [ ] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
+  - [x] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
   - [ ] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
   - [ ] **P2-08.5** Annotation & Reference Tools (4 tools: callout, legend, legend component, revision cloud)
   - [ ] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
