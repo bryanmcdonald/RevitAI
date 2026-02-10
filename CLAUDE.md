@@ -282,9 +282,9 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-08.3 (Region + Component Tools)
+**Next chunk to implement**: P2-08.4 (Sheet & Viewport Tools)
 
-> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1 and P2-08.2 are complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
+> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1, P2-08.2, and P2-08.3 are complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
@@ -344,7 +344,7 @@ This project is licensed under GPL-3.0. **All new source files must include the 
 
 ### 1. Run Code Review
 
-After completing code changes and verifying the build succeeds, run the **code-reviewer** agent to review all modified files before updating documentation. Address any issues found by the reviewer before proceeding. This ensures code quality is validated while context is fresh, before shifting focus to docs.
+After completing code changes and verifying the build succeeds, run the **code-reviewer** agent to review all modified files. Address any issues found by the reviewer and rebuild to confirm fixes. **Documentation updates (steps 2-5) must happen after the code review is complete and all issues are resolved** — this ensures docs reflect the final, reviewed code rather than a pre-review draft.
 
 ### 2. Update CLAUDE.md
 - Reflect any architectural changes, new patterns, or workflow modifications
@@ -434,3 +434,5 @@ The plugin will be considered successful when it meets these criteria:
 | 2.7 | P2-07 | Conversation Memory: project-keyed persistence (`GetProjectKey` for cloud/local models), auto-load on `DocumentOpened`, auto-save on `DocumentClosing`, `ChangeTracker` singleton for session change tracking, tool action summaries injected into system prompt, API history rebuild with role-alternation merging. |
 | 2.8 | P2-08.1 | Drafting Discovery Tools: `DraftingHelper` shared utility class (view resolution, point parsing, curve loop building, line style application), 6 read-only discovery tools (`get_fill_patterns`, `get_line_styles`, `get_detail_components`, `get_revision_list`, `get_sheet_list`, `get_viewport_info`). P2-08 split into 7 sub-chunks with individual docs. |
 | 2.9 | P2-08.2 | Linework & Shape Tools: 7 new tools (`place_detail_arc` with center_radius and three_point modes, `place_detail_curve` for spline/hermite, `place_detail_polyline` with optional closing, `place_detail_circle` as two semicircles, `place_detail_rectangle` axis-aligned, `place_detail_ellipse` with rotation, `modify_detail_curve_style`). Added `CreateDetailCurves` and `ApplyLineStyleToAll` shared helpers to DraftingHelper. |
+| 3.0 | P2-08.3 | Region + Component Tools: 5 new tools (`place_filled_region` with 3-tier type resolution, `place_masking_region`, `create_filled_region_type` via Duplicate with pattern/color, `place_detail_component` with fuzzy matching, `place_detail_group` filtered to OST_IOSDetailGroups). Added `GetAvailableFilledRegionTypeNames` and `GetAvailableDetailGroupNames` to ElementLookupHelper. |
+| 3.0.1 | P2-08.3 fix | Transaction failure handling: `SilentFailuresPreprocessor` + `SetForcedModalHandling(false)` on all transactions to prevent modal dialog hangs. Fixed `place_masking_region` 3-tier type resolution to require no foreground pattern (was selecting masking types with visible hatching). Improved `place_filled_region` and `get_fill_patterns` descriptions for better AI tool discovery. |
