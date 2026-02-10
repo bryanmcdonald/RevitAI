@@ -104,14 +104,12 @@ public sealed class PlaceMaskingRegionTool : IRevitTool
             var (curveLoop, loopError) = DraftingHelper.BuildClosedCurveLoop(points!);
             if (loopError != null) return Task.FromResult(loopError);
 
-            // Find masking type
-            var maskingType = new FilteredElementCollector(doc)
-                .OfClass(typeof(FilledRegionType))
-                .Cast<FilledRegionType>()
-                .FirstOrDefault(frt => frt.IsMasking);
-
+            // Find or create a proper masking type (IsMasking + no visible foreground pattern)
+            var (maskingType, typeSource) = ResolveMaskingType(doc);
             if (maskingType == null)
-                return Task.FromResult(ToolResult.Error("No masking region type found in the document. Create one in Revit's Filled Region Type settings."));
+                return Task.FromResult(ToolResult.Error(
+                    "No masking region type found and could not create one. " +
+                    "Create a masking type in Revit's Filled Region Type settings with no foreground pattern."));
 
             // Create the masking region
             var filledRegion = FilledRegion.Create(doc, maskingType.Id, view!.Id, new List<CurveLoop> { curveLoop! });
@@ -137,6 +135,65 @@ public sealed class PlaceMaskingRegionTool : IRevitTool
         {
             return Task.FromResult(ToolResult.FromException(ex));
         }
+    }
+
+    /// <summary>
+    /// Resolves a masking FilledRegionType with no visible foreground pattern.
+    /// If the document only has masking types with patterns, duplicates one and clears it.
+    /// </summary>
+    private static (FilledRegionType? Type, string Source) ResolveMaskingType(Document doc)
+    {
+        var allTypes = new FilteredElementCollector(doc)
+            .OfClass(typeof(FilledRegionType))
+            .Cast<FilledRegionType>()
+            .ToList();
+
+        // Tier 1: Masking type with no foreground pattern (ideal)
+        var pure = allTypes.FirstOrDefault(frt =>
+            frt.IsMasking && frt.ForegroundPatternId == ElementId.InvalidElementId);
+        if (pure != null)
+            return (pure, "existing");
+
+        // Tier 2: Masking type exists but has a foreground pattern — duplicate and clear it
+        var withPattern = allTypes.FirstOrDefault(frt => frt.IsMasking);
+        if (withPattern != null)
+        {
+            try
+            {
+                var newType = withPattern.Duplicate("Masking - No Pattern") as FilledRegionType;
+                if (newType != null)
+                {
+                    newType.ForegroundPatternId = ElementId.InvalidElementId;
+                    return (newType, "created");
+                }
+            }
+            catch
+            {
+                // Duplicate or pattern clear failed — fall through to Tier 3
+            }
+        }
+
+        // Tier 3: No masking types at all — create from any available type
+        var baseType = allTypes.FirstOrDefault();
+        if (baseType != null)
+        {
+            try
+            {
+                var newType = baseType.Duplicate("Masking") as FilledRegionType;
+                if (newType != null)
+                {
+                    newType.IsMasking = true;
+                    newType.ForegroundPatternId = ElementId.InvalidElementId;
+                    return (newType, "created");
+                }
+            }
+            catch
+            {
+                // Creation failed
+            }
+        }
+
+        return (null, "none");
     }
 
     private sealed class PlaceMaskingRegionResult

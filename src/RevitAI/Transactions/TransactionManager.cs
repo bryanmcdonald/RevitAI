@@ -220,6 +220,12 @@ public sealed class TransactionManager
                 $"Failed to start transaction '{name}': result was {result}.");
         }
 
+        // Prevent modal failure dialogs from blocking the ExternalEvent thread
+        var options = transaction.GetFailureHandlingOptions();
+        options.SetFailuresPreprocessor(new SilentFailuresPreprocessor());
+        options.SetForcedModalHandling(false);
+        transaction.SetFailureHandlingOptions(options);
+
         return new TransactionScope(transaction);
     }
 }

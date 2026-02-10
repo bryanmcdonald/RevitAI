@@ -77,7 +77,7 @@ public sealed class PlaceFilledRegionTool : IRevitTool
 
     public string Name => "place_filled_region";
 
-    public string Description => "Creates a filled region (hatched/solid area) with a boundary in a view. Coordinates are in feet. Use get_fill_patterns to discover available patterns.";
+    public string Description => "Creates a filled region (hatched/solid area) with a boundary in a view. Coordinates are in feet. Use get_fill_patterns to discover available fill patterns and region type names.";
 
     public JsonElement InputSchema => _inputSchema;
 

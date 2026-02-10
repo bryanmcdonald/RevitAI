@@ -57,8 +57,8 @@ public sealed class GetFillPatternsTool : IRevitTool
     public string Name => "get_fill_patterns";
 
     public string Description => "Lists available fill patterns in the document. " +
-        "Use this before placing filled regions to discover pattern names. " +
-        "Optionally filter by 'drafting' or 'model' target.";
+        "Also use this to discover available filled region type names. " +
+        "Use before placing filled regions. Optionally filter by 'drafting' or 'model' target.";
 
     public JsonElement InputSchema => _inputSchema;
 
