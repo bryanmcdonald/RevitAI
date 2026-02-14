@@ -290,6 +290,8 @@ See [README.md](README.md#development-status) for detailed development status wi
 
 > **Note**: P2-05 (Visual Feedback) is partial. Auto-selection of affected elements and markdown rendering are implemented. Preview graphics (DirectContext3D) were deferred. See [P2-05 doc](docs/phase2/P2-05-visual-feedback.md) for details.
 
+> **Deferred tool**: `set_view_scale` — needed so placed viewports fit on sheets. Simple API (`view.Scale = n`). Implement before or alongside P2-08.5. See [P1.5-02 Future Enhancements](docs/phase1.5/P1.5-02-view-management.md#future-enhancements-deferred).
+
 ---
 
 ## Post-Change Requirements
