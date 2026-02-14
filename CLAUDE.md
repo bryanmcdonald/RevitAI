@@ -282,15 +282,13 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-08.5 (Annotation & Reference Tools)
+**Next chunk to implement**: P2-08.6 (Batch Tools)
 
-> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1, P2-08.2, P2-08.3, and P2-08.4 are complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
+> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1, P2-08.2, P2-08.3, P2-08.4, and P2-08.5 are complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
 > **Note**: P2-05 (Visual Feedback) is partial. Auto-selection of affected elements and markdown rendering are implemented. Preview graphics (DirectContext3D) were deferred. See [P2-05 doc](docs/phase2/P2-05-visual-feedback.md) for details.
-
-> **Deferred tool**: `set_view_scale` — needed so placed viewports fit on sheets. Simple API (`view.Scale = n`). Implement before or alongside P2-08.5. See [P1.5-02 Future Enhancements](docs/phase1.5/P1.5-02-view-management.md#future-enhancements-deferred).
 
 ---
 
@@ -439,3 +437,4 @@ The plugin will be considered successful when it meets these criteria:
 | 3.0 | P2-08.3 | Region + Component Tools: 5 new tools (`place_filled_region` with 3-tier type resolution, `place_masking_region`, `create_filled_region_type` via Duplicate with pattern/color, `place_detail_component` with fuzzy matching, `place_detail_group` filtered to OST_IOSDetailGroups). Added `GetAvailableFilledRegionTypeNames` and `GetAvailableDetailGroupNames` to ElementLookupHelper. |
 | 3.0.1 | P2-08.3 fix | Transaction failure handling: `SilentFailuresPreprocessor` + `SetForcedModalHandling(false)` on all transactions to prevent modal dialog hangs. Fixed `place_masking_region` 3-tier type resolution to require no foreground pattern (was selecting masking types with visible hatching). Improved `place_filled_region` and `get_fill_patterns` descriptions for better AI tool discovery. |
 | 3.1 | P2-08.4 | Sheet & Viewport Tools: 2 new tools (`place_viewport` with sheet/view resolution by ID or name, fuzzy view matching, already-placed detection; `auto_arrange_viewports` with auto/grid/column layout modes, configurable spacing/margin in inches). Added `ResolveSheet`, `ResolveViewForViewport`, `GetSheetUsableArea` helpers to DraftingHelper. |
+| 3.2 | P2-08.5 | Annotation & Reference Tools: 5 new tools (`set_view_scale` deferred from P1.5-02, `create_legend` via view duplication, `place_legend_component` with cross-category fuzzy matching and view direction, `place_revision_cloud` with auto-close and latest-revision default, `place_callout` supporting detail/section and reference callouts). Added `ResolveView` general-purpose helper to DraftingHelper, `FindFamilySymbolFuzzy` cross-category search to ElementLookupHelper. |
