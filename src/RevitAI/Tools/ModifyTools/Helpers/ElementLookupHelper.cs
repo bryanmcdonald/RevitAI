@@ -658,6 +658,77 @@ public static class ElementLookupHelper
     }
 
     /// <summary>
+    /// Finds a family symbol across ALL categories using fuzzy matching.
+    /// Same 3-tier matching as FindFamilySymbolInCategoryFuzzy but without a category filter.
+    /// Required for legend components which can be any family type.
+    /// </summary>
+    public static (FamilySymbol? Symbol, bool IsFuzzy, string? MatchedName) FindFamilySymbolFuzzy(
+        Document doc, string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return (null, false, null);
+
+        var trimmedName = fullName.Trim();
+        var symbols = new FilteredElementCollector(doc)
+            .OfClass(typeof(FamilySymbol))
+            .Cast<FamilySymbol>()
+            .ToList();
+
+        // Exact match (case-insensitive full name)
+        var exactMatch = symbols.FirstOrDefault(fs =>
+            string.Equals(GetFullSymbolName(fs), trimmedName, StringComparison.OrdinalIgnoreCase));
+        if (exactMatch != null)
+            return (exactMatch, false, GetFullSymbolName(exactMatch));
+
+        // Exact type name match
+        var typeMatch = symbols.FirstOrDefault(fs =>
+            string.Equals(fs.Name, trimmedName, StringComparison.OrdinalIgnoreCase));
+        if (typeMatch != null)
+            return (typeMatch, false, GetFullSymbolName(typeMatch));
+
+        // Partial contains match (case-insensitive) — prefer shortest name for predictability
+        var containsMatch = symbols
+            .Where(fs =>
+                GetFullSymbolName(fs).Contains(trimmedName, StringComparison.OrdinalIgnoreCase) ||
+                fs.Name.Contains(trimmedName, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(fs => fs.Name.Length)
+            .FirstOrDefault();
+        if (containsMatch != null)
+            return (containsMatch, true, GetFullSymbolName(containsMatch));
+
+        // Levenshtein distance match
+        var maxDistance = Math.Max(2, trimmedName.Length / 3);
+        FamilySymbol? bestMatch = null;
+        var bestDistance = int.MaxValue;
+        string? bestName = null;
+
+        foreach (var fs in symbols)
+        {
+            var typeNameDist = LevenshteinDistance(trimmedName, fs.Name);
+            if (typeNameDist < bestDistance)
+            {
+                bestDistance = typeNameDist;
+                bestMatch = fs;
+                bestName = GetFullSymbolName(fs);
+            }
+
+            var fullNameStr = GetFullSymbolName(fs);
+            var fullDist = LevenshteinDistance(trimmedName, fullNameStr);
+            if (fullDist < bestDistance)
+            {
+                bestDistance = fullDist;
+                bestMatch = fs;
+                bestName = fullNameStr;
+            }
+        }
+
+        if (bestMatch != null && bestDistance <= maxDistance)
+            return (bestMatch, true, bestName);
+
+        return (null, false, null);
+    }
+
+    /// <summary>
     /// Finds a wall type by name using fuzzy matching.
     /// </summary>
     public static (WallType? Type, bool IsFuzzy, string? MatchedName) FindWallTypeByNameFuzzy(

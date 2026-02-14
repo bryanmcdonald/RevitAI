@@ -244,9 +244,13 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_detail_group` | Place detail group instance |
 | `place_viewport` | Place a view on a sheet as a viewport |
 | `auto_arrange_viewports` | Auto-arrange viewports on a sheet (auto/grid/column) |
+| `set_view_scale` | Set the scale of a view (e.g. 48 for 1/4" = 1'-0") |
+| `create_legend` | Create a new legend view (by duplicating existing) |
+| `place_legend_component` | Place family symbol representation in a legend view |
+| `place_revision_cloud` | Place revision cloud markup in a view |
+| `place_callout` | Create detail or section callout (new or reference) |
 
 **Coming Soon (Phase 2-08):**
-- Annotation tools (callouts, legends, revision clouds)
 - Batch tools (batch detail lines, batch detail components)
 
 ## Development Status
@@ -288,7 +292,7 @@ Advanced features and improved workflows.
   - [x] **P2-08.2** Linework & Shape Tools (7 tools: arc, curve, polyline, circle, rectangle, ellipse, modify style)
   - [x] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
   - [x] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
-  - [ ] **P2-08.5** Annotation & Reference Tools (4 tools: callout, legend, legend component, revision cloud)
+  - [x] **P2-08.5** Annotation & Reference Tools (5 tools: set view scale, callout, legend, legend component, revision cloud)
   - [ ] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
   - [ ] **P2-08.7** System Prompt + Documentation
 

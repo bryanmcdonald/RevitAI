@@ -66,6 +66,36 @@ public static class DraftingHelper
     }
 
     /// <summary>
+    /// Resolves a view from input parameters for general-purpose operations.
+    /// Uses optional view_id from input, falls back to active view.
+    /// Only rejects view templates — callers validate view type suitability themselves.
+    /// </summary>
+    public static (View? View, ToolResult? Error) ResolveView(Document doc, JsonElement input, string paramName = "view_id")
+    {
+        View? view;
+
+        if (input.TryGetProperty(paramName, out var viewIdElement))
+        {
+            var viewId = new ElementId(viewIdElement.GetInt64());
+            view = doc.GetElement(viewId) as View;
+            if (view == null)
+                return (null, ToolResult.Error($"View with ID {viewIdElement.GetInt64()} not found."));
+        }
+        else
+        {
+            view = doc.ActiveView;
+        }
+
+        if (view == null)
+            return (null, ToolResult.Error("No active view available."));
+
+        if (view.IsTemplate)
+            return (null, ToolResult.Error($"View '{view.Name}' is a template and cannot be used for this operation."));
+
+        return (view, null);
+    }
+
+    /// <summary>
     /// Parses a JSON array element as an XYZ point ([x, y] or [x, y, z]) in feet.
     /// </summary>
     public static (XYZ? Point, ToolResult? Error) ParsePoint(JsonElement input, string paramName)

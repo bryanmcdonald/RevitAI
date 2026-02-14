@@ -359,6 +359,15 @@ public class App : IExternalApplication
         // Drafting & documentation tools (P2-08.4) - Sheets & Viewports
         registry.Register(new PlaceViewportTool());
         registry.Register(new AutoArrangeViewportsTool());
+
+        // View scale tool (deferred from P1.5-02)
+        registry.Register(new SetViewScaleTool());
+
+        // Drafting & documentation tools (P2-08.5) - Annotations & References
+        registry.Register(new CreateLegendTool());
+        registry.Register(new PlaceLegendComponentTool());
+        registry.Register(new PlaceRevisionCloudTool());
+        registry.Register(new PlaceCalloutTool());
     }
 
     /// <summary>
