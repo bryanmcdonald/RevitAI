@@ -778,7 +778,7 @@ public static class ElementLookupHelper
     /// <summary>
     /// Computes the Levenshtein edit distance between two strings (case-insensitive).
     /// </summary>
-    private static int LevenshteinDistance(string s, string t)
+    internal static int LevenshteinDistance(string s, string t)
     {
         s = s.ToLowerInvariant();
         t = t.ToLowerInvariant();

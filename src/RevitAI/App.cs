@@ -355,6 +355,10 @@ public class App : IExternalApplication
         registry.Register(new CreateFilledRegionTypeTool());
         registry.Register(new PlaceDetailComponentTool());
         registry.Register(new PlaceDetailGroupTool());
+
+        // Drafting & documentation tools (P2-08.4) - Sheets & Viewports
+        registry.Register(new PlaceViewportTool());
+        registry.Register(new AutoArrangeViewportsTool());
     }
 
     /// <summary>
