@@ -242,9 +242,10 @@ RevitAI provides Claude with tools to query your Revit model:
 | `create_filled_region_type` | Create new region type (pattern + color) |
 | `place_detail_component` | Place detail component family instance |
 | `place_detail_group` | Place detail group instance |
+| `place_viewport` | Place a view on a sheet as a viewport |
+| `auto_arrange_viewports` | Auto-arrange viewports on a sheet (auto/grid/column) |
 
 **Coming Soon (Phase 2-08):**
-- Sheet & viewport tools (place viewport, auto-arrange)
 - Annotation tools (callouts, legends, revision clouds)
 - Batch tools (batch detail lines, batch detail components)
 
@@ -286,7 +287,7 @@ Advanced features and improved workflows.
   - [x] **P2-08.1** DraftingHelper + Discovery Tools (6 tools: fill patterns, line styles, detail components, revisions, sheets, viewport info)
   - [x] **P2-08.2** Linework & Shape Tools (7 tools: arc, curve, polyline, circle, rectangle, ellipse, modify style)
   - [x] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
-  - [ ] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
+  - [x] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
   - [ ] **P2-08.5** Annotation & Reference Tools (4 tools: callout, legend, legend component, revision cloud)
   - [ ] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
   - [ ] **P2-08.7** System Prompt + Documentation

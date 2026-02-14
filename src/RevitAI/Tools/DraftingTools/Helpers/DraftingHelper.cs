@@ -239,4 +239,158 @@ public static class DraftingHelper
     /// Converts degrees to radians.
     /// </summary>
     public static double DegreesToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+    // ────────────────────────────────────────────────────────────────
+    //  Sheet & Viewport helpers (P2-08.4)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves a ViewSheet from input parameters.
+    /// Tries sheet_id first, then sheet_number (case-insensitive).
+    /// </summary>
+    public static (ViewSheet? Sheet, ToolResult? Error) ResolveSheet(Document doc, JsonElement input)
+    {
+        // Try sheet_id first
+        if (input.TryGetProperty("sheet_id", out var sheetIdElement))
+        {
+            var sheetId = new ElementId(sheetIdElement.GetInt64());
+            var sheet = doc.GetElement(sheetId) as ViewSheet;
+            if (sheet == null)
+                return (null, ToolResult.Error($"Sheet with ID {sheetIdElement.GetInt64()} not found."));
+            return (sheet, null);
+        }
+
+        // Try sheet_number
+        if (input.TryGetProperty("sheet_number", out var sheetNumElement))
+        {
+            var sheetNumber = sheetNumElement.GetString();
+            if (string.IsNullOrWhiteSpace(sheetNumber))
+                return (null, ToolResult.Error("Parameter 'sheet_number' cannot be empty."));
+
+            var sheets = new FilteredElementCollector(doc)
+                .OfClass(typeof(ViewSheet))
+                .Cast<ViewSheet>()
+                .Where(s => !s.IsPlaceholder)
+                .ToList();
+
+            var match = sheets.FirstOrDefault(s =>
+                string.Equals(s.SheetNumber, sheetNumber, StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+                return (match, null);
+
+            var available = string.Join(", ", sheets
+                .OrderBy(s => s.SheetNumber, StringComparer.OrdinalIgnoreCase)
+                .Select(s => $"'{s.SheetNumber} - {s.Name}'"));
+            return (null, ToolResult.Error(
+                $"Sheet number '{sheetNumber}' not found. Available sheets: {available}"));
+        }
+
+        return (null, ToolResult.Error("Either 'sheet_id' or 'sheet_number' must be provided."));
+    }
+
+    /// <summary>
+    /// Resolves a View suitable for viewport placement from input parameters.
+    /// Tries view_id first, then view_name (case-insensitive, then fuzzy).
+    /// Rejects view templates and sheets.
+    /// </summary>
+    public static (View? View, ToolResult? Error) ResolveViewForViewport(Document doc, JsonElement input)
+    {
+        // Try view_id first
+        if (input.TryGetProperty("view_id", out var viewIdElement))
+        {
+            var viewId = new ElementId(viewIdElement.GetInt64());
+            var view = doc.GetElement(viewId) as View;
+            if (view == null)
+                return (null, ToolResult.Error($"View with ID {viewIdElement.GetInt64()} not found."));
+            if (view.IsTemplate)
+                return (null, ToolResult.Error($"View '{view.Name}' is a template and cannot be placed on a sheet."));
+            if (view is ViewSheet)
+                return (null, ToolResult.Error($"'{view.Name}' is a sheet, not a view. Sheets cannot be placed on other sheets."));
+            return (view, null);
+        }
+
+        // Try view_name
+        if (input.TryGetProperty("view_name", out var viewNameElement))
+        {
+            var viewName = viewNameElement.GetString();
+            if (string.IsNullOrWhiteSpace(viewName))
+                return (null, ToolResult.Error("Parameter 'view_name' cannot be empty."));
+
+            var allViews = new FilteredElementCollector(doc)
+                .OfClass(typeof(View))
+                .Cast<View>()
+                .Where(v => !v.IsTemplate && v is not ViewSheet)
+                .ToList();
+
+            // Exact case-insensitive match
+            var exactMatch = allViews.FirstOrDefault(v =>
+                string.Equals(v.Name, viewName, StringComparison.OrdinalIgnoreCase));
+            if (exactMatch != null)
+                return (exactMatch, null);
+
+            // Contains match — prefer shortest name to avoid "Level 1" matching "Level 10"
+            var containsMatch = allViews
+                .Where(v => v.Name.Contains(viewName, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(v => v.Name.Length)
+                .FirstOrDefault();
+            if (containsMatch != null)
+                return (containsMatch, null);
+
+            // Fuzzy match via Levenshtein distance
+            var maxDistance = Math.Max(2, viewName.Length / 3);
+            View? bestMatch = null;
+            var bestDistance = int.MaxValue;
+
+            foreach (var v in allViews)
+            {
+                var dist = ElementLookupHelper.LevenshteinDistance(viewName, v.Name);
+                if (dist < bestDistance)
+                {
+                    bestDistance = dist;
+                    bestMatch = v;
+                }
+            }
+
+            if (bestMatch != null && bestDistance <= maxDistance)
+                return (bestMatch, null);
+
+            var available = string.Join(", ", allViews
+                .OrderBy(v => v.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(20)
+                .Select(v => $"'{v.Name}'"));
+            var moreNote = allViews.Count > 20 ? $" (showing 20 of {allViews.Count})" : "";
+            return (null, ToolResult.Error(
+                $"View '{viewName}' not found. Available views{moreNote}: {available}"));
+        }
+
+        return (null, ToolResult.Error("Either 'view_id' or 'view_name' must be provided."));
+    }
+
+    /// <summary>
+    /// Gets the area of a sheet based on its title block bounding box.
+    /// Note: The title block BB covers the full sheet including border/stamp area.
+    /// Callers should apply sufficient margin to clear the title block frame.
+    /// Falls back to standard D-size sheet dimensions (34" x 22") if no title block found.
+    /// Returns min/max corners in sheet coordinates (feet).
+    /// </summary>
+    public static (XYZ Min, XYZ Max) GetSheetUsableArea(Document doc, ViewSheet sheet)
+    {
+        // Try to find title block on the sheet
+        var titleBlocks = new FilteredElementCollector(doc, sheet.Id)
+            .OfCategory(BuiltInCategory.OST_TitleBlocks)
+            .ToList();
+
+        if (titleBlocks.Count > 0)
+        {
+            var bb = titleBlocks[0].get_BoundingBox(sheet);
+            if (bb != null)
+                return (bb.Min, bb.Max);
+        }
+
+        // Fallback: standard D-size sheet (34" x 22")
+        var width = 34.0 / 12.0;  // 2.833 feet
+        var height = 22.0 / 12.0; // 1.833 feet
+        return (new XYZ(0, 0, 0), new XYZ(width, height, 0));
+    }
 }
