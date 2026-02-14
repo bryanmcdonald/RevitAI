@@ -398,6 +398,7 @@ For detailed setup, coding standards, and the full contribution process, see [CO
 |------------|-------------|-------------------|
 | **Local file key breaks on move/rename** | Hash-based project key changes if .rvt file is moved | Acceptable trade-off |
 | **Single document** | Only works with active document | Future consideration |
+| **Viewport sizing** | Placed viewports inherit the view's scale — large-scale views may overflow the sheet | Future `set_view_scale` tool |
 
 ### Not Yet Supported
 
