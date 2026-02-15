@@ -422,9 +422,22 @@ public static class ElementLookupHelper
         if (lineCategory == null)
             return null;
 
+        // Pass 1: exact match (case-insensitive)
         foreach (Category subCat in lineCategory.SubCategories)
         {
             if (string.Equals(subCat.Name, trimmedName, StringComparison.OrdinalIgnoreCase))
+            {
+                return subCat.GetGraphicsStyle(GraphicsStyleType.Projection);
+            }
+        }
+
+        // Pass 2: strip angle brackets from both sides and retry.
+        // Revit built-in styles use "<Thin Lines>" but users/AI say "Thin Lines".
+        var stripped = trimmedName.TrimStart('<').TrimEnd('>');
+        foreach (Category subCat in lineCategory.SubCategories)
+        {
+            var catStripped = subCat.Name.TrimStart('<').TrimEnd('>');
+            if (string.Equals(catStripped, stripped, StringComparison.OrdinalIgnoreCase))
             {
                 return subCat.GetGraphicsStyle(GraphicsStyleType.Projection);
             }

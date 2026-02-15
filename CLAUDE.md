@@ -282,9 +282,9 @@ RevitAI/
 
 See [README.md](README.md#development-status) for detailed development status with checkboxes.
 
-**Next chunk to implement**: P2-08.6 (Batch Tools)
+**Next chunk to implement**: P2-08.7 (System Prompt + Documentation)
 
-> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1, P2-08.2, P2-08.3, P2-08.4, and P2-08.5 are complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
+> **Note**: P2-08 (Drafting & Documentation Tools) is split into 7 sub-chunks (P2-08.1 through P2-08.7). P2-08.1 through P2-08.6 are complete. See `docs/phase2/P2-08.1-discovery-tools.md` through `P2-08.7-prompt-docs.md` for sub-chunk details.
 
 > **Note**: P2-03 (Multi-Step Design Operations) is partial. Cross-round single-undo was deferred because Revit auto-closes TransactionGroups between ExternalEvent handler calls. Within-round batching works. See [P2-03 doc](docs/phase2/P2-03-multi-step-operations.md) for details.
 
@@ -438,3 +438,4 @@ The plugin will be considered successful when it meets these criteria:
 | 3.0.1 | P2-08.3 fix | Transaction failure handling: `SilentFailuresPreprocessor` + `SetForcedModalHandling(false)` on all transactions to prevent modal dialog hangs. Fixed `place_masking_region` 3-tier type resolution to require no foreground pattern (was selecting masking types with visible hatching). Improved `place_filled_region` and `get_fill_patterns` descriptions for better AI tool discovery. |
 | 3.1 | P2-08.4 | Sheet & Viewport Tools: 2 new tools (`place_viewport` with sheet/view resolution by ID or name, fuzzy view matching, already-placed detection; `auto_arrange_viewports` with auto/grid/column layout modes, configurable spacing/margin in inches). Added `ResolveSheet`, `ResolveViewForViewport`, `GetSheetUsableArea` helpers to DraftingHelper. |
 | 3.2 | P2-08.5 | Annotation & Reference Tools: 5 new tools (`set_view_scale` deferred from P1.5-02, `create_legend` via view duplication, `place_legend_component` with cross-category fuzzy matching and view direction, `place_revision_cloud` with auto-close and latest-revision default, `place_callout` supporting detail/section and reference callouts). Added `ResolveView` general-purpose helper to DraftingHelper, `FindFamilySymbolFuzzy` cross-category search to ElementLookupHelper. |
+| 3.3 | P2-08.6 | Batch Tools: 2 new tools (`batch_place_detail_lines` up to 200 lines per call with per-line style and cached lookups, `batch_place_detail_components` up to 100 components per call with shared family and per-component type). Both use partial-success tracking (succeeded/failed/errors capped at 5) and `OkWithElements` for auto-selection. |

@@ -249,9 +249,8 @@ RevitAI provides Claude with tools to query your Revit model:
 | `place_legend_component` | Place family symbol representation in a legend view |
 | `place_revision_cloud` | Place revision cloud markup in a view |
 | `place_callout` | Create detail or section callout (new or reference) |
-
-**Coming Soon (Phase 2-08):**
-- Batch tools (batch detail lines, batch detail components)
+| `batch_place_detail_lines` | Place up to 200 detail lines in one call |
+| `batch_place_detail_components` | Place up to 100 detail components in one call |
 
 ## Development Status
 
@@ -293,7 +292,7 @@ Advanced features and improved workflows.
   - [x] **P2-08.3** Region + Component Tools (5 tools: filled region, masking region, create region type, detail component, detail group)
   - [x] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
   - [x] **P2-08.5** Annotation & Reference Tools (5 tools: set view scale, callout, legend, legend component, revision cloud)
-  - [ ] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
+  - [x] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
   - [ ] **P2-08.7** System Prompt + Documentation
 
 ### Phase 3: Advanced & Multi-Discipline
