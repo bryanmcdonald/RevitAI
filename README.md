@@ -41,13 +41,15 @@ Built for multi-discipline engineering teams (Structural, MEP, Fire Protection, 
 
 ## Current Status
 
-**Ready for Phase 2** (Phase 1 + 1.5 Foundation complete)
+**Ready for Phase 3** (Phases 1, 1.5, and 2 complete)
 
 | Phase | Status |
 |-------|--------|
 | Phase 1 Foundation (10 chunks) | ✅ Complete |
 | Phase 1.5 View & Navigation (4 chunks) | ✅ Complete |
-| Phase 2 Enhanced Capabilities | 🔜 Next |
+| Phase 2 Enhanced Capabilities (8 chunks, 27 drafting tools) | ✅ Complete |
+| Phase 3 Advanced & Multi-Discipline | 🔜 Next |
+| Phase 4 Agentic Mode | Planned |
 
 See [Development Status](#development-status) for full details.
 
