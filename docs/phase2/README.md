@@ -22,7 +22,7 @@ Phase 2 extends the foundation with advanced tools, smart context awareness, vis
 | [P2-05](P2-05-visual-feedback.md) | Visual Feedback System | Element highlighting, preview graphics, status display, **markdown rendering** | P2-04 |
 | [P2-06](P2-06-parameter-schedule.md) | Parameter & Schedule Tools | Bulk modify, schedule read/create, data export | P2-05 |
 | [P2-07](P2-07-conversation-memory.md) | Conversation Memory | Persist history, change tracking, undo all | P2-06 |
-| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds — split into [7 sub-chunks](P2-08.1-discovery-tools.md); **P2-08.1, P2-08.2, P2-08.3 complete** | P2-01 |
+| [P2-08](P2-08-drafting-tools.md) | Drafting & Documentation Tools | Advanced linework, filled regions, detail components, viewports, callouts, legends, revision clouds — split into [7 sub-chunks](P2-08.1-discovery-tools.md); **P2-08.1–P2-08.7 complete** (27 tools) | P2-01 |
 
 ---
 
@@ -69,11 +69,14 @@ src/RevitAI/
 │   │   ├── CreateFilledRegionTypeTool.cs     # P2-08.3: Region types
 │   │   ├── PlaceDetailComponentTool.cs       # P2-08.3: Components
 │   │   ├── PlaceDetailGroupTool.cs           # P2-08.3: Components
-│   │   ├── PlaceViewportTool.cs              # P2-08.4 (planned)
-│   │   ├── PlaceCalloutTool.cs               # P2-08.5 (planned)
-│   │   ├── CreateLegendTool.cs               # P2-08.5 (planned)
-│   │   ├── PlaceLegendComponentTool.cs       # P2-08.5 (planned)
-│   │   └── PlaceRevisionCloudTool.cs         # P2-08.5 (planned)
+│   │   ├── PlaceViewportTool.cs              # P2-08.4: Sheet layout
+│   │   ├── AutoArrangeViewportsTool.cs       # P2-08.4: Sheet layout
+│   │   ├── PlaceCalloutTool.cs               # P2-08.5: Annotations
+│   │   ├── CreateLegendTool.cs               # P2-08.5: Annotations
+│   │   ├── PlaceLegendComponentTool.cs       # P2-08.5: Annotations
+│   │   ├── PlaceRevisionCloudTool.cs         # P2-08.5: Annotations
+│   │   ├── BatchPlaceDetailLinesTool.cs      # P2-08.6: Batch
+│   │   └── BatchPlaceDetailComponentsTool.cs # P2-08.6: Batch
 │   └── ReadTools/
 │       └── ReadScheduleDataTool.cs       # P2-06
 ├── Services/
@@ -94,14 +97,14 @@ src/RevitAI/
 ## Phase 2 Completion Criteria
 
 - [x] All 7 advanced placement tools working
-- [ ] All 7 element manipulation tools working
-- [ ] Multi-step operations execute as single undo
-- [ ] Grid intersection references resolve correctly
-- [ ] Relative position commands work ("3 feet right of...")
-- [ ] Type inference finds matching family types
-- [ ] Elements highlight temporarily after creation
-- [ ] Bulk parameter modifications work
-- [ ] Schedule data can be read and created
-- [ ] Conversation history persists across sessions
-- [ ] Change tracking summarizes AI modifications
-- [ ] All 10 drafting tools working (arcs, curves, regions, viewports, callouts, legends, revision clouds)
+- [x] All 7 element manipulation tools working
+- [x] Multi-step operations execute as single undo (within-round; cross-round deferred)
+- [x] Grid intersection references resolve correctly
+- [x] Relative position commands work ("3 feet right of...")
+- [x] Type inference finds matching family types
+- [x] Elements highlight temporarily after creation (auto-selection)
+- [x] Bulk parameter modifications work
+- [x] Schedule data can be read and exported
+- [x] Conversation history persists across sessions
+- [x] Change tracking summarizes AI modifications
+- [x] All 27 drafting tools working (discovery, linework, shapes, regions, components, viewports, annotations, batch)

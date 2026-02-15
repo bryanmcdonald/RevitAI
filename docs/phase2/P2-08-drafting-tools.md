@@ -904,12 +904,12 @@ P2-08 is split into 7 sub-chunks for manageability:
 | Sub-Chunk | Description | Status |
 |-----------|-------------|--------|
 | [P2-08.1](P2-08.1-discovery-tools.md) | DraftingHelper + 6 discovery tools | **Complete** |
-| [P2-08.2](P2-08.2-linework-tools.md) | Linework & shape tools (7 tools) | Not started |
-| [P2-08.3](P2-08.3-region-component-tools.md) | Region + component tools (5 tools) | Not started |
-| [P2-08.4](P2-08.4-sheet-viewport-tools.md) | Sheet & viewport tools (2 tools) | Not started |
-| [P2-08.5](P2-08.5-annotation-tools.md) | Annotation & reference tools (4 tools) | Not started |
-| [P2-08.6](P2-08.6-batch-tools.md) | Batch tools (2 tools) | Not started |
-| [P2-08.7](P2-08.7-prompt-docs.md) | System prompt + documentation | Not started |
+| [P2-08.2](P2-08.2-linework-tools.md) | Linework & shape tools (7 tools) | **Complete** |
+| [P2-08.3](P2-08.3-region-component-tools.md) | Region + component tools (5 tools) | **Complete** |
+| [P2-08.4](P2-08.4-sheet-viewport-tools.md) | Sheet & viewport tools (2 tools) | **Complete** |
+| [P2-08.5](P2-08.5-annotation-tools.md) | Annotation & reference tools (5 tools) | **Complete** |
+| [P2-08.6](P2-08.6-batch-tools.md) | Batch tools (2 tools) | **Complete** |
+| [P2-08.7](P2-08.7-prompt-docs.md) | System prompt + documentation | **Complete** |
 
 ---
 
@@ -926,6 +926,60 @@ P2-08 is split into 7 sub-chunks for manageability:
 - `GetSheetListTool` excludes placeholder sheets.
 - `GetViewportInfoTool` returns center + outline bounds for layout planning.
 - All tools follow existing patterns from `GetAvailableTypesTool` (static schema/options, cancellation token check, null document check, try/catch).
+
+### P2-08.2: Linework & Shape Tools
+
+**Implemented**: 7 tools for 2D linework and shapes.
+
+- **Circle/Ellipse creation**: `Ellipse.CreateCurve(center, radius, radius, BasisX, BasisY, 0, 2*Math.PI)` works with `NewDetailCurve` to create single-element circles and ellipses. The old "Revit rejects 360-degree arcs" limitation applies only to `Arc.Create`, not `Ellipse.CreateCurve`.
+- **HermiteSpline rejected**: `HermiteSpline.Create()` objects are rejected by `NewDetailCurve` in Revit 2026. Workaround uses Catmull-Rom cubic Bezier segments via `NurbSpline.CreateCurve` with 4 control points per segment, passing exactly through endpoint data points.
+- Added `CreateDetailCurves` and `ApplyLineStyleToAll` shared helpers to `DraftingHelper` for code reuse across linework tools.
+
+### P2-08.3: Region + Component Tools
+
+**Implemented**: 5 tools for regions and detail components.
+
+- **Transaction failure handling**: `SilentFailuresPreprocessor` + `SetForcedModalHandling(false)` required on all transactions to prevent modal dialog hangs when Revit encounters internal errors.
+- **Masking region type resolution**: 3-tier resolution must require no foreground pattern — without this check, types with visible hatching were incorrectly selected as "masking" types.
+- **Filled region type resolution**: 3-tier approach (exact name match → fuzzy match → first available).
+- **Detail component**: Fuzzy matching via `ElementLookupHelper` for family/type names.
+- **Detail group**: Filtered to `OST_IOSDetailGroups` to exclude model groups.
+
+### P2-08.4: Sheet & Viewport Tools
+
+**Implemented**: 2 tools for sheet/viewport management.
+
+- **Already-placed detection**: `Viewport.CanAddViewToSheet` check prevents duplicate placement errors.
+- **Fuzzy view matching**: Sheet and view resolution by ID or name with fuzzy fallback.
+- Added `ResolveSheet`, `ResolveViewForViewport`, `GetSheetUsableArea` helpers to `DraftingHelper`.
+- **Auto-arrange**: Supports auto/grid/column layout modes with configurable spacing and margins in inches.
+
+### P2-08.5: Annotation & Reference Tools
+
+**Implemented**: 5 tools for annotations and references.
+
+- **`set_view_scale`**: Deferred from P1.5-02, implemented here.
+- **`create_legend`**: Uses view duplication of existing legend (Revit API limitation — cannot create from scratch).
+- **`place_legend_component`**: `FindFamilySymbolFuzzy` cross-category search in `ElementLookupHelper` for matching family symbols across all categories, with view direction support.
+- **`place_revision_cloud`**: Auto-closes boundary loop; defaults to latest revision if none specified.
+- **`place_callout`**: Supports both new detail/section callouts and reference callouts pointing to existing views.
+- Added `ResolveView` general-purpose helper to `DraftingHelper`.
+
+### P2-08.6: Batch Tools
+
+**Implemented**: 2 batch tools for high-volume drafting.
+
+- **Partial-success tracking**: Both tools track succeeded/failed counts with error messages capped at 5 to avoid overwhelming responses.
+- **Cached line style lookups**: `batch_place_detail_lines` caches line style resolution to avoid redundant FilteredElementCollector queries across 200 lines.
+- **Per-item customization**: `batch_place_detail_lines` supports per-line style; `batch_place_detail_components` supports shared family with per-component type.
+- Both use `OkWithElements` for auto-selection of created elements.
+
+### P2-08.7: System Prompt + Documentation
+
+**Implemented**: System prompt guidance + documentation sync.
+
+- Added "Drafting & Documentation" section to `BuildSystemPrompt()` in `ContextEngine.cs` with 8 guidance lines covering discovery-first workflow, view requirements, units, batch tools, and revision prerequisites.
+- Synchronized all documentation files: sub-chunk status, phase README completion criteria, CLAUDE.md version history.
 
 ---
 
