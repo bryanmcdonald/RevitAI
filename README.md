@@ -293,7 +293,7 @@ Advanced features and improved workflows.
   - [x] **P2-08.4** Sheet & Viewport Tools (2 tools: place viewport, auto-arrange viewports)
   - [x] **P2-08.5** Annotation & Reference Tools (5 tools: set view scale, callout, legend, legend component, revision cloud)
   - [x] **P2-08.6** Batch Tools (2 tools: batch detail lines, batch detail components)
-  - [ ] **P2-08.7** System Prompt + Documentation
+  - [x] **P2-08.7** System Prompt + Documentation
 
 ### Phase 3: Advanced & Multi-Discipline
 Discipline-specific tool packs and advanced features.

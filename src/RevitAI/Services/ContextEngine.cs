@@ -205,6 +205,16 @@ public sealed class ContextEngine
         sb.AppendLine("- read_schedule_data: Returns schedule rows inline. Always present the data in a readable table format to the user.");
         sb.AppendLine("- bulk_modify_parameters: Use {index} for sequential numbering (1,2,3) or {index:3} for zero-padded (001,002,003). Supports category, level, and parameter value filtering.");
         sb.AppendLine();
+        sb.AppendLine("**Drafting & Documentation:**");
+        sb.AppendLine("- Use get_fill_patterns, get_line_styles, get_detail_components to discover available resources before placing elements.");
+        sb.AppendLine("- All 2D drafting tools require a detail or drafting view (not 3D, not schedule, not sheet).");
+        sb.AppendLine("- Coordinates are in feet; angles are in degrees.");
+        sb.AppendLine("- For complex drawings, use batch tools (batch_place_detail_lines, batch_place_detail_components) to minimize round trips.");
+        sb.AppendLine("- Fill patterns: use get_fill_patterns to discover patterns, create_filled_region_type for custom types, then place_filled_region.");
+        sb.AppendLine("- Line styles: use get_line_styles first, then reference by name in line_style parameter.");
+        sb.AppendLine("- Sheets: use get_sheet_list + get_viewport_info to understand current layout before placing viewports.");
+        sb.AppendLine("- Revision clouds require at least one revision to exist (use get_revision_list to check).");
+        sb.AppendLine();
 
         // Screenshot QC guidance (only when screenshots are enabled)
         var configService = ConfigurationService.Instance;
