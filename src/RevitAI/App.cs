@@ -368,6 +368,10 @@ public class App : IExternalApplication
         registry.Register(new PlaceLegendComponentTool());
         registry.Register(new PlaceRevisionCloudTool());
         registry.Register(new PlaceCalloutTool());
+
+        // Drafting & documentation tools (P2-08.6) - Batch Tools
+        registry.Register(new BatchPlaceDetailLinesTool());
+        registry.Register(new BatchPlaceDetailComponentsTool());
     }
 
     /// <summary>
